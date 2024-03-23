@@ -1,18 +1,21 @@
 from socket import *
+import sys
 
 
-def get_user_input() -> ([str], bool):
+def get_user_input() -> (str, bool):
     nr: int = 0
-    commands: [str] = []
+    commands: str = ""
     while True:
         nr += 1
         command = input(f"{nr}> ")
-        commands.append(command)
+
         match command.lower():
             case "go":
                 return commands, True
             case "exit":
-                return ["exit"], False
+                return "exit", False
+        # the exit and go commands won't make it into the commands string
+        commands += command + '\n'
 
 
 def main():
@@ -23,16 +26,23 @@ def main():
     try:
         while True:
             commands, keep_running = get_user_input()
-            if len(commands) != 0:
-                for command in commands:
-                    s.sendall(command.encode())
-                data = s.recv(1024).decode()
-                print(data)
-            if not keep_running:
-                s.close()
-                break
+            command_length: int = len(commands)
+            if command_length != 0:
+                s.sendall(command_length.to_bytes(4, byteorder='big'))  # send buffer size
+                s.sendall(commands.encode())  # send commands
+                if keep_running:
+                    response_length: int = int.from_bytes(s.recv(4), byteorder="big")
+                    response = s.recv(response_length).decode()
+                    print(response)
+                else:
+                    s.close()
+                    break
+            else:
+                print("No commands")
     except KeyboardInterrupt:
         print("Ctrl+C pressed")
 
 
 main()
+
+# client should send the buffer size and the data after

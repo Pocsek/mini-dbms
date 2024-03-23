@@ -1,6 +1,7 @@
 from socket import *
 from threading import Thread
 from datetime import datetime
+import sys
 
 stop_threads = False
 
@@ -23,6 +24,7 @@ def respond_to_client(client_socket: socket, commands: [str]):
     good: bool = False
     # do something with the commands
     for command in commands:
+        # the true-false logic is not correct, but it will change anyway
         match command.lower().strip().split():
             case ["create", obj]:
                 match obj:
@@ -45,27 +47,30 @@ def respond_to_client(client_socket: socket, commands: [str]):
             case _:
                 good = False
     if not good:
-        client_socket.sendall(str.encode("invalid command(s)"))
+        response: str = "invalid command(s)"
+        client_socket.send(len(response).to_bytes(4, byteorder='big'))
+        client_socket.sendall(str.encode(response))
     else:
         # this is just for testing
-        client_socket.sendall(str.encode("ok"))
+        response: str = "ok"
+        client_socket.send(len(response).to_bytes(4, byteorder='big'))
+        client_socket.sendall(str.encode(response))
 
 
 def handle_client(client_socket, addr):
     while True:
-        commands: [str] = []
         # get the commands from the client
-        while True:
-            command = client_socket.recv(1024).decode()
-            log("Received command: {}".format(command), "logfile.txt")
-            if command == "go" or command == "GO":
-                respond_to_client(client_socket, commands)
-                break
-            if command == "exit" or command == "EXIT":
-                client_socket.close()
-                log("Socket closed" + str(addr), "logfile.txt")
-                return
-            commands.append(command)
+        command_length: int = int.from_bytes(client_socket.recv(4), byteorder="big")
+        commands: str = client_socket.recv(command_length).decode()
+        log("Received commands:\n" + commands + "----end of commands", "logfile.txt")
+        commands: list[str] = [command for command in commands.lower().split('\n') if command != '']
+
+        if commands[0] == "exit":
+            client_socket.close()
+            log("Socket closed" + str(addr), "logfile.txt")
+            return
+
+        respond_to_client(client_socket, commands)
 
 
 def run_server(s: socket):
@@ -92,10 +97,14 @@ def main():
     # send go message to server to get it out of waiting for connection, so it can stop
     exit_socket = socket(AF_INET, SOCK_STREAM)
     exit_socket.connect((host, port))
-    exit_socket.sendall(str.encode("exit"))
+    message = "exit"
+    exit_socket.send(len(message).to_bytes(4, byteorder='big'))
+    exit_socket.sendall(str.encode(message))
     exit_socket.close()
     thread.join()
     print("Server stopped")
 
 
 main()
+
+# client should send the buffer size and the data after
