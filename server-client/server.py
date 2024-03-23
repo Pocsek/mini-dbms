@@ -1,7 +1,15 @@
 from socket import *
 from threading import Thread
+from datetime import datetime
 
 stop_threads = False
+
+
+def log(message: str, filename: str):
+    f = open(filename, 'a')
+    time = datetime.now()
+    f.write(str(time) + " -- " + message + '\n')
+    f.close()
 
 
 def create_socket(host, port) -> socket:
@@ -11,40 +19,53 @@ def create_socket(host, port) -> socket:
     return sock
 
 
-def handle_client(client_socket):
-    commands: [str] = []
-    # get the commands from the client
+def respond_to_client(client_socket: socket, commands: [str]):
+    good: bool = False
+    # do something with the commands
+    for command in commands:
+        match command.lower().strip().split():
+            case ["create", obj]:
+                match obj:
+                    case "table":
+                        good = True
+                    case "database":
+                        good = True
+                    case "index":
+                        good = True
+                    case _:
+                        good = False
+            case ["drop", obj]:
+                match obj:
+                    case "table":
+                        good = True
+                    case "database":
+                        good = True
+                    case _:
+                        good = False
+            case _:
+                good = False
+    if not good:
+        client_socket.sendall(str.encode("invalid command(s)"))
+    else:
+        # this is just for testing
+        client_socket.sendall(str.encode("ok"))
+
+
+def handle_client(client_socket, addr):
     while True:
-        command = client_socket.recv(1024).decode()
-        if command == "go" or command == "GO":
-            break
-        commands.append(command)
-    if len(commands) != 0:
-        good: bool = False
-        # do something with the commands
-        for command in commands:
-            # this is not necessarily the best wat to do this, but will help in the future
-            match command.strip().split():
-                case ["create", "table"] | ["CREATE", "TABLE"]:
-                    good = True
-                case ["drop", "table"] | ["DROP", "TABLE"]:
-                    good = True
-                case ["create", "database"] | ["CREATE", "DATABASE"]:
-                    good = True
-                case ["drop", "database"] | ["DROP", "DATABASE"]:
-                    good = True
-                case ["create", "index"] | ["CREATE", "INDEX"]:
-                    good = True
-                case _:
-                    good = False
-
-        if not good:
-            client_socket.send(str.encode("invalid statement"))
-        else:
-            # this is just for testing
-            client_socket.send(str.encode("ok"))
-
-    client_socket.close()
+        commands: [str] = []
+        # get the commands from the client
+        while True:
+            command = client_socket.recv(1024).decode()
+            log("Received command: {}".format(command), "logfile.txt")
+            if command == "go" or command == "GO":
+                respond_to_client(client_socket, commands)
+                break
+            if command == "exit" or command == "EXIT":
+                client_socket.close()
+                log("Socket closed" + str(addr), "logfile.txt")
+                return
+            commands.append(command)
 
 
 def run_server(s: socket):
@@ -52,8 +73,8 @@ def run_server(s: socket):
     global stop_threads
     while not stop_threads:
         conn, addr = s.accept()
-        print("Connected by", addr)
-        handle_client(conn)
+        log("Connected by" + str(addr), "logfile.txt")
+        handle_client(conn, addr)
 
 
 def main():
@@ -71,7 +92,7 @@ def main():
     # send go message to server to get it out of waiting for connection, so it can stop
     exit_socket = socket(AF_INET, SOCK_STREAM)
     exit_socket.connect((host, port))
-    exit_socket.send(str.encode("go"))
+    exit_socket.sendall(str.encode("exit"))
     exit_socket.close()
     thread.join()
     print("Server stopped")

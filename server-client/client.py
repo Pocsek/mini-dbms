@@ -8,11 +8,11 @@ def get_user_input() -> ([str], bool):
         nr += 1
         command = input(f"{nr}> ")
         commands.append(command)
-        match command:
-            case "go" | "GO":
+        match command.lower():
+            case "go":
                 return commands, True
-            case "exit" | "EXIT":
-                return [], False
+            case "exit":
+                return ["exit"], False
 
 
 def main():
@@ -20,17 +20,19 @@ def main():
     host = 'localhost'
     port = 12345
     s.connect((host, port))
-    while True:
-        commands, keep_running = get_user_input()
-        if keep_running:
+    try:
+        while True:
+            commands, keep_running = get_user_input()
             if len(commands) != 0:
                 for command in commands:
-                    s.send(command.encode())
+                    s.sendall(command.encode())
                 data = s.recv(1024).decode()
                 print(data)
-        else:
-            s.close()
-            break
+            if not keep_running:
+                s.close()
+                break
+    except KeyboardInterrupt:
+        print("Ctrl+C pressed")
 
 
 main()
