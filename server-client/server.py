@@ -26,6 +26,9 @@ def respond_to_client(client_socket: socket, commands: [str]):
     for command in commands:
         # the true-false logic is not correct, but it will change anyway
         match command.lower().strip().split():
+            case ["use", obj]:
+                # need to check whether the obj is existing
+                good = True
             case ["create", obj]:
                 match obj:
                     case "table":
