@@ -33,6 +33,13 @@ def find_database(name) -> int:
     return -1
 
 
+def find_table(db_idx, table_name) -> int:
+    for (idx, table) in enumerate(dbs["databases"][db_idx]["tables"]):
+        if table["table_name"] == table_name:
+            return idx
+    return -1
+
+
 def create_empty_database() -> dict:
     return {
         "name": "",

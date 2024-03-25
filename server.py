@@ -120,7 +120,7 @@ def respond_to_client(client_socket: socket, commands: [str]):
             case ["drop", *obj]:
                 match obj:
                     case ["database", db_name]:
-                        db_idx = dbmanager.find_database(db_name);
+                        db_idx = dbmanager.find_database(db_name)
                         if db_idx == -1:
                             response = f"Cannot drop the database '{db_name}', because it does not exist."
                             good = False
@@ -131,8 +131,16 @@ def respond_to_client(client_socket: socket, commands: [str]):
                             del dbmanager.dbs["databases"][db_idx]
                             modified = True
 
-                    case "table":
-                        pass
+                    case ["table", table_name]:
+                        db_idx = dbmanager.working_db
+                        table_idx = dbmanager.find_table(db_idx, table_name)
+                        if table_idx == -1:
+                            response = f"Cannot drop the table '{table_name}', because it does not exist."
+                            good = False
+                        else:
+                            del dbmanager.dbs["databases"][db_idx]["tables"][table_idx]
+                            # TO-DO: delete corresponding file containing table data
+                            modified = True
                     case _:
                         good = False
             case _:
