@@ -31,3 +31,25 @@ def find_database(name) -> int:
         if db["name"] == name:
             return idx
     return -1
+
+
+def create_empty_table() -> dict:
+    return {
+        "name": "",
+        "columns": [],
+        "keys": [],
+        "constraints": [],
+        "indexes": []
+    }
+
+
+def create_empty_column() -> dict:
+    return {
+        "name": "",
+        "type": "",
+        "primary_key": False,
+        "allow_nulls": True,
+        "identity": False,
+        "identity_seed": 0,
+        "identity_increment": 0
+    }

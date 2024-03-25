@@ -2,7 +2,7 @@ from socket import *
 from threading import Thread
 from datetime import datetime
 import sys
-import json
+import re
 
 import dbmanager
 
@@ -27,8 +27,8 @@ def respond_to_client(client_socket: socket, commands: [str]):
     good: bool = True
     modified: bool = False
     response: str = ""
-    # do something with the commands
     n_cmd = len(commands)
+    # do something with the commands
     for command in commands:
         # the true-false logic is not correct, but it will change anyway
         match command.lower().strip().split():
@@ -40,8 +40,10 @@ def respond_to_client(client_socket: socket, commands: [str]):
                 else:
                     response = f"Changed database context to '{obj}'."
                     dbmanager.working_db = db_idx
+
             case ["create", *obj]:
                 match obj:
+                    # example command: create database test1
                     case ["database", db_name]:
                         db_idx = dbmanager.find_database(db_name)
                         if db_idx != -1:
@@ -54,12 +56,63 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                 "tables": []
                             })
                             modified = True
-                    case "table (":
-                        pass
+
+                    # example command: create table t1 ( ... );
+                    case ["table", table_name, "(", *column_commands, ");"]:
+                        new_table = dbmanager.create_empty_table()
+                        new_table["name"] = table_name
+
+                        column_definitions = []
+                        tmp = []
+                        for word in column_commands:
+                            if word[-1] == ',':
+                                tmp.append(word[:-1])
+                                column_definitions.append(tmp)
+                                tmp = []
+                            else:
+                                tmp.append(word)
+                        column_definitions.append(tmp)
+
+                        for column_definition in column_definitions:
+                            match column_definition:
+                                case [col_name, col_type]:
+                                    new_column = dbmanager.create_empty_column()
+                                    new_column["name"] = col_name
+                                    new_column["type"] = col_type
+                                case [col_name, col_type, "primary", "key"]:
+                                    new_column = dbmanager.create_empty_column()
+                                    new_column["name"] = col_name
+                                    new_column["type"] = col_type
+                                    new_column["primary_key"] = True
+                                case [col_name, col_type, "references", keypart]:
+                                    pass
+                                case [col_name, col_type, "constraint", constraint_name, "primary", keypart] if re.match(r"key\(" + col_name + r"\)", keypart):
+                                    pass
+                                case [col_name, col_type, "constraint", constraint_name, "foreign", keypart, "references", reference_column] if re.match(r"key\(" + col_name + r"\)", keypart):
+                                    pass
+                                case ["primary", keypart]:
+                                    pass
+                                case ["foreign", keypart, "references", reference_column]:
+                                    pass
+                                case ["constraint", constraint_name, "primary", keypart]:
+                                    pass
+                                case ["constraint", constraint_name, "foreign", keypart, "references", reference_column]:
+                                    pass
+                                case ["constraint", constraint_name, "unique", unique_column]:
+                                    pass
+                                #  -------------------------------
+                                # | TO-DO: handle more cases (e.g.: identity property, check constraint, etc.) |
+                                #  -------------------------------
+                                case _:
+                                    good = False
+                                    break
+
+                        dbmanager.dbs["databases"][dbmanager.working_db]["tables"].append(new_table)
                     case "index":
                         pass
                     case _:
                         good = False
+
             case ["drop", *obj]:
                 match obj:
                     case ["database", db_name]:
