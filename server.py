@@ -2,6 +2,9 @@ from socket import *
 from threading import Thread
 from datetime import datetime
 import sys
+import json
+
+import dbmanager
 
 stop_threads = False
 
@@ -21,43 +24,52 @@ def create_socket(host, port) -> socket:
 
 
 def respond_to_client(client_socket: socket, commands: [str]):
-    good: bool = False
+    good: bool = True
+    modified: bool = False
+    response: str = ""
     # do something with the commands
     for command in commands:
         # the true-false logic is not correct, but it will change anyway
         match command.lower().strip().split():
             case ["use", obj]:
-                # need to check whether the obj is existing
-                good = True
+                for (idx, db) in enumerate(dbmanager.get_databases()):
+                    if db['name'] == obj:
+                        response += f"Changed database context to '{obj}'."
+                        dbmanager.working_db = idx
+                    else:
+                        response += f"Database '{obj}' does not exist. Make sure that the name is entered correctly."
+                        good = False
+
             case ["create", obj]:
                 match obj:
-                    case "table":
-                        good = True
                     case "database":
-                        good = True
+                        pass
+                    case "table":
+                        pass
                     case "index":
-                        good = True
+                        pass
                     case _:
                         good = False
             case ["drop", obj]:
                 match obj:
-                    case "table":
-                        good = True
                     case "database":
-                        good = True
+                        pass
+                    case "table":
+                        pass
                     case _:
                         good = False
             case _:
                 good = False
-    if not good:
-        response: str = "invalid command(s)"
-        client_socket.send(len(response).to_bytes(4, byteorder='big'))
-        client_socket.sendall(str.encode(response))
-    else:
-        # this is just for testing
-        response: str = "ok"
-        client_socket.send(len(response).to_bytes(4, byteorder='big'))
-        client_socket.sendall(str.encode(response))
+
+    client_socket.send(len(response).to_bytes(4, byteorder='big'))
+    client_socket.sendall(str.encode(response))
+
+    # if there was modification in the database and there were problems, load the last stable state
+    if modified and not good:
+        dbmanager.dbs = dbmanager.load_databases()
+    # if there was modification in the database and there were no problems, update the db file
+    elif modified and good:
+        dbmanager.update_databases()
 
 
 def handle_client(client_socket, addr):
@@ -78,6 +90,8 @@ def handle_client(client_socket, addr):
 
 def run_server(s: socket):
     print("Server started")
+    dbmanager.dbs = dbmanager.load_databases()
+    print("Databases loaded")
     global stop_threads
     while not stop_threads:
         conn, addr = s.accept()
