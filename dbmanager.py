@@ -16,6 +16,18 @@ def update_databases():
         # f.truncate()  # if the new file is smaller, cut off excess space
 
 
-def get_databases() -> []:
-    return dbs['databases']
+def get_database(idx):
+    if idx >= len(get_databases()):
+        raise "Cannot retrive database: index out of bounds"
+    return dbs["databases"][idx]
 
+
+def get_databases() -> []:
+    return dbs["databases"]
+
+
+def find_database(name) -> int:
+    for (idx, db) in enumerate(get_databases()):
+        if db["name"] == name:
+            return idx
+    return -1

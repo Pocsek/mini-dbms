@@ -28,38 +28,61 @@ def respond_to_client(client_socket: socket, commands: [str]):
     modified: bool = False
     response: str = ""
     # do something with the commands
+    n_cmd = len(commands)
     for command in commands:
         # the true-false logic is not correct, but it will change anyway
         match command.lower().strip().split():
             case ["use", obj]:
-                for (idx, db) in enumerate(dbmanager.get_databases()):
-                    if db['name'] == obj:
-                        response += f"Changed database context to '{obj}'."
-                        dbmanager.working_db = idx
-                    else:
-                        response += f"Database '{obj}' does not exist. Make sure that the name is entered correctly."
-                        good = False
-
-            case ["create", obj]:
+                db_idx = dbmanager.find_database(obj)
+                if db_idx == -1:
+                    response = f"Database '{obj}' does not exist. Make sure that the name is entered correctly."
+                    good = False
+                else:
+                    response = f"Changed database context to '{obj}'."
+                    dbmanager.working_db = db_idx
+            case ["create", *obj]:
                 match obj:
-                    case "database":
-                        pass
-                    case "table":
+                    case ["database", db_name]:
+                        db_idx = dbmanager.find_database(db_name)
+                        if db_idx != -1:
+                            response = f"Database '{db_name}' already exists. Choose a different database name."
+                            good = False
+                        else:
+                            dbmanager.working_db = len(dbmanager.get_databases())
+                            dbmanager.dbs["databases"].append({
+                                "name": db_name,
+                                "tables": []
+                            })
+                            modified = True
+                    case "table (":
                         pass
                     case "index":
                         pass
                     case _:
                         good = False
-            case ["drop", obj]:
+            case ["drop", *obj]:
                 match obj:
-                    case "database":
-                        pass
+                    case ["database", db_name]:
+                        db_idx = dbmanager.find_database(db_name);
+                        if db_idx == -1:
+                            response = f"Cannot drop the database '{db_name}', because it does not exist."
+                            good = False
+                        elif dbmanager.get_database(db_idx)["name"] == "master":
+                            response = f"Cannot drop the database 'master' because it is a system database."
+                            good = False
+                        else:
+                            del dbmanager.dbs["databases"][db_idx]
+                            modified = True
+
                     case "table":
                         pass
                     case _:
                         good = False
             case _:
                 good = False
+
+    if not good:
+        response = "Invalid command(s)\n" + response
 
     client_socket.send(len(response).to_bytes(4, byteorder='big'))
     client_socket.sendall(str.encode(response))
