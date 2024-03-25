@@ -33,12 +33,37 @@ def find_database(name) -> int:
     return -1
 
 
-def create_empty_table() -> dict:
+def create_empty_database() -> dict:
     return {
         "name": "",
+        "tables": []
+    }
+
+
+def create_empty_foreign_key() -> dict:
+    return {
+        "attributes": [],
+        "references": {
+            "table": "",
+            "attributes": []
+        }
+    }
+
+
+def create_empty_table() -> dict:
+    return {
+        "table_name": "",
+        "file_name": "",
         "columns": [],
-        "keys": [],
-        "constraints": [],
+        "keys": {
+            "primary_key": [],
+            "foreign_keys": [],
+            "unique_keys": []
+        },
+        "constraints": {
+            "check": [],
+            "default": []
+        },
         "indexes": []
     }
 
@@ -47,7 +72,6 @@ def create_empty_column() -> dict:
     return {
         "name": "",
         "type": "",
-        "primary_key": False,
         "allow_nulls": True,
         "identity": False,
         "identity_seed": 0,

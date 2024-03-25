@@ -51,16 +51,16 @@ def respond_to_client(client_socket: socket, commands: [str]):
                             good = False
                         else:
                             dbmanager.working_db = len(dbmanager.get_databases())
-                            dbmanager.dbs["databases"].append({
-                                "name": db_name,
-                                "tables": []
-                            })
+                            new_db = dbmanager.create_empty_database()
+                            new_db["name"] = db_name
+                            dbmanager.dbs["databases"].append(new_db)
                             modified = True
 
                     # example command: create table t1 ( ... );
                     case ["table", table_name, "(", *column_commands, ");"]:
                         new_table = dbmanager.create_empty_table()
-                        new_table["name"] = table_name
+                        new_table["table_name"] = table_name
+                        new_table["file_name"] = f"{table_name}.kv"
 
                         column_definitions = []
                         tmp = []
@@ -83,9 +83,8 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                     new_column = dbmanager.create_empty_column()
                                     new_column["name"] = col_name
                                     new_column["type"] = col_type
-                                    new_column["primary_key"] = True
                                     new_column["allow_nulls"] = False
-                                    new_table["keys"].append(f"PK__{table_name}")
+                                    new_table["keys"]["primary_key"].append(col_name)
                                 case [col_name, col_type, "references", keypart]:
                                     pass
                                 case [col_name, col_type, "constraint", constraint_name, "primary", keypart] if re.match(r"key\(" + col_name + r"\)", keypart):
@@ -108,8 +107,9 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                     break
                             if good:
                                 new_table["columns"].append(new_column)
-                                # TO-DO: validation
+                                # TO-DO: validity checks
                         if good:
+                            # TO-DO: validity checks
                             dbmanager.dbs["databases"][dbmanager.working_db]["tables"].append(new_table)
                             modified = True
                     case "index":
