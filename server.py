@@ -74,9 +74,9 @@ def respond_to_client(client_socket: socket, commands: [str]):
                         column_definitions.append(tmp)
 
                         for column_definition in column_definitions:
+                            new_column = dbmanager.create_empty_column()
                             match column_definition:
                                 case [col_name, col_type]:
-                                    new_column = dbmanager.create_empty_column()
                                     new_column["name"] = col_name
                                     new_column["type"] = col_type
                                 case [col_name, col_type, "primary", "key"]:
@@ -84,6 +84,8 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                     new_column["name"] = col_name
                                     new_column["type"] = col_type
                                     new_column["primary_key"] = True
+                                    new_column["allow_nulls"] = False
+                                    new_table["keys"].append(f"PK__{table_name}")
                                 case [col_name, col_type, "references", keypart]:
                                     pass
                                 case [col_name, col_type, "constraint", constraint_name, "primary", keypart] if re.match(r"key\(" + col_name + r"\)", keypart):
@@ -100,14 +102,16 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                     pass
                                 case ["constraint", constraint_name, "unique", unique_column]:
                                     pass
-                                #  -------------------------------
-                                # | TO-DO: handle more cases (e.g.: identity property, check constraint, etc.) |
-                                #  -------------------------------
+                                # TO-DO: handle more cases (e.g.: identity property, check constraint, etc.)
                                 case _:
                                     good = False
                                     break
-
-                        dbmanager.dbs["databases"][dbmanager.working_db]["tables"].append(new_table)
+                            if good:
+                                new_table["columns"].append(new_column)
+                                # TO-DO: validation
+                        if good:
+                            dbmanager.dbs["databases"][dbmanager.working_db]["tables"].append(new_table)
+                            modified = True
                     case "index":
                         pass
                     case _:
