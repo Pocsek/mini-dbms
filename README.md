@@ -8,6 +8,3 @@ Mini DBMS project is a database management system that allows users to create, s
 - Display data in tabular form
 - Query editor
 - Manage indexes (create, delete) and use indexes in queries
-
-## Test
-- writing something to see how it would look like
