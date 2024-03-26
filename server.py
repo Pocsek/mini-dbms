@@ -5,8 +5,10 @@ import sys
 import re
 
 import dbmanager
+from index_manager import *
 
 stop_threads = False
+im: IndexManager = IndexManager()
 
 
 def log(message: str, filename: str):
@@ -87,9 +89,11 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                     new_table["keys"]["primary_key"].append(col_name)
                                 case [col_name, col_type, "references", keypart]:
                                     pass
-                                case [col_name, col_type, "constraint", constraint_name, "primary", keypart] if re.match(r"key\(" + col_name + r"\)", keypart):
+                                case [col_name, col_type, "constraint", constraint_name, "primary",
+                                      keypart] if re.match(r"key\(" + col_name + r"\)", keypart):
                                     pass
-                                case [col_name, col_type, "constraint", constraint_name, "foreign", keypart, "references", reference_column] if re.match(r"key\(" + col_name + r"\)", keypart):
+                                case [col_name, col_type, "constraint", constraint_name, "foreign", keypart,
+                                      "references", reference_column] if re.match(r"key\(" + col_name + r"\)", keypart):
                                     pass
                                 case ["primary", keypart]:
                                     pass
@@ -97,7 +101,8 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                     pass
                                 case ["constraint", constraint_name, "primary", keypart]:
                                     pass
-                                case ["constraint", constraint_name, "foreign", keypart, "references", reference_column]:
+                                case ["constraint", constraint_name, "foreign", keypart, "references",
+                                      reference_column]:
                                     pass
                                 case ["constraint", constraint_name, "unique", unique_column]:
                                     pass
@@ -112,8 +117,21 @@ def respond_to_client(client_socket: socket, commands: [str]):
                             # TO-DO: validity checks
                             dbmanager.dbs["databases"][dbmanager.working_db]["tables"].append(new_table)
                             modified = True
-                    case "index":
-                        pass
+                    case ["index", name, "on", table, "(", *columns, ")"]:
+                        # as of right now no validity checks are implemented
+                        # TO-DO: add unique indexes (create unique index)
+                        new_index = create_empty_index()
+                        new_index["name"] = name
+                        new_index["database"] = dbmanager.dbs["databases"][dbmanager.working_db]["name"]
+                        # TO-DO:
+                        # check if it's an existing table
+                        # check that all columns listed are existing ones it the given table
+                        new_index["table"] = table
+                        new_index["columns"] = columns
+                        im.indexes["indexes"].append(new_index)
+                        im.update_indexes()  # this should be at the end of the function
+                        response += f"Added '{name}' index\n"
+
                     case _:
                         good = False
 
@@ -180,6 +198,8 @@ def run_server(s: socket):
     print("Server started")
     dbmanager.dbs = dbmanager.load_databases()
     print("Databases loaded")
+    im.load_indexes()  # load index file
+    print("Indexes loaded")
     global stop_threads
     while not stop_threads:
         conn, addr = s.accept()
