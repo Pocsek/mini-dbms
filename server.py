@@ -118,19 +118,29 @@ def respond_to_client(client_socket: socket, commands: [str]):
                             dbmanager.dbs["databases"][dbmanager.working_db]["tables"].append(new_table)
                             modified = True
                     case ["index", name, "on", table, "(", *columns, ")"]:
-                        # as of right now no validity checks are implemented
                         # TO-DO: add unique indexes (create unique index)
-                        new_index = create_empty_index()
+                        # TO-DO: maybe check if the current name for the index already exists or not
+                        new_index = dbmanager.create_empty_index()
                         new_index["name"] = name
-                        new_index["database"] = dbmanager.dbs["databases"][dbmanager.working_db]["name"]
-                        # TO-DO:
-                        # check if it's an existing table
-                        # check that all columns listed are existing ones it the given table
-                        new_index["table"] = table
-                        new_index["columns"] = columns
-                        im.indexes["indexes"].append(new_index)
-                        im.update_indexes()  # this should be at the end of the function
-                        response += f"Added '{name}' index\n"
+                        table_idx = dbmanager.find_table(dbmanager.working_db, table)
+                        if table_idx != -1:
+                            # if table exists
+                            if all(column in dbmanager.get_column_names(dbmanager.working_db, table_idx)
+                                   for column in columns):
+                                # if all columns exist
+                                new_index["columns"] = columns
+                            else:
+                                good = False
+                                response += f"Column(s) not found in table '{table}'\n"
+                        else:
+                            good = False
+                            response += (f"Table '{table}' not found in database "
+                                         f"'{dbmanager.dbs['databases'][dbmanager.working_db]['name']}'\n")
+
+                        if good:
+                            dbmanager.dbs["databases"][dbmanager.working_db]["tables"][table_idx]["indexes"].append(new_index)
+                            modified = True
+                            response += f"Added '{name}' index\n"
 
                     case _:
                         good = False
@@ -198,8 +208,6 @@ def run_server(s: socket):
     print("Server started")
     dbmanager.dbs = dbmanager.load_databases()
     print("Databases loaded")
-    im.load_indexes()  # load index file
-    print("Indexes loaded")
     global stop_threads
     while not stop_threads:
         conn, addr = s.accept()

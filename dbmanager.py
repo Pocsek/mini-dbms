@@ -18,7 +18,7 @@ def update_databases():
 
 def get_database(idx):
     if idx >= len(get_databases()):
-        raise "Cannot retrive database: index out of bounds"
+        raise "Cannot retrieve database: index out of bounds"
     return dbs["databases"][idx]
 
 
@@ -39,6 +39,17 @@ def find_table(db_idx, table_name) -> int:
             return idx
     return -1
 
+def get_table_names(db_idx) -> list[str]:
+    table_names = []
+    for table in dbs["databases"][db_idx]["tables"]:
+        table_names.append(table["table_name"])
+    return table_names
+
+def get_column_names(db_idx, table_idx) -> list[str]:
+    column_names = []
+    for column in dbs["databases"][db_idx]["tables"][table_idx]["columns"]:
+        column_names.append(column["name"])
+    return column_names
 
 def create_empty_database() -> dict:
     return {
@@ -83,4 +94,12 @@ def create_empty_column() -> dict:
         "identity": False,
         "identity_seed": 0,
         "identity_increment": 0
+    }
+
+
+def create_empty_index() -> dict:
+    return {
+        "name": "",
+        "columns": [],
+        "index": ""
     }
