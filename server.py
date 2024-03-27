@@ -5,8 +5,10 @@ import sys
 import re
 
 import dbmanager
+from index_manager import *
 
 stop_threads = False
+im: IndexManager = IndexManager()
 
 
 def log(message: str, filename: str):
@@ -87,9 +89,11 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                     new_table["keys"]["primary_key"].append(col_name)
                                 case [col_name, col_type, "references", keypart]:
                                     pass
-                                case [col_name, col_type, "constraint", constraint_name, "primary", keypart] if re.match(r"key\(" + col_name + r"\)", keypart):
+                                case [col_name, col_type, "constraint", constraint_name, "primary",
+                                      keypart] if re.match(r"key\(" + col_name + r"\)", keypart):
                                     pass
-                                case [col_name, col_type, "constraint", constraint_name, "foreign", keypart, "references", reference_column] if re.match(r"key\(" + col_name + r"\)", keypart):
+                                case [col_name, col_type, "constraint", constraint_name, "foreign", keypart,
+                                      "references", reference_column] if re.match(r"key\(" + col_name + r"\)", keypart):
                                     pass
                                 case ["primary", keypart]:
                                     pass
@@ -97,7 +101,8 @@ def respond_to_client(client_socket: socket, commands: [str]):
                                     pass
                                 case ["constraint", constraint_name, "primary", keypart]:
                                     pass
-                                case ["constraint", constraint_name, "foreign", keypart, "references", reference_column]:
+                                case ["constraint", constraint_name, "foreign", keypart, "references",
+                                      reference_column]:
                                     pass
                                 case ["constraint", constraint_name, "unique", unique_column]:
                                     pass
@@ -112,8 +117,31 @@ def respond_to_client(client_socket: socket, commands: [str]):
                             # TO-DO: validity checks
                             dbmanager.dbs["databases"][dbmanager.working_db]["tables"].append(new_table)
                             modified = True
-                    case "index":
-                        pass
+                    case ["index", name, "on", table, "(", *columns, ")"]:
+                        # TO-DO: add unique indexes (create unique index)
+                        # TO-DO: maybe check if the current name for the index already exists or not
+                        new_index = dbmanager.create_empty_index()
+                        new_index["name"] = name
+                        table_idx = dbmanager.find_table(dbmanager.working_db, table)
+                        if table_idx != -1:
+                            # if table exists
+                            if all(column in dbmanager.get_column_names(dbmanager.working_db, table_idx)
+                                   for column in columns):
+                                # if all columns exist
+                                new_index["columns"] = columns
+                            else:
+                                good = False
+                                response += f"Column(s) not found in table '{table}'\n"
+                        else:
+                            good = False
+                            response += (f"Table '{table}' not found in database "
+                                         f"'{dbmanager.dbs['databases'][dbmanager.working_db]['name']}'\n")
+
+                        if good:
+                            dbmanager.dbs["databases"][dbmanager.working_db]["tables"][table_idx]["indexes"].append(new_index)
+                            modified = True
+                            response += f"Added '{name}' index\n"
+
                     case _:
                         good = False
 
