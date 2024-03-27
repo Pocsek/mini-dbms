@@ -1,5 +1,4 @@
 from socket import *
-import sys
 
 
 def get_user_input() -> (str, bool):
@@ -7,15 +6,15 @@ def get_user_input() -> (str, bool):
     commands: str = ""
     while True:
         nr += 1
-        command = input(f"{nr}> ")
+        command = input(f"{nr}> ").strip()
 
         match command.lower():
             case "go":
-                return commands, True
+                return commands[:-1], True  # return commands string without trailing space
             case "exit":
                 return "exit", False
         # the exit and go commands won't make it into the commands string
-        commands += command + '\n'
+        commands += command + " "
 
 
 def main():
@@ -28,7 +27,7 @@ def main():
             commands, keep_running = get_user_input()
             command_length: int = len(commands)
             if command_length != 0:
-                s.sendall(command_length.to_bytes(4, byteorder='big'))  # send buffer size
+                s.sendall(command_length.to_bytes(4, byteorder="big"))  # send buffer size
                 s.sendall(commands.encode())  # send commands
                 if keep_running:
                     response_length: int = int.from_bytes(s.recv(4), byteorder="big")

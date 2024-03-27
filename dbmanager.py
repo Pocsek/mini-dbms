@@ -122,3 +122,11 @@ def create_empty_index() -> dict:
         "columns": [],
         "index": ""
     }
+
+
+# takes a string of SQL commands separated by spaces and turns it into a list of strings according to certain rules
+# (normalize the input) with the scope of making the next step - interpretation of the commands - easier
+def normalize_input(commands_string) -> list[str]:
+    normalized: list[str] = commands_string.split(" ")
+
+    return normalized
