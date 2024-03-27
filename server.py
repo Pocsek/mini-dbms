@@ -5,10 +5,8 @@ import sys
 import re
 
 import dbmanager
-from index_manager import *
 
 stop_threads = False
-im: IndexManager = IndexManager()
 
 
 def log(message: str, filename: str):

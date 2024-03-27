@@ -1,12 +1,18 @@
 import json
+import os
 
 dbs = {}  # the databases metadata is loaded into this dictionary
 working_db = 0  # the index of the database we're currently using
 
 
 def load_databases():
-    with open("databases.json", "r") as f:
-        data = json.load(f)  # decode (JSON -> python dict)
+    if os.path.exists("databases.json"):
+        with open("databases.json", "r") as f:
+            data = json.load(f)  # decode (JSON -> python dict)
+    else:
+        with open("databases.json", "w") as f:
+            data = create_default_databases()
+            json.dump(data, f, indent=2)
     return data
 
 
@@ -39,17 +45,30 @@ def find_table(db_idx, table_name) -> int:
             return idx
     return -1
 
+
 def get_table_names(db_idx) -> list[str]:
     table_names = []
     for table in dbs["databases"][db_idx]["tables"]:
         table_names.append(table["table_name"])
     return table_names
 
+
 def get_column_names(db_idx, table_idx) -> list[str]:
     column_names = []
     for column in dbs["databases"][db_idx]["tables"][table_idx]["columns"]:
         column_names.append(column["name"])
     return column_names
+
+
+def create_default_databases() -> dict:
+    data = {
+        "databases": []
+    }
+    default_db_1 = create_empty_database()
+    default_db_1["name"] = "master"
+    data["databases"].append(default_db_1)
+    return data
+
 
 def create_empty_database() -> dict:
     return {
