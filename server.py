@@ -24,11 +24,13 @@ def create_socket(host, port) -> socket:
 
 
 def respond_to_client(client_socket: socket, commands: str):
-    commands: list[str] = dbmanager.normalize_input(commands)
     good: bool = True
     modified: bool = False
     response: str = ""
 
+    commands: list[str] = dbmanager.normalize_input(commands)
+    log("Normalized commands:\n" + " ".join(commands))
+    # print(commands)
     match commands:
         case ["use", obj]:
             db_idx = dbmanager.find_database(obj)

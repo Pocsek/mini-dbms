@@ -1,9 +1,12 @@
 import json
 import os
+import sqlparse
+import re
+
+DATATYPES = ("int", "float", "bit", "date", "datetime", "varchar")
 
 dbs = {}  # the databases metadata is loaded into this dictionary
 working_db = 0  # the index of the database we're currently using
-
 
 def load_databases():
     if os.path.exists("databases.json"):
@@ -124,9 +127,24 @@ def create_empty_index() -> dict:
     }
 
 
-# takes a string of SQL commands separated by spaces and turns it into a list of strings according to certain rules
-# (normalize the input) with the scope of making the next step - interpretation of the commands - easier
+# takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
+# different list element -> this is an essential step to take before starting to interpret the commands
 def normalize_input(commands_string) -> list[str]:
-    normalized: list[str] = commands_string.split(" ")
+    normalized = sqlparse.format(
+        commands_string,
+        keywords_case="lower",  # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
+        strip_comments=True  # remove comments (both "--" and "/* */" variants)
+    )
+    normalized = normalized.replace("\n", " ")  # concatenate all lines into one line
+    normalized = re.sub(r"([(),;+\-*/%@]|==|!=|\+=|-=|\*=|/=|%=)", r" \1 ", normalized)  # put space around parentheses, separators, operators
+    normalized = re.sub(" +", " ", normalized)  # remove extra spaces
+    normalized = normalized.strip()  # remove possible trailing space
+    normalized = normalized.split(" ")  # split by spaces
+
+    # cast datatypes to lowercase
+    for i, val in enumerate(normalized):
+        val_lower = val.lower()
+        if val_lower in DATATYPES:
+            normalized[i] = val_lower
 
     return normalized
