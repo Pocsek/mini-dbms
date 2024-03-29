@@ -130,7 +130,7 @@ def create_empty_index() -> dict:
 # takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
 # different list element -> this is an essential step to take before starting to interpret the commands
 def normalize_input(commands_string) -> list[str]:
-    normalized = re.sub(r"([(),;+\-*/%@]|==|!=|\+=|-=|\*=|/=|%=)", r" \1 ", commands_string)  # put space around parentheses, separators, operators
+    normalized = re.sub(r"([(),;+\-*/%@]|==|!=|\+=|-=|\*=|/=|%=|>|<|>=|<=)", r" \1 ", commands_string)  # put space around parentheses, separators, operators
     normalized = sqlparse.format(
         normalized,
         keyword_case="lower",  # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
