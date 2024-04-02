@@ -5,6 +5,7 @@ main_commands = ["create", "drop", "alter", "insert", "select", "update", "delet
 
 def first_index_of_command(li: list[str]) -> int:
     # find the index of the first main_command in the list
+    # return -1 if no main_command is found
     global main_commands
     for (idx, token) in enumerate(li):
         if token in main_commands:
@@ -47,28 +48,49 @@ def main():
             break
     tokens: list[str] = dbmanager.normalize_input(raw_commands)
 
-    c_idx: int = first_index_of_command(tokens)  # index of the first command
-    if c_idx != -1:
-        next_c_idx: int = len(tokens)  # next command index set to end of tokens if no more commands
-        last_idx: int = c_idx  # last command index set to the first command index
-        while True:
-            # find the next command index not in brackets if it exists
-            current_idx: int = first_index_of_command(tokens[last_idx + 1:])
-            if current_idx == -1:
-                # no more commands
-                break
-            current_idx += last_idx + 1  # adjust index to the original list
-            if not bracket_started(tokens[c_idx + 1:current_idx]):
-                # if the next command is not in brackets
-                # checks brackets from the first command (NOT from the last) to the current
-                next_c_idx = current_idx
-                break
-            else:
-                # if the next command is in brackets
-                last_idx = current_idx
-        print(tokens[c_idx:next_c_idx])
-    else:
-        print("No commands")
+    for c in extract_commands(tokens):
+        print(c)
+
+
+def extract_commands(tokens) -> list[list[str]]:
+    commands: list[list[str]] = []
+    c_idx: int = 0
+    while True:
+        if c_idx >= len(tokens):
+            # no more tokens
+            break
+        if tokens[c_idx] not in main_commands:
+            # command not found on current index
+            print(f"Command not found: {tokens[c_idx]}")
+            return []
+
+        next_c_idx = next_index_of_command(c_idx, tokens)
+        command: list[str] = tokens[c_idx:next_c_idx]
+        commands.append(command)
+        c_idx = next_c_idx
+
+    return commands
+
+
+def next_index_of_command(c_idx, tokens):
+    next_c_idx: int = len(tokens)  # next command index set to end of tokens if no more commands
+    last_idx: int = c_idx  # last command index set to the first command index
+    while True:
+        # find the next command index not in brackets if it exists
+        current_idx: int = first_index_of_command(tokens[last_idx + 1:])
+        if current_idx == -1:
+            # no more commands
+            break
+        current_idx += last_idx + 1  # adjust index to the original list
+        if not bracket_started(tokens[c_idx + 1:current_idx]):
+            # if the next command is not in brackets
+            # checks brackets from the first command (NOT from the last) to the current
+            next_c_idx = current_idx
+            break
+        else:
+            # if the next command is in brackets
+            last_idx = current_idx
+    return next_c_idx
 
 
 main()
