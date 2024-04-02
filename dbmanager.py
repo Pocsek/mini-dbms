@@ -22,9 +22,8 @@ class DbManager:
                 self.__dbs = [Database().from_dict(db) for db in data]
         else:
             with open("databases.json", "w") as f:
-                databases = create_default_databases()
-                json.dump([db.__dict__() for db in databases], f, indent=4)
-        return data
+                self.__dbs = create_default_databases()
+                json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
     def update_databases(self):
         with open("databases.json", "w") as f:
@@ -33,11 +32,14 @@ class DbManager:
     def get_databases(self) -> list[Database]:
         return self.__dbs
 
-    def get_working_db(self) -> int:
+    def get_working_db_index(self) -> int:
         return self.__working_db
 
-    def set_working_db(self, db_idx):
+    def set_working_db_index(self, db_idx):
         self.__working_db = db_idx
+
+    def get_working_db(self) -> Database:
+        return self.get_databases()[self.get_working_db_index()]
 
     def find_database(self, name) -> int:
         for (idx, db) in enumerate(self.get_databases()):
