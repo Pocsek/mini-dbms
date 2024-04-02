@@ -2,15 +2,15 @@ from database_objects.dbo import Dbo
 
 
 class Column(Dbo):
-    __type: str
+    __type: str = ""
     __allow_nulls: bool = True
     __identity: bool = False
     __identity_seed: int = 0
     __identity_increment: int = 0
 
     def __init__(self,
-                 name: str,
-                 _type: str,
+                 name: str = "",
+                 _type: str = "",
                  allow_nulls: bool = True,
                  identity: bool = False,
                  identity_seed: int = 0,
@@ -31,6 +31,14 @@ class Column(Dbo):
             "identity_seed": self.__identity_seed,
             "identity_increment": self.__identity_increment
         }
+
+    def from_dict(self, data: dict):
+        self.__name = data.get("name", "")
+        self.__type = data.get("type", "")
+        self.__allow_nulls = data.get("allow_nulls", True)
+        self.__identity = data.get("identity", False)
+        self.__identity_seed = data.get("identity_seed", 0)
+        self.__identity_increment = data.get("identity_increment", 0)
 
     def get_name(self) -> str:
         return self.__name

@@ -3,10 +3,15 @@ from database_objects.column import Column
 
 
 class Index(Dbo):
-    __columns: list[Column]
-    __index: int  # not sure if int will be the type
+    __columns: list[Column] = list()
+    __index: int = -1  # not sure if int will be the type
 
-    def __init__(self, name: str, columns: list[Column], index: int):
+    def __init__(self,
+                 name: str = "",
+                 columns: list[Column] | None = None,
+                 index: int = -1):
+        if columns is None:
+            columns = list()
         self.__name = name
         self.__columns = columns
         self.__index = index
@@ -17,6 +22,11 @@ class Index(Dbo):
             "columns": [column.__dict__() for column in self.__columns],
             "index": self.__index
         }
+
+    def from_dict(self, data: dict):
+        self.__name = data.get("name", "")
+        self.__columns = [Column().from_dict(column) for column in data.get("columns", [])]
+        self.__index = data.get("index", -1)
 
     def get_name(self) -> str:
         return self.__name

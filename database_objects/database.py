@@ -3,17 +3,25 @@ from database_objects.table import Table
 
 
 class Database(Dbo):
-    __tables: list[Table]
+    __tables: list[Table] = list()
 
-    def __init__(self, name: str):
+    def __init__(self,
+                 name: str = "",
+                 tables: list[Table] | None = None):
+        if tables is None:
+            tables = list()
         self.__name = name
-        self.__tables = list()
+        self.__tables = tables
 
     def __dict__(self) -> dict:
         return {
             "name": self.__name,
             "tables": [table.__dict__() for table in self.__tables]
         }
+
+    def from_dict(self, data: dict):
+        self.__name = data.get("name", "")
+        self.__tables = [Table().from_dict(table) for table in data.get("tables", [])]
 
     def get_tables(self) -> list[Table]:
         return self.__tables

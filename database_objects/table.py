@@ -4,9 +4,9 @@ from database_objects.index import Index
 
 
 class Table(Dbo):
-    __collection_name: str
-    __columns: list[Column]
-    __indexes: list[Index]
+    __collection_name: str = ""
+    __columns: list[Column] = list()
+    __indexes: list[Index] = list()
 
     # TO-DO: add keys, create a key class, possibly one for each type of key
     # "keys": {
@@ -15,7 +15,15 @@ class Table(Dbo):
     #     "unique_keys": []
     # }
 
-    def __init__(self, name: str, collection_name: str, columns: list[Column], indexes: list[Index]):
+    def __init__(self,
+                 name: str = "",
+                 collection_name: str = "",
+                 columns: list[Column] | None = None,
+                 indexes: list[Index] | None = None):
+        if columns is None:
+            columns = list()
+        if indexes is None:
+            indexes = list()
         self.__name = name
         self.__collection_name = collection_name
         self.__columns = columns
@@ -28,6 +36,12 @@ class Table(Dbo):
             "columns": [column.__dict__() for column in self.__columns],
             "indexes": [index.__dict__() for index in self.__indexes]
         }
+
+    def from_dict(self, data: dict):
+        self.__name = data.get("name", "")
+        self.__collection_name = data.get("collection_name", "")
+        self.__columns = [Column().from_dict(column) for column in data.get("columns", [])]
+        self.__indexes = [Index().from_dict(index) for index in data.get("indexes", [])]
 
     def get_name(self) -> str:
         return self.__name
