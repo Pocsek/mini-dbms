@@ -103,14 +103,15 @@ def create_empty_index() -> Index:
 # different list element -> this is an essential step to take before starting to interpret the commands
 def normalize_input(commands_string) -> list[str]:
     datatypes = ("int", "float", "bit", "date", "datetime", "varchar")
-    normalized = re.sub(r"([(),;+\-*/%@]|==|!=|\+=|-=|\*=|/=|%=|>|<|>=|<=)", r" \1 ",
-                        commands_string)  # put space around parentheses, separators, operators
+    normalized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
     normalized = sqlparse.format(
         normalized,
         keyword_case="lower",
         # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
         strip_comments=True  # remove comments (both "--" and "/* */" variants)
     )
+    normalized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", normalized)  # put space around compound operators
+    normalized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", normalized)  # put space around simple operators
     normalized = normalized.replace("\n", " ")  # concatenate all lines into one line
     normalized = re.sub(" +", " ", normalized)  # remove extra spaces
     normalized = normalized.strip()  # remove possible trailing space
