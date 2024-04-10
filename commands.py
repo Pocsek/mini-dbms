@@ -82,7 +82,7 @@ def main():
         if raw_commands.endswith("# "):
             break
 
-    tokens: list[str] = dbmanager.normalize_input(raw_commands)  # normalize input
+    tokens: list[str] = dbmanager.tokenize_input(raw_commands)  # tokenize input
 
     # extract commands from tokens and print them
     for c in extract_commands(tokens):

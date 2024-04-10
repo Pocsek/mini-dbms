@@ -30,7 +30,7 @@ def respond_to_client(client_socket: socket, commands: str):
     modified: bool = False
     response: str = ""
 
-    commands: list[str] = normalize_input(commands)
+    commands: list[str] = tokenize_input(commands)
     log("Normalized commands:\n" + " ".join(commands))
     # print(commands)
     match commands:

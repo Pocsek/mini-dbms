@@ -101,26 +101,25 @@ def create_empty_index() -> Index:
 
 # takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
 # different list element -> this is an essential step to take before starting to interpret the commands
-def normalize_input(commands_string) -> list[str]:
+def tokenize_input(commands_string) -> list[str]:
     datatypes = ("int", "float", "bit", "date", "datetime", "varchar")
-    normalized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
-    normalized = sqlparse.format(
-        normalized,
-        keyword_case="lower",
-        # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
+    tokenized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
+    tokenized = sqlparse.format(
+        tokenized,
+        keyword_case="lower", # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
         strip_comments=True  # remove comments (both "--" and "/* */" variants)
     )
-    normalized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", normalized)  # put space around compound operators
-    normalized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", normalized)  # put space around simple operators
-    normalized = normalized.replace("\n", " ")  # concatenate all lines into one line
-    normalized = re.sub(" +", " ", normalized)  # remove extra spaces
-    normalized = normalized.strip()  # remove possible trailing space
-    normalized = normalized.split(" ")  # split by spaces
+    tokenized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", tokenized)  # put space around compound operators
+    tokenized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", tokenized)  # put space around simple operators
+    tokenized = tokenized.replace("\n", " ")  # concatenate all lines into one line
+    tokenized = re.sub(" +", " ", tokenized)  # remove extra spaces
+    tokenized = tokenized.strip()  # remove possible trailing space
+    tokenized = tokenized.split(" ")  # split by spaces
 
     # cast datatypes to lowercase
-    for i, val in enumerate(normalized):
+    for i, val in enumerate(tokenized):
         val_lower = val.lower()
         if val_lower in datatypes:
-            normalized[i] = val_lower
+            tokenized[i] = val_lower
 
-    return normalized
+    return tokenized
