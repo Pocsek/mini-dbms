@@ -2,8 +2,6 @@ import json
 import os
 from typing import List
 
-import sqlparse
-import re
 from database_objects import *
 from database_objects import Database, Table, Index
 
@@ -97,29 +95,3 @@ def create_empty_column() -> Column:
 
 def create_empty_index() -> Index:
     return Index()
-
-
-# takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
-# different list element -> this is an essential step to take before starting to interpret the commands
-def tokenize_input(commands_string) -> list[str]:
-    datatypes = ("int", "float", "bit", "date", "datetime", "varchar")
-    tokenized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
-    tokenized = sqlparse.format(
-        tokenized,
-        keyword_case="lower", # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
-        strip_comments=True  # remove comments (both "--" and "/* */" variants)
-    )
-    tokenized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", tokenized)  # put space around compound operators
-    tokenized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", tokenized)  # put space around simple operators
-    tokenized = tokenized.replace("\n", " ")  # concatenate all lines into one line
-    tokenized = re.sub(" +", " ", tokenized)  # remove extra spaces
-    tokenized = tokenized.strip()  # remove possible trailing space
-    tokenized = tokenized.split(" ")  # split by spaces
-
-    # cast datatypes to lowercase
-    for i, val in enumerate(tokenized):
-        val_lower = val.lower()
-        if val_lower in datatypes:
-            tokenized[i] = val_lower
-
-    return tokenized

@@ -1,14 +1,14 @@
 class TokenType:
-    MAIN_KEYWORD = 0
-    SECONDARY_KEYWORD = 1
-    DATATYPE = 2
-    PARENTHESIS = 3
-    SEPARATOR = 4
-    UNARY_OPERATOR = 5
-    BINARY_OPERATOR = 6
-    NUMBER = 7
-    STRING = 8
-    REFERENCE = 9
+    MAIN_KEYWORD = "Main Keyword"
+    SECONDARY_KEYWORD = "Secondary Keyword"
+    DATATYPE = "Datatype"
+    PARENTHESIS = "Parenthesis"
+    SEPARATOR = "Separator"
+    UNARY_OPERATOR = "Unary Operator"
+    BINARY_OPERATOR = "Binary Operator"
+    NUMBER = "Number"
+    STRING = "String"
+    REFERENCE = "Reference"
     # TABLE_REFERENCE = 10
     # COLUMN_REFERENCE = 11
     # RESULT_COLUMN_REFERENCE = 12  # e.g.: first row of a select command
@@ -43,6 +43,7 @@ class Literal:
         "from",
         "group",
         "having",
+        "index",
         "inner",
         "into",
         "is",

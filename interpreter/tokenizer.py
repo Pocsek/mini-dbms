@@ -8,7 +8,7 @@ class Tokenizer:
     @classmethod
     # takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
     # different list element -> this is an essential step to take before starting to interpret the commands
-    def tokenize_input(cls, commands_string) -> list[str]:
+    def tokenize(cls, commands_string) -> list[str]:
         datatypes = ("int", "float", "bit", "date", "datetime", "varchar")
         tokenized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
         tokenized = sqlparse.format(
