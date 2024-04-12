@@ -74,13 +74,24 @@ def extract_commands(tokens) -> list[list[str]]:
     return commands
 
 
-def main():
-    # read from command line while the input does not end with #
-    raw_commands: str = ""
+# this snippet is copied from client.py -> get_user_input()
+def get_input():
+    # read from command line while the input does not end with "go"
+    nr: int = 0
+    commands: str = ""
     while True:
-        raw_commands += input("Enter commands: ") + " "
-        if raw_commands.endswith("# "):
-            break
+        nr += 1
+        command = input(f"{nr}> ").strip()
+        match command.lower():
+            case "go":
+                return commands[:-1]  # return commands string without trailing newline character
+        # the exit and go commands won't make it into the commands string
+        if command != "":
+            commands += command + "\n"
+
+
+def main():
+    raw_commands = get_input()
 
     tokens: list[str] = dbmanager.tokenize_input(raw_commands)  # tokenize input
 
