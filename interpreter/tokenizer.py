@@ -1,41 +1,88 @@
 import sqlparse
 import re
 
-from interpreter import TokenType, Literal
+from token_classification import *
 
 
-# takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
-# different list element -> this is an essential step to take before starting to interpret the commands
-def tokenize_input(commands_string) -> list[str]:
-    datatypes = ("int", "float", "bit", "date", "datetime", "varchar")
-    tokenized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
-    tokenized = sqlparse.format(
-        tokenized,
-        keyword_case="lower", # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
-        strip_comments=True  # remove comments (both "--" and "/* */" variants)
-    )
-    tokenized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", tokenized)  # put space around compound operators
-    tokenized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", tokenized)  # put space around simple operators
-    tokenized = tokenized.replace("\n", " ")  # concatenate all lines into one line
-    tokenized = re.sub(" +", " ", tokenized)  # remove extra spaces
-    tokenized = tokenized.strip()  # remove possible trailing space
-    tokenized = tokenized.split(" ")  # split by spaces
+class Tokenizer:
+    @classmethod
+    # takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
+    # different list element -> this is an essential step to take before starting to interpret the commands
+    def tokenize_input(cls, commands_string) -> list[str]:
+        datatypes = ("int", "float", "bit", "date", "datetime", "varchar")
+        tokenized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
+        tokenized = sqlparse.format(
+            tokenized,
+            keyword_case="lower", # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
+            strip_comments=True  # remove comments (both "--" and "/* */" variants)
+        )
+        tokenized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", tokenized)  # put space around compound operators
+        tokenized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", tokenized)  # put space around simple operators
+        tokenized = tokenized.replace("\n", " ")  # concatenate all lines into one line
+        tokenized = re.sub(" +", " ", tokenized)  # remove extra spaces
+        tokenized = tokenized.strip()  # remove possible trailing space
+        tokenized = tokenized.split(" ")  # split by spaces
 
-    # cast datatypes to lowercase
-    for i, val in enumerate(tokenized):
-        val_lower = val.lower()
-        if val_lower in datatypes:
-            tokenized[i] = val_lower
+        # cast datatypes to lowercase
+        for i, val in enumerate(tokenized):
+            val_lower = val.lower()
+            if val_lower in datatypes:
+                tokenized[i] = val_lower
 
-    return tokenized
+        return tokenized
+
+    @classmethod
+    def extract_commands(cls, tokens) -> list[list[str]]:
+        # separates commands based on main_commands
+        # a command is a list of tokens
+        # returns a list of commands
+        commands: list[list[str]] = []
+        c_idx: int = 0  # current command start index
+        while True:
+            if c_idx >= len(tokens):
+                # no more tokens
+                break
+            if tokens[c_idx] not in Literal.MAIN_KEYWORDS:
+                # command not found on current index
+                print(f"Command not found: {tokens[c_idx]}")
+                return []
+            # next command index is either the end of tokens or the next command index
+            next_c_idx = next_index_of_command(c_idx, tokens)
+
+            command: list[str] = tokens[c_idx:next_c_idx]
+            commands.append(command)
+            c_idx = next_c_idx
+
+        return commands
+
+    @classmethod
+    def get_token_type(cls, token):
+        if token in Literal.MAIN_KEYWORDS:
+            return TokenType.MAIN_KEYWORD
+        if token in Literal.SECONDARY_KEYWORDS:
+            return TokenType.SECONDARY_KEYWORD
+        if token in Literal.DATATYPES:
+            return TokenType.DATATYPE
+        if token in Literal.PARENTHESES:
+            return TokenType.PARENTHESIS
+        if token in Literal.SEPARATORS:
+            return TokenType.SEPARATOR
+        if token in Literal.UNARY_OPERATORS:
+            return TokenType.UNARY_OPERATOR
+        if token in Literal.BINARY_OPERATORS:
+            return TokenType.BINARY_OPERATOR
+        if token.isdigit():
+            return TokenType.NUMBER
+        if token.startswith("\"") or token.startswith("'"):
+            return TokenType.STRING
+        return TokenType.REFERENCE
 
 
 def first_index_of_command(li: list[str]) -> int:
-    # find the index of the first main_command in the list
+    # find the index of the first main_command (keyword) in the list
     # return -1 if no main_command is found
-    global main_commands
     for (idx, token) in enumerate(li):
-        if token in main_commands:
+        if token in Literal.MAIN_KEYWORDS:
             return idx
     return -1
 
@@ -74,49 +121,3 @@ def bracket_started(li: list[str]) -> bool:
                 # closing bracket before opening bracket
                 return False
     return bracket_count > 0
-
-
-def extract_commands(tokens) -> list[list[str]]:
-    # separates commands based on main_commands
-    # a command is a list of tokens
-    # returns a list of commands
-    commands: list[list[str]] = []
-    c_idx: int = 0  # current command start index
-    while True:
-        if c_idx >= len(tokens):
-            # no more tokens
-            break
-        if tokens[c_idx] not in main_commands:
-            # command not found on current index
-            print(f"Command not found: {tokens[c_idx]}")
-            return []
-        # next command index is either the end of tokens or the next command index
-        next_c_idx = next_index_of_command(c_idx, tokens)
-
-        command: list[str] = tokens[c_idx:next_c_idx]
-        commands.append(command)
-        c_idx = next_c_idx
-
-    return commands
-
-
-def get_token_type(token):
-    if token in Literal.MAIN_KEYWORDS:
-        return TokenType.MAIN_KEYWORD
-    if token in Literal.SECONDARY_KEYWORDS:
-        return TokenType.SECONDARY_KEYWORDS
-    if token in Literal.DATATYPES:
-        return TokenType.DATATYPE
-    if token in Literal.PARENTHESES:
-        return TokenType.PARENTHESIS
-    if token in Literal.SEPARATORS:
-        return TokenType.SEPARATOR
-    if token in Literal.UNARY_OPERATORS:
-        return TokenType.UNARY_OPERATOR
-    if token in Literal.BINARY_OPERATORS:
-        return TokenType.BINARY_OPERATOR
-    if token.isdigit():
-        return TokenType.NUMBER
-    if token.startswith("\"") or token.startswith("'"):
-        return TokenType.STRING
-    return TokenType.REFERENCE

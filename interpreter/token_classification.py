@@ -1,6 +1,6 @@
 class TokenType:
     MAIN_KEYWORD = 0
-    SECONDARY_KEYWORDS = 1
+    SECONDARY_KEYWORD = 1
     DATATYPE = 2
     PARENTHESIS = 3
     SEPARATOR = 4
