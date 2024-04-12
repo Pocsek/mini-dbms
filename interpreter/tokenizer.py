@@ -9,7 +9,6 @@ class Tokenizer:
     # takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
     # different list element -> this is an essential step to take before starting to interpret the commands
     def tokenize(cls, commands_string) -> list[str]:
-        datatypes = ("int", "float", "bit", "date", "datetime", "varchar")
         tokenized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
         tokenized = sqlparse.format(
             tokenized,
@@ -26,7 +25,7 @@ class Tokenizer:
         # cast datatypes to lowercase
         for i, val in enumerate(tokenized):
             val_lower = val.lower()
-            if val_lower in datatypes:
+            if val_lower in Literal.DATATYPES:
                 tokenized[i] = val_lower
 
         return tokenized
