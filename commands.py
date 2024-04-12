@@ -1,7 +1,35 @@
-import dbmanager
+import sqlparse
+import re
+
 
 # list of main commands which are used to separate commands
 main_commands = ["create", "drop", "alter", "insert", "select", "update", "delete", "use"]
+
+
+# takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
+# different list element -> this is an essential step to take before starting to interpret the commands
+def tokenize_input(commands_string) -> list[str]:
+    datatypes = ("int", "float", "bit", "date", "datetime", "varchar")
+    tokenized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
+    tokenized = sqlparse.format(
+        tokenized,
+        keyword_case="lower", # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
+        strip_comments=True  # remove comments (both "--" and "/* */" variants)
+    )
+    tokenized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", tokenized)  # put space around compound operators
+    tokenized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", tokenized)  # put space around simple operators
+    tokenized = tokenized.replace("\n", " ")  # concatenate all lines into one line
+    tokenized = re.sub(" +", " ", tokenized)  # remove extra spaces
+    tokenized = tokenized.strip()  # remove possible trailing space
+    tokenized = tokenized.split(" ")  # split by spaces
+
+    # cast datatypes to lowercase
+    for i, val in enumerate(tokenized):
+        val_lower = val.lower()
+        if val_lower in datatypes:
+            tokenized[i] = val_lower
+
+    return tokenized
 
 
 def first_index_of_command(li: list[str]) -> int:
@@ -93,7 +121,7 @@ def get_input():
 def main():
     raw_commands = get_input()
 
-    tokens: list[str] = dbmanager.tokenize_input(raw_commands)  # tokenize input
+    tokens: list[str] = tokenize_input(raw_commands)  # tokenize input
 
     # extract commands from tokens and print them
     for c in extract_commands(tokens):
