@@ -33,10 +33,8 @@ class Parser:
 
 
 def parse_token_list(token_list: TokenList):
-    token = token_list.get_next()
-    token_type = Tokenizer.get_token_type(token)
-
-    match token_type:
+    token = token_list.consume(TokenType.MAIN_KEYWORD)
+    match token:
         case "use":
             return parse_use(token_list)
         case "create":
@@ -54,7 +52,7 @@ def parse_token_list(token_list: TokenList):
         case "delete":
             return parse_delete(token_list)
         case _:
-            raise SyntaxError(f"Expected: '{TokenType.MAIN_KEYWORD}', got '{token_type}'")
+            raise NotImplementedError(f"No implementation for '{token}''")
 
 
 def parse_use(token_list: TokenList):
@@ -62,11 +60,8 @@ def parse_use(token_list: TokenList):
 
 
 def parse_create(token_list: TokenList):
-    token = token_list.get_next()
-    if token is None:
-        raise SyntaxError(f"Unexpected end of command: after '{token}'")
-    token_type = Tokenizer.get_token_type(token)
-    match token_type:
+    token = token_list.consume(TokenType.SECONDARY_KEYWORD)
+    match token:
         case "database":
             return parse_create_database(token_list)
         case "table":
@@ -74,7 +69,7 @@ def parse_create(token_list: TokenList):
         case "index":
             return parse_create_index(token_list)
         case _:
-            raise SyntaxError(f"Expected: '{TokenType.SECONDARY_KEYWORD}', got '{token_type}'")
+            raise SyntaxError(f"Invalid syntax at '{token}'")
 
 
 def parse_create_database(token_list: TokenList):
