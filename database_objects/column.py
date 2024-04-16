@@ -32,13 +32,14 @@ class Column(Dbo):
             "identity_increment": self.__identity_increment
         }
 
-    def from_dict(self, data: dict):
+    def from_dict(self, data: dict) -> 'Column':
         self.__name = data.get("name", "")
         self.__type = data.get("type", "")
         self.__allow_nulls = data.get("allow_nulls", True)
         self.__identity = data.get("identity", False)
         self.__identity_seed = data.get("identity_seed", 0)
         self.__identity_increment = data.get("identity_increment", 0)
+        return self
 
     def get_name(self) -> str:
         return self.__name
