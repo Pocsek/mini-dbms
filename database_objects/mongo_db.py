@@ -22,7 +22,12 @@ def insert_one(db_name: str, collection_name: str, document: dict) -> bool:
     with pymongo.MongoClient(str(_MongoHost())) as client:
         db = client[db_name]
         collection = db[collection_name]
-        collection.insert_one(document)  # insert the document into mongoDB collection
+        # noinspection PyUnresolvedReferences
+        try:
+            collection.insert_one(document)  # insert the document into mongoDB collection
+        except pymongo.errors.DuplicateKeyError:
+            # catch the error if there are duplicate keys
+            return False
         return True
 
 
@@ -33,5 +38,10 @@ def insert_many(db_name: str, collection_name: str, documents: list[dict]) -> bo
     with pymongo.MongoClient(str(_MongoHost())) as client:
         db = client[db_name]
         collection = db[collection_name]
-        collection.insert_many(documents)  # insert the documents into mongoDB collection
+        # noinspection PyUnresolvedReferences
+        try:
+            collection.insert_many(documents)  # insert the documents into mongoDB collection
+        except pymongo.errors.BulkWriteError:
+            # catch the error if there are duplicate keys
+            return False
         return True
