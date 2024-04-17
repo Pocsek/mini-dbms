@@ -10,13 +10,13 @@ class Column(Dbo):
 
     def __init__(self,
                  name: str = "",
-                 _type: str = "",
+                 data_type: str = "",
                  allow_nulls: bool = True,
                  identity: bool = False,
                  identity_seed: int = 0,
                  identity_increment: int = 0):
         self.__name = name
-        self.__type = _type
+        self.__type = data_type
         self.__allow_nulls = allow_nulls
         self.__identity = identity
         self.__identity_seed = identity_seed

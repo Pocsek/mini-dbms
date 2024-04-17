@@ -14,7 +14,7 @@ class _MongoHost:
         return self.__host_str
 
 
-def insert_one(db_name: str, collection_name: str, document: dict) -> bool:
+def insert_one(db_name: str, collection_name: str, key: str, value: str) -> bool:
     """
     Insert a document into a collection without any validation.
     Returns True if the document is inserted successfully.
@@ -25,7 +25,7 @@ def insert_one(db_name: str, collection_name: str, document: dict) -> bool:
         collection = db[collection_name]
         # noinspection PyUnresolvedReferences
         try:
-            collection.insert_one(document)  # insert the document into mongoDB collection
+            collection.insert_one({"_id": key, "value": value})  # insert a key-value pair into mongoDB collection
         except pymongo.errors.DuplicateKeyError:
             # catch the error if there are duplicate keys
             return False
