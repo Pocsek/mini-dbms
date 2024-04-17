@@ -1,4 +1,4 @@
-from socket import *
+from server_connection import ServerConnection
 
 
 def get_user_input() -> (str, bool):
@@ -18,20 +18,21 @@ def get_user_input() -> (str, bool):
 
 
 def main():
-    s = socket(AF_INET, SOCK_STREAM)
     host = 'localhost'
     port = 12345
-    s.connect((host, port))
+    try:
+        s = ServerConnection(host, port)
+    except ConnectionRefusedError:
+        print("The server is not running.")
+        return
     try:
         while True:
             commands, keep_running = get_user_input()
             command_length: int = len(commands)
             if command_length != 0:
-                s.sendall(command_length.to_bytes(4, byteorder="big"))  # send buffer size
-                s.sendall(commands.encode())  # send commands
+                s.send(commands)
                 if keep_running:
-                    response_length: int = int.from_bytes(s.recv(4), byteorder="big")
-                    response = s.recv(response_length).decode()
+                    response = s.receive()
                     print(response)
                 else:
                     s.close()
