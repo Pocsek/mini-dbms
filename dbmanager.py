@@ -24,6 +24,25 @@ class DbManager:
         with open("databases.json", "w") as f:
             json.dump(self.__dbs, f, indent=4)  # encode (python dict -> JSON)
 
+    # # cannot really sync databases with mongoDB, because mongoDB doesn't create the database until a collection is created
+    # def sync_databases_with_mongo(self):
+    #     mongo_dbs = mongo_db.get_database_names()
+    #     for db in self.get_databases():
+    #         if db.get_name() not in mongo_dbs:
+    #             mongo_db.create_database(db.get_name())
+    #         else:
+    #             # TO-DO: sync tables
+    #             pass
+    #
+    # # TO-DO: implement sync_tables_with_mongo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # def sync_tables_with_mongo(self, db_idx):
+    #     db: Database = self.get_databases()[db_idx]
+    #     mongo_tables = mongo_db.get_collection_names(db.get_name())
+    #     for tb in db.get_tables():
+    #         if tb.get_name() not in mongo_tables:
+    #             # TO-DO: create table
+    #             pass
+
     def get_databases(self) -> list[Database]:
         return self.__dbs
 
@@ -63,6 +82,9 @@ class DbManager:
         Inserts a record into a table.
         Checks if the database and table exist.
         """
+        # TO-DO: provide better feedback on what went wrong
+        # TO-DO: check if the document has the correct number of attributes and types
+        # TO-DO: concatenate the attribute values into a string for key-value pairs
         db_idx = self.find_database(db.get_name())
         if db_idx == -1:
             return False
@@ -75,12 +97,29 @@ class DbManager:
         Inserts multiple records into a table.
         Checks if the database and table exist.
         """
+        # TO-DO: provide better feedback on what went wrong
         db_idx = self.find_database(db.get_name())
         if db_idx == -1:
             return False
         if self.find_table(db_idx, tb.get_name()) == -1:
             return False
-        return mongo_db.insert_many(db.get_name(), tb.get_name(), documents)
+        ok, _ = mongo_db.insert_many(db.get_name(), tb.get_name(), documents)
+        return ok
+
+    def delete_one(self, db: Database, tb: Table, key_val: int) -> bool:
+        """
+        Deletes a record from a table.
+        Checks if the database and table exist.
+        """
+        # TO-DO: provide better feedback on what went wrong
+        # TO-DO: id should be a condition somehow and from it, I should build a dict to pass further
+        db_idx = self.find_database(db.get_name())
+        if db_idx == -1:
+            return False
+        if self.find_table(db_idx, tb.get_name()) == -1:
+            return False
+        return mongo_db.delete_one(db.get_name(), tb.get_name(), {"_id": key_val})
+
 
 
 def create_default_databases() -> list[Database]:
@@ -111,6 +150,3 @@ def create_empty_column() -> Column:
 
 def create_empty_index() -> Index:
     return Index()
-
-
-
