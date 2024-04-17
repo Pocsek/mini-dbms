@@ -14,7 +14,7 @@ class Database(Dbo):
 
     def from_dict(self, data: dict):
         self.__name = data.get("name", "")
-        self.__tables = [Table("").from_dict(table) for table in data.get("tables", [])]
+        self.__tables = [Table().from_dict(table) for table in data.get("tables", [])]
         return self
 
     def get_name(self) -> str:

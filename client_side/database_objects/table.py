@@ -14,7 +14,7 @@ class Table(Dbo):
 
     def from_dict(self, data: dict):
         self.__name = data.get("name", "")
-        self.__columns = [Column("").from_dict(column) for column in data.get("columns", [])]
+        self.__columns = [Column().from_dict(column) for column in data.get("columns", [])]
         return self
 
     def get_name(self) -> str:

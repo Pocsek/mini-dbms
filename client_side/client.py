@@ -1,4 +1,4 @@
-from server_connection import ServerConnection
+from client_side.server_connection import ServerConnection
 
 
 def get_user_input() -> (str, bool):
