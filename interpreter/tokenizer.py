@@ -59,7 +59,7 @@ class Tokenizer:
         if token in Literal.MAIN_KEYWORDS:
             return TokenType.MAIN_KEYWORD
         if token in Literal.OTHER_KEYWORDS:
-            return TokenType.SECONDARY_KEYWORD
+            return TokenType.OTHER_KEYWORD
         if token in Literal.DATATYPES:
             return TokenType.DATATYPE
         if token in Literal.PARENTHESES:

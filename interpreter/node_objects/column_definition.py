@@ -17,4 +17,7 @@ class ColumnDefinition(CustomNode):
         pass
 
     def add_column_constraint(self, col_constr):
-        col_constr.update_bpointer(self.__constraints)
+        col_constr.set_predecessor(self.__constraints)
+
+    def get_constraints(self):
+        return self.__constraints

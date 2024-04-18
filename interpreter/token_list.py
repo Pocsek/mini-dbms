@@ -17,6 +17,22 @@ class TokenList:
         """Returns the token at the cursor"""
         return self.__tokens[self.__cursor]
 
+    def peek_type(self):
+        """Returns the type of the token at the cursor"""
+        return Tokenizer.get_token_type(self.peek())
+
+    def expect_type(self, target_token_type: TokenType):
+        """Same as 'consume_of_type' but without incrementing the cursor."""
+        if not self.has_next():
+            raise SyntaxError(f"Unexpected end of command. Expected type '{target_token_type}'")
+        token = self.peek()
+        token_type = Tokenizer.get_token_type(token)
+
+        if token_type != target_token_type:
+            raise SyntaxError(f"Expected type '{target_token_type}', found '{token_type}' at '{token}'")
+
+        return token
+
     def consume_of_type(self, target_token_type: TokenType):
         """
         Returns the token at the cursor from the token list and increments the cursor if the token matches the

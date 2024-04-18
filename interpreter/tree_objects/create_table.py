@@ -35,3 +35,6 @@ class CreateTable(CustomTree):
 
     def add_constraint_definition(self, constr_def):
         self.add_node(constr_def, self.__constr_defs)
+
+    def add_inline_constraint(self, constraint, parent):
+        self.add_node(constraint, parent)

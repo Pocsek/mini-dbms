@@ -57,7 +57,7 @@ class Parser:
 
     @classmethod
     def __parse_create(cls, token_list: TokenList):
-        token = token_list.consume_of_type(TokenType.SECONDARY_KEYWORD)
+        token = token_list.consume_of_type(TokenType.OTHER_KEYWORD)
         match token:
             case "database":
                 return cls.__parse_create_database(token_list)
@@ -79,34 +79,37 @@ class Parser:
 
         token_list.consume_concrete("(")
 
-        while True:
+        while token_list.has_next():
             passed = True
 
             # look for a column definition
-            try:
-                col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-                col_type = token_list.consume_of_type(TokenType.DATATYPE)
-                col_def = ColumnDefinition(col_name, col_type)
+            # try:
+            col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+            col_type = token_list.consume_of_type(TokenType.DATATYPE)
+            col_def = ColumnDefinition(col_name, col_type)
 
-                inline_primary_key = token_list.consume_group(TInlinePrimaryKey())
-                col_def.add_column_constraint(PrimaryKey())
+            constraint = None
+            if token_list.peek() not in (",", ")"):
+                match token_list.expect_type(TokenType.OTHER_KEYWORD):
+                    case "primary":
+                        token_list.consume_group(TInlinePrimaryKey())
+                        constraint = PrimaryKey()
+                    case "foreign":
+                        pass
 
-                match token_list.peek():
-                    case ",":
-                        tree.add_column_definition(col_def)
-                        token_list.increment_cursor()
-                    case ")":
-                        tree.add_column_definition(col_def)
-                        token_list.increment_cursor()
-                        break
-            except SyntaxError:
-                passed = False
+            # parsing was successful -> add new nodes to the tree
+            if token_list.peek() in (",", ")"):
+                tree.add_column_definition(col_def)
+                tree.add_inline_constraint(constraint, col_def.get_constraints())
+                token_list.increment_cursor()
+            # except SyntaxError:
+            #     passed = False
 
             # look for a constraint definition
-            if not passed:
-                token_list.consume_concrete("constraint")
-                constr_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-                token_list.consume_of_type(TokenType.SECONDARY_KEYWORD)
+            # if not passed:
+            #     token_list.consume_concrete("constraint")
+            #     constr_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+            #     token_list.consume_of_type(TokenType.SECONDARY_KEYWORD)
 
             # token_list.consume(TokenType.SEPARATOR, ",")
 
