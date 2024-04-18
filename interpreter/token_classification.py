@@ -26,7 +26,7 @@ class Literal:
         "delete"
     )
 
-    SECONDARY_KEYWORDS = (
+    OTHER_KEYWORDS = (
         "add",
         "as",
         "asc",

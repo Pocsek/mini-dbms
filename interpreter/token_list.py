@@ -17,7 +17,7 @@ class TokenList:
         """Returns the token at the cursor"""
         return self.__tokens[self.__cursor]
 
-    def consume(self, target_token_type: TokenType, concrete_value=None):
+    def consume_of_type(self, target_token_type: TokenType):
         """
         Returns the token at the cursor from the token list and increments the cursor if the token matches the
         target token, else raises an exception.
@@ -30,10 +30,31 @@ class TokenList:
         if token_type != target_token_type:
             raise SyntaxError(f"Expected type '{target_token_type}', found '{token_type}' at '{token}'")
 
-        if concrete_value is not None and token != concrete_value:
-            raise SyntaxError(f"Expected token '{concrete_value}', found '{token}'")
-
         self.increment_cursor()
         return token
+
+    def consume_concrete(self, target_token):
+        """
+        Increments the cursor if the current token matches the target token, else raises an exception.
+        """
+        if not self.has_next():
+            raise SyntaxError(f"Unexpected end of command. Expected '{target_token}'")
+        token = self.peek()
+
+        if token != target_token:
+            raise SyntaxError(f"Expected token '{target_token}', found '{token}'")
+
+        self.increment_cursor()
+
+    def consume_group(self, consumer):
+        """
+        Process a given type of token and move the cursor the needed amount.
+        :param consumer: a token to be consumed (a token object instance)
+        :return: an object of the same type as 'consumer' with its fields set respectively
+        """
+
+        return consumer.consume(self)
+
+
 
 

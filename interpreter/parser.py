@@ -6,6 +6,8 @@ from .token_classification import TokenType, Literal
 
 from .node_objects import *
 from .tree_objects import *
+from .token_objects import *
+
 
 class Parser:
     @classmethod
@@ -28,7 +30,7 @@ class Parser:
 
     @classmethod
     def __parse_token_list(cls, token_list: TokenList):
-        token = token_list.consume(TokenType.MAIN_KEYWORD)
+        token = token_list.consume_of_type(TokenType.MAIN_KEYWORD)
         match token:
             case "use":
                 return cls.__parse_use(token_list)
@@ -55,7 +57,7 @@ class Parser:
 
     @classmethod
     def __parse_create(cls, token_list: TokenList):
-        token = token_list.consume(TokenType.SECONDARY_KEYWORD)
+        token = token_list.consume_of_type(TokenType.SECONDARY_KEYWORD)
         match token:
             case "database":
                 return cls.__parse_create_database(token_list)
@@ -72,19 +74,22 @@ class Parser:
 
     @classmethod
     def __parse_create_table(cls, token_list: TokenList):
-        table_name = token_list.consume(TokenType.IDENTIFIER)
+        table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
         tree = CreateTable(table_name)
 
-        token_list.consume(TokenType.PARENTHESIS, "(")
+        token_list.consume_concrete("(")
 
         while True:
             passed = True
 
             # look for a column definition
             try:
-                col_name = token_list.consume(TokenType.IDENTIFIER)
-                col_type = token_list.consume(TokenType.DATATYPE)
-                col_def = ColumnDefinitions(col_name, col_type)
+                col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+                col_type = token_list.consume_of_type(TokenType.DATATYPE)
+                col_def = ColumnDefinition(col_name, col_type)
+
+                inline_primary_key = token_list.consume_group(TInlinePrimaryKey())
+                col_def.add_column_constraint(PrimaryKey())
 
                 match token_list.peek():
                     case ",":
@@ -99,9 +104,9 @@ class Parser:
 
             # look for a constraint definition
             if not passed:
-                token_list.consume(TokenType.SECONDARY_KEYWORD, "constraint")
-                constr_name = token_list.consume(TokenType.IDENTIFIER)
-                token_list.consume(TokenType.SECONDARY_KEYWORD)
+                token_list.consume_concrete("constraint")
+                constr_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+                token_list.consume_of_type(TokenType.SECONDARY_KEYWORD)
 
             # token_list.consume(TokenType.SEPARATOR, ",")
 

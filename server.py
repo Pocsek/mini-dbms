@@ -197,7 +197,7 @@ def respond_to_client(client_socket: socket, commands: str):
         ast_list = Parser.parse(commands)  # list of abstract syntax trees (one ast for each independent command block)
         # Executor.execute(ast_list, dbm)  # execute every syntax tree
     except Exception as e:
-        response = e.__str__()
+        response = f"Error: {e.__str__()}"
 
     client_socket.send(len(response).to_bytes(4, byteorder='big'))
     client_socket.sendall(str.encode(response))
