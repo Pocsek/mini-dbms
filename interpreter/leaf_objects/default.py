@@ -1,9 +1,11 @@
+"""NOT IMPLEMENTED"""
+
 from .constraint_node import ConstraintNode
 
 
 class Default(ConstraintNode):
-    def __init__(self, name=None, parent=None):
-        super().__init__(name, parent)
+    def __init__(self, name=None):
+        super().__init__(name)
 
     def check_validity(self):
         """

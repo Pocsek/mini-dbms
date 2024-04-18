@@ -1,13 +1,16 @@
+"""NOT IMPLEMENTED"""
+
 from .constraint_node import ConstraintNode
 
 
-class Unique(ConstraintNode):
-    def __init__(self, name=None, parent=None):
-        super().__init__(name, parent)
+class Null(ConstraintNode):
+    def __init__(self, name=None):
+        super().__init__(name)
 
     def check_validity(self):
         """
         Check if the column already has a constraint of this type.
+        Check whether the column is a primary key.
         """
         pass
 

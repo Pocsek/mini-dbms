@@ -4,7 +4,7 @@ from .tokenizer import Tokenizer
 from .token_list import TokenList
 from .token_classification import TokenType, Literal
 
-from .node_objects import *
+from .leaf_objects import *
 from .tree_objects import *
 from .token_objects import *
 
@@ -96,11 +96,13 @@ class Parser:
                         constraint = PrimaryKey()
                     case "foreign":
                         pass
+                col_def.add_constraint(constraint)
+
 
             # parsing was successful -> add new nodes to the tree
             if token_list.peek() in (",", ")"):
+                col_def.finalize()
                 tree.add_column_definition(col_def)
-                tree.add_inline_constraint(constraint, col_def.get_constraints())
                 token_list.increment_cursor()
             # except SyntaxError:
             #     passed = False
@@ -113,6 +115,7 @@ class Parser:
 
             # token_list.consume(TokenType.SEPARATOR, ",")
 
+        tree.finalize()
         print(tree)
         return tree
 
