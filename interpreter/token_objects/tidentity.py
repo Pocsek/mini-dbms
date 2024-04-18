@@ -8,12 +8,6 @@ class TIdentity(TObj):
         self.__seed = None
         self.__increment = None
 
-    def __dict__(self) -> dict:
-        return {
-            "seed": self.__seed,
-            "increment": self.__increment
-        }
-
     def consume(self, token_list: TokenList):
         pass
 

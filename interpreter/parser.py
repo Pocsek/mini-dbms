@@ -80,30 +80,32 @@ class Parser:
         token_list.consume_concrete("(")
 
         while token_list.has_next():
-            passed = True
+            if token_list.peek_type() == TokenType.IDENTIFIER:
+                tcol_def = token_list.consume_group(TColumnDefinition())
+                col_def = ColumnDefinition(tcol_def.get_name(), tcol_def.get_type(), tcol_def.get_constraints)
 
             # look for a column definition
             # try:
-            col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-            col_type = token_list.consume_of_type(TokenType.DATATYPE)
-            col_def = ColumnDefinition(col_name, col_type)
-
-            constraint = None
-            if token_list.peek() not in (",", ")"):
-                match token_list.expect_type(TokenType.OTHER_KEYWORD):
-                    case "primary":
-                        token_list.consume_group(TInlinePrimaryKey())
-                        constraint = PrimaryKey()
-                    case "foreign":
-                        pass
-                col_def.add_constraint(constraint)
-
-
-            # parsing was successful -> add new nodes to the tree
-            if token_list.peek() in (",", ")"):
-                col_def.finalize()
-                tree.add_column_definition(col_def)
-                token_list.increment_cursor()
+            # col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+            # col_type = token_list.consume_of_type(TokenType.DATATYPE)
+            # col_def = ColumnDefinition(col_name, col_type)
+            #
+            # constraint = None
+            # if token_list.peek() not in (",", ")"):
+            #     match token_list.expect_type(TokenType.OTHER_KEYWORD):
+            #         case "primary":
+            #             token_list.consume_group(TInlinePrimaryKey())
+            #             constraint = PrimaryKey()
+            #         case "foreign":
+            #             pass
+            #     col_def.add_constraint(constraint)
+            #
+            #
+            # # parsing was successful -> add new nodes to the tree
+            # if token_list.peek() in (",", ")"):
+            #     col_def.finalize()
+            #     tree.add_column_definition(col_def)
+            #     token_list.increment_cursor()
             # except SyntaxError:
             #     passed = False
 

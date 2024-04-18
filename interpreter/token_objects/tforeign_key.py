@@ -8,13 +8,6 @@ class TForeignKey(TObj):
         self.__src_col = None  # source column
         self.__ref_col = None  # reference column
 
-    def __dict__(self) -> dict:
-        return {
-            "length": self.__length,
-            "src_col": self.__src_col,
-            "ref_col": self.__ref_col
-        }
-
     def consume(self, token_list: TokenList):
         pass
 

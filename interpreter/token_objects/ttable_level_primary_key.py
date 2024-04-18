@@ -7,12 +7,6 @@ class TTableLevelPrimaryKey(TObj):
     def __init__(self):
         self.__ref_cols = None  # reference columns
 
-    def __dict__(self) -> dict:
-        return {
-            "length": self.__length,
-            "ref_col": self.__ref_cols
-        }
-
     def consume(self, token_list: TokenList):
         pass
 

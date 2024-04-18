@@ -1,3 +1,4 @@
+from .tcolumn_definition import TColumnDefinition
 from .tforeign_key import TForeignKey
 from .tidentity import TIdentity
 from .tinline_primary_key import TInlinePrimaryKey

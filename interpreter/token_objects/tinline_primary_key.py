@@ -6,11 +6,6 @@ class TInlinePrimaryKey(TObj):
     def __init__(self):
         pass
 
-    def __dict__(self) -> dict:
-        return {
-            "length": self.__length
-        }
-
     def consume(self, tokens):
         tokens.consume_concrete("primary")
         tokens.consume_concrete("key")

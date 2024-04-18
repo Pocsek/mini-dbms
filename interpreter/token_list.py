@@ -7,6 +7,9 @@ class TokenList:
         self.__cursor = 0
         self.__tokens = tokens
 
+    def get_cursor(self):
+        return self.__cursor
+
     def increment_cursor(self):
         self.__cursor += 1
 
@@ -66,10 +69,12 @@ class TokenList:
         """
         Process a given type of token and move the cursor the needed amount.
         :param consumer: a token to be consumed (a token object instance)
-        :return: an object of the same type as 'consumer' with its fields set respectively
+        :return: <the new position of the cursor>, <an object of the same type as 'consumer' with its fields set
+        respectively>
         """
 
-        return consumer.consume(self)
+        self.__cursor, token_obj = consumer.consume(self)
+        return token_obj
 
 
 

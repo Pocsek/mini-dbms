@@ -6,7 +6,7 @@ from .inline_constraint_definitions import InlineConstraintDefinitions
 
 
 class ColumnDefinition(CustomTree):
-    def __init__(self, name, datatype):
+    def __init__(self, name, datatype, constraints):
         super().__init__()
         self.__name = CharConst(name)
         self.__datatype = CharConst(datatype)

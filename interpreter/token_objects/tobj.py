@@ -10,10 +10,6 @@ class TObj(ABC):
         pass
 
     @abstractmethod
-    def __dict__(self) -> dict:
-        pass
-
-    @abstractmethod
     def consume(self, token_list: TokenList):
         pass
 
