@@ -6,9 +6,9 @@ class TokenType:
     SEPARATOR = "Separator"
     UNARY_OPERATOR = "Unary Operator"
     BINARY_OPERATOR = "Binary Operator"
-    NUMBER = "Number"
-    STRING = "String"
-    REFERENCE = "Reference"
+    NUM_CONST = "Numeric Constant"
+    CHAR_CONST = "Character Constant"
+    IDENTIFIER = "Identifier"
     # TABLE_REFERENCE = 10
     # COLUMN_REFERENCE = 11
     # RESULT_COLUMN_REFERENCE = 12  # e.g.: first row of a select command
@@ -66,7 +66,7 @@ class Literal:
     )
 
     DATATYPES = (
-        "int"
+        "int",
         "float",
         "bit",
         "date",
@@ -76,7 +76,7 @@ class Literal:
 
     PARENTHESES = (
         "(",
-        ")",
+        ")"
     )
 
     SEPARATORS = (

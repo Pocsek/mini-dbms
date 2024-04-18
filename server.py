@@ -1,14 +1,15 @@
 from socket import *
 from threading import Thread
 from datetime import datetime
-import re
 
 from dbmanager import *
-from interpreter import Parser, Executor
+from interpreter import *
 
 
 stop_threads = False
-dbm = DbManager()  # create an instance of the DbManager class, loads the databases from the file too
+
+
+# dbm = DbManager()  # create an instance of the DbManager class, loads the databases from the file too
 
 
 def log(message: str):
@@ -194,7 +195,7 @@ def respond_to_client(client_socket: socket, commands: str):
 
     try:
         ast_list = Parser.parse(commands)  # list of abstract syntax trees (one ast for each independent command block)
-        Executor.execute(ast_list, dbm)  # execute every syntax tree
+        # Executor.execute(ast_list, dbm)  # execute every syntax tree
     except Exception as e:
         response = e.__str__()
 

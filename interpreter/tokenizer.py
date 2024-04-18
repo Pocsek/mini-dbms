@@ -1,7 +1,7 @@
 import sqlparse
 import re
 
-from token_classification import *
+from .token_classification import *
 
 
 class Tokenizer:
@@ -71,10 +71,10 @@ class Tokenizer:
         if token in Literal.BINARY_OPERATORS:
             return TokenType.BINARY_OPERATOR
         if token.isdigit():
-            return TokenType.NUMBER
-        if token.startswith("\"") or token.startswith("'"):
-            return TokenType.STRING
-        return TokenType.REFERENCE
+            return TokenType.NUM_CONST
+        if token.startswith("\"") or token.startswith("'") or token.endswith("\"") or token.endswith("'"):
+            return TokenType.CHAR_CONST
+        return TokenType.IDENTIFIER
 
 
 def first_index_of_command(li: list[str]) -> int:
