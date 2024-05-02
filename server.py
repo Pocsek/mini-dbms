@@ -9,7 +9,9 @@ from interpreter import *
 stop_threads = False
 
 
-# dbm = DbManager()  # create an instance of the DbManager class, loads the databases from the file too
+dbm = DbManager()  # create an instance of the DbManager class, loads the databases from the file too
+ps = Parser()
+ex = Executor(dbm)
 
 
 def log(message: str):
@@ -188,26 +190,23 @@ def create_socket(host, port) -> socket:
 
 
 def respond_to_client(client_socket: socket, commands: str):
-    # global dbm
-    # good: bool = True
-    # modified: bool = False
+    global dbm
+    global ps
+    global ex
     response: str = ""
 
     try:
-        ast_list = Parser.parse(commands)  # list of abstract syntax trees (one ast for each independent command block)
-        # Executor.execute(ast_list, dbm)  # execute every syntax tree
+        ps.parse(commands)
+        ex.execute(ps.get_ast_list())
     except Exception as e:
         response = f"Error: {e.__str__()}"
+        # if the database was modified, load the last stable state
+        if ex.modified():
+            # load last stable state of the working DB
+            pass
 
     client_socket.send(len(response).to_bytes(4, byteorder='big'))
     client_socket.sendall(str.encode(response))
-
-    # if there was modification in the database and there were problems, load the last stable state
-    # if modified and not good:
-    #     dbm.load_databases()
-    # if there was modification in the database and there were no problems, update the db file
-    # elif modified and good:
-    #     dbm.update_databases()
 
 
 def handle_client(client_socket, addr):

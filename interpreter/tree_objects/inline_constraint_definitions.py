@@ -7,7 +7,7 @@ class InlineConstraintDefinitions(CustomTree):
     def __init__(self):
         super().__init__()
 
-    def check_validity(self) -> None:
+    def validate(self) -> None:
         pass
 
     def connect_nodes_to_root(self) -> None:

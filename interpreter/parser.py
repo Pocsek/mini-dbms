@@ -10,88 +10,105 @@ from .token_objects import *
 
 
 class Parser:
-    @classmethod
-    def parse(cls, raw_commands):
+    """
+    The Parser class is responsible for parsing a string of raw commands into an Abstract Syntax Tree (AST).
+
+    The AST is a list of trees, where each tree represents a command.
+
+    The Parser class is also responsible for validating the syntax of the commands.
+    """
+    def __init__(self):
+        self.__ast_list = None
+
+        self.reset_state()
+
+    def reset_state(self):
+        self.__ast_list = list()
+
+    def get_ast_list(self):
+        return self.__ast_list
+
+    def parse(self, raw_commands):
+        self.reset_state()
+
         tokens_all = Tokenizer.tokenize(raw_commands)
         tokens_separated = Tokenizer.extract_commands(tokens_all)
         token_lists = []
         for tokens in tokens_separated:
             token_lists.append(TokenList(tokens))
 
-        ast_list = []  # list of abstract syntax trees
         for token_list in token_lists:
             try:
-                ast = cls.__parse_token_list(token_list)
-                ast_list.append(ast)
+                ast = self.__parse_token_list(token_list)
+                self.__ast_list.append(ast)
             except Exception:
                 raise
 
-        return ast_list
-
-    @classmethod
-    def __parse_token_list(cls, token_list: TokenList):
+    def __parse_token_list(self, token_list: TokenList):
         token = token_list.consume_of_type(TokenType.MAIN_KEYWORD)
         match token:
             case "use":
-                return cls.__parse_use(token_list)
+                return self.__parse_use(token_list)
             case "create":
-                return cls.__parse_create(token_list)
+                return self.__parse_create(token_list)
             case "drop":
-                return cls.__parse_drop(token_list)
+                return self.__parse_drop(token_list)
             case "alter":
-                return cls.__parse_alter(token_list)
+                return self.__parse_alter(token_list)
             case "insert":
-                return cls.__parse_insert(token_list)
+                return self.__parse_insert(token_list)
             case "select":
-                return cls.__parse_select(token_list)
+                return self.__parse_select(token_list)
             case "update":
-                return cls.__parse_update(token_list)
+                return self.__parse_update(token_list)
             case "delete":
-                return cls.__parse_delete(token_list)
+                return self.__parse_delete(token_list)
             case _:
                 raise NotImplementedError(f"No implementation for '{token}''")
 
-    @classmethod
-    def __parse_use(cls, token_list: TokenList):
+    def __parse_use(self, token_list: TokenList):
         db_name = token_list.consume_of_type(TokenType.IDENTIFIER)
         tree = Use(db_name)
         token_list.consume_group(TOptionalCommandEnd())
         tree.finalize()
         return tree
 
-    @classmethod
-    def __parse_create(cls, token_list: TokenList):
+    def __parse_create(self, token_list: TokenList):
         token = token_list.consume_of_type(TokenType.KEYWORD)
         match token:
             case "database":
-                return cls.__parse_create_database(token_list)
+                return self.__parse_create_database(token_list)
             case "table":
-                return cls.__parse_create_table(token_list)
+                return self.__parse_create_table(token_list)
             case "index":
-                return cls.__parse_create_index(token_list)
+                return self.__parse_create_index(token_list)
             case _:
                 raise SyntaxError(f"Invalid syntax at '{token}'")
 
-    @classmethod
-    def __parse_create_database(cls, token_list: TokenList):
+    def __parse_create_database(self, token_list: TokenList):
         db_name = token_list.consume_of_type(TokenType.IDENTIFIER)
         tree = CreateDatabase(db_name)
         token_list.consume_group(TOptionalCommandEnd())
         tree.finalize()
         return tree
 
-    @classmethod
-    def __parse_create_table(cls, token_list: TokenList):
+    def __parse_create_table(self, token_list: TokenList):
         table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
         tree = CreateTable(table_name)
 
         token_list.consume_concrete("(")
 
         while token_list.has_next():
-            if token_list.peek_type() == TokenType.IDENTIFIER:
-                tcol_def = token_list.consume_group(TColumnDefinition())
-                col_def = ColumnDefinition(tcol_def.get_name(), tcol_def.get_type(), tcol_def.get_constraints())
-                tree.add_column_definition(col_def)
+            tok_type = token_list.peek_type()
+            match tok_type:
+                case TokenType.IDENTIFIER:
+                    tcol_def = token_list.consume_group(TColumnDefinition())
+                    col_def = ColumnDefinition(tcol_def.get_name(), tcol_def.get_type(), tcol_def.get_constraints())
+                    tree.add_column_definition(col_def)
+                case TokenType.KEYWORD:
+                    # handle constraint definition
+                    pass
+
 
 
             # look for a column definition
@@ -131,30 +148,25 @@ class Parser:
         print(tree)
         return tree
 
-    @classmethod
-    def __parse_create_index(cls, token_list: TokenList):
+    def __parse_create_index(self, token_list: TokenList):
         pass
 
-    @classmethod
-    def __parse_drop(cls, token_list: TokenList):
+    def __parse_drop(self, token_list: TokenList):
         pass
 
-    @classmethod
-    def __parse_alter(cls, token_list: TokenList):
+    def __parse_alter(self, token_list: TokenList):
         pass
 
-    @classmethod
-    def __parse_insert(cls, token_list: TokenList):
+    def __parse_insert(self, token_list: TokenList):
         pass
 
-    @classmethod
-    def __parse_select(cls, token_list: TokenList):
+    def __parse_select(self, token_list: TokenList):
         pass
 
-    @classmethod
-    def __parse_update(cls, token_list: TokenList):
+    def __parse_update(self, token_list: TokenList):
         pass
 
-    @classmethod
-    def __parse_delete(cls, token_list: TokenList):
+    def __parse_delete(self, token_list: TokenList):
         pass
+
+

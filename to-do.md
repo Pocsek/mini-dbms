@@ -3,7 +3,7 @@
 2. implement parser for "create database"
 3. executor for "use"
 4. executor for "create database"
-5. complete the parser for the create table command on a basic level
+5. complete the parser for the create table command
 6. implement executor for "create table"
 7. parser for "create index"
 8. executor for "create index"

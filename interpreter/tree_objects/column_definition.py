@@ -14,7 +14,7 @@ class ColumnDefinition(CustomTree):
 
         self.finalize()
 
-    def check_validity(self):
+    def validate(self):
         """
         Check if there already exists a column in the parent table with the given name.
         """

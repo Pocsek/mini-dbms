@@ -1,31 +1,32 @@
-from treelib import Tree
-
-from interpreter.tree_objects.custom_tree import CustomTree
+from interpreter.tree_objects.executable_tree import ExecutableTree
 from interpreter.tree_objects.column_definitions import ColumnDefinitions
 from interpreter.leaf_objects.char_const import CharConst
 from interpreter.tree_objects.table_level_constraint_definitions import TableLevelConstraintDefinitions
 
 
-class CreateTable(CustomTree):
+class CreateTable(ExecutableTree):
     def __init__(self, name):
         super().__init__()
         self.__name = CharConst(name)
         self.__col_defs = ColumnDefinitions()
         self.__constr_defs = TableLevelConstraintDefinitions()
 
-        # self.connect_nodes_to_root()
-        # self.connect_subtrees_to_root()
-
-    def check_validity(self) -> None:
+    def validate(self):
         """
         Check if there already exists a table with the given name.
         """
         pass
 
-    def connect_nodes_to_root(self) -> None:
+    def execute(self):
+        """
+        Update the json structure with the new table.
+        Update in MongoDB as well.
+        """
+
+    def connect_nodes_to_root(self):
         self.add_node(self.__name, self.root)
 
-    def connect_subtrees_to_root(self) -> None:
+    def connect_subtrees_to_root(self):
         self.paste(self.root, self.__col_defs)
         self.paste(self.root, self.__constr_defs)
 
