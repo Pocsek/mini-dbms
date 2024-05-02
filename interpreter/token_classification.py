@@ -1,6 +1,6 @@
 class TokenType:
     MAIN_KEYWORD = "Main Keyword"
-    OTHER_KEYWORD = "Other Keyword"
+    KEYWORD = "Keyword"
     DATATYPE = "Datatype"
     PARENTHESIS = "Parenthesis"
     SEPARATOR = "Separator"
@@ -26,7 +26,7 @@ class Literal:
         "delete"
     )
 
-    OTHER_KEYWORDS = (
+    KEYWORDS = (
         "add",
         "as",
         "asc",

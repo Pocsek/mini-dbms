@@ -53,11 +53,15 @@ class Parser:
 
     @classmethod
     def __parse_use(cls, token_list: TokenList):
-        pass
+        db_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+        tree = Use(db_name)
+        token_list.consume_group(TOptionalCommandEnd())
+        tree.finalize()
+        return tree
 
     @classmethod
     def __parse_create(cls, token_list: TokenList):
-        token = token_list.consume_of_type(TokenType.OTHER_KEYWORD)
+        token = token_list.consume_of_type(TokenType.KEYWORD)
         match token:
             case "database":
                 return cls.__parse_create_database(token_list)
@@ -70,7 +74,11 @@ class Parser:
 
     @classmethod
     def __parse_create_database(cls, token_list: TokenList):
-        pass
+        db_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+        tree = CreateDatabase(db_name)
+        token_list.consume_group(TOptionalCommandEnd())
+        tree.finalize()
+        return tree
 
     @classmethod
     def __parse_create_table(cls, token_list: TokenList):
@@ -82,7 +90,9 @@ class Parser:
         while token_list.has_next():
             if token_list.peek_type() == TokenType.IDENTIFIER:
                 tcol_def = token_list.consume_group(TColumnDefinition())
-                col_def = ColumnDefinition(tcol_def.get_name(), tcol_def.get_type(), tcol_def.get_constraints)
+                col_def = ColumnDefinition(tcol_def.get_name(), tcol_def.get_type(), tcol_def.get_constraints())
+                tree.add_column_definition(col_def)
+
 
             # look for a column definition
             # try:
@@ -92,7 +102,7 @@ class Parser:
             #
             # constraint = None
             # if token_list.peek() not in (",", ")"):
-            #     match token_list.expect_type(TokenType.OTHER_KEYWORD):
+            #     match token_list.expect_type(TokenType.KEYWORD):
             #         case "primary":
             #             token_list.consume_group(TInlinePrimaryKey())
             #             constraint = PrimaryKey()

@@ -58,8 +58,8 @@ class Tokenizer:
     def get_token_type(cls, token):
         if token in Literal.MAIN_KEYWORDS:
             return TokenType.MAIN_KEYWORD
-        if token in Literal.OTHER_KEYWORDS:
-            return TokenType.OTHER_KEYWORD
+        if token in Literal.KEYWORDS:
+            return TokenType.KEYWORD
         if token in Literal.DATATYPES:
             return TokenType.DATATYPE
         if token in Literal.PARENTHESES:

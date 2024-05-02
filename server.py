@@ -211,6 +211,10 @@ def respond_to_client(client_socket: socket, commands: str):
 
 
 def handle_client(client_socket, addr):
+    """
+    Handles the client connection and the commands received from the client socket. It will keep the connection open
+    until the client sends the "exit" command.
+    """
     while True:
         # get the commands from the client
         command_length: int = int.from_bytes(client_socket.recv(4), byteorder="big")

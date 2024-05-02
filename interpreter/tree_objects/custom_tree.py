@@ -29,6 +29,9 @@ class CustomTree(Tree, ABC):
         pass
 
     def finalize(self):
-        """Connect all nodes and subtrees to the root."""
+        """
+        Connect all nodes and subtrees to the root.
+        MUST be called after the tree is built.
+        """
         self.connect_nodes_to_root()
         self.connect_subtrees_to_root()

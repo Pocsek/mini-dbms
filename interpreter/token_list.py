@@ -52,17 +52,21 @@ class TokenList:
         self.increment_cursor()
         return token
 
-    def consume_concrete(self, target_token):
-        """
-        Increments the cursor if the current token matches the target token, else raises an exception.
-        """
-        if not self.has_next():
-            raise SyntaxError(f"Unexpected end of command. Expected '{target_token}'")
+    def expect_concrete(self, target_token):
+        """Raises an exception if the current token does not match the target token."""
         token = self.peek()
-
         if token != target_token:
             raise SyntaxError(f"Expected token '{target_token}', found '{token}'")
 
+    def consume_concrete(self, target_token):
+        """
+        Returns the token at the cursor from the token list and increments the cursor if the token matches the
+        target token, else raises an exception.
+        """
+        if not self.has_next():
+            raise SyntaxError(f"Unexpected end of command. Expected '{target_token}'")
+
+        self.expect_concrete(target_token)
         self.increment_cursor()
 
     def consume_group(self, consumer):

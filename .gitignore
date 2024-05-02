@@ -1,0 +1,8 @@
+*.pyc
+*.xml
+*.iml
+/ex.sql
+/example_commands.sql
+/databases.json
+/kerdesek-valaszok.txt
+/test.py

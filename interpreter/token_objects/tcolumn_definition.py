@@ -28,7 +28,7 @@ class TColumnDefinition(TObj):
 
         while tokens.peek() not in (",", ")"):
             constraint = None
-            match tokens.expect_type(TokenType.OTHER_KEYWORD):
+            match tokens.expect_type(TokenType.KEYWORD):
                 case "check":
                     pass
                 case "constraint":

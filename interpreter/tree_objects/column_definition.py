@@ -6,14 +6,13 @@ from .inline_constraint_definitions import InlineConstraintDefinitions
 
 
 class ColumnDefinition(CustomTree):
-    def __init__(self, name, datatype, constraints):
+    def __init__(self, name, datatype, constraints: InlineConstraintDefinitions = None):
         super().__init__()
         self.__name = CharConst(name)
         self.__datatype = CharConst(datatype)
-        self.__constraints = InlineConstraintDefinitions()
+        self.__constraints = InlineConstraintDefinitions() if None else constraints
 
-        # self.connect_nodes_to_root()
-        # self.connect_subtrees_to_root()
+        self.finalize()
 
     def check_validity(self):
         """
