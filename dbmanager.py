@@ -22,7 +22,7 @@ class DbManager:
 
     def update_databases(self):
         with open("databases.json", "w") as f:
-            json.dump(self.__dbs, f, indent=4)  # encode (python dict -> JSON)
+            json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
     # # cannot really sync databases with mongoDB, because mongoDB doesn't create the database until a collection is created
     # def sync_databases_with_mongo(self):
@@ -77,48 +77,63 @@ class DbManager:
         # TO-DO: check if the database already exists
         self.__dbs.append(db)
 
-    def insert_one(self, db: Database, tb: Table, record: dict) -> bool:
+    def insert(self, db: Database, tb: Table, records: list[dict]) -> list[str]:
         """
-        Inserts a record into a table creating a key-value pair.
+        Inserts records into a table creating key-value pairs.
         Checks if the database and table exist.
+        !Right now it inserts only one record at a time and if it fails it raises an exception,
+        but keeps the ones inserted before and ignores the rest.!
         """
-        # TO-DO: provide better feedback on what went wrong
         # TO-DO: check if the record has the correct types
         db_idx = self.find_database(db.get_name())
         if db_idx == -1:
-            return False
+            raise ValueError(f"Database [{db.get_name()}] not found")
         if self.find_table(db_idx, tb.get_name()) == -1:
-            return False
+            raise ValueError(f"Table [{tb.get_name()}] not found")
         column_names = tb.get_column_names()
-        primary_key_names = tb.get_primary_key().get_column_names()
+        pr = tb.get_primary_key()
+        if not pr:
+            raise ValueError(f"Table [{tb.get_name()}] has no primary key")
+        primary_key_names = pr.get_column_names()
         if len(column_names) == 0:
             # cannot insert a record into a table with no columns
-            return False
-        if len(primary_key_names) == 0:
-            # cannot insert a record into a table with no primary key
-            return False
-        key, value = build_key_value_pair(record, column_names, primary_key_names)
-        return mongo_db.insert_one(db.get_name(), tb.get_name(), key, value)
+            raise ValueError(f"Table [{tb.get_name()}] has no columns")
+        if len(records) == 0:
+            # cannot insert an empty record
+            raise ValueError("Record is empty")
+        key_value_pairs = []
+        for record in records:
+            key, value = build_key_value_pair(record, column_names, primary_key_names)
+            key_value_pairs.append((key, value))
+        inserted_keys = []
+        for key_value_pair in key_value_pairs:
+            try:
+                inserted_keys.append(mongo_db.insert_one(db.get_name(), tb.get_name(), key_value_pair))
+            except ValueError:
+                raise
+        return inserted_keys
+        # TO-DO: implement insert_many
+        # else:
+        #     try:
+        #         return mongo_db.insert_many(db.get_name(), tb.get_name(), key_value_pairs)
+        #     except ValueError:
+        #         raise
 
-    def insert_many(self, db: Database, tb: Table, records: list[dict]) -> tuple[bool, list]:
-        pass
-
-    def delete_one(self, db: Database, tb: Table, key: str) -> bool:
+    def delete(self, db: Database, tb: Table, key: str) -> int:
         """
-        Deletes a record from a table.
+        Deletes records from a table.
         Checks if the database and table exist.
+        Returns the number of deleted records.
+        Currently, only deletes by primary-key.
         """
         # TO-DO: provide better feedback on what went wrong
         # TO-DO: key should be a condition somehow and from it, I should build a dict to pass further
         db_idx = self.find_database(db.get_name())
         if db_idx == -1:
-            return False
+            raise ValueError(f"Database [{db.get_name()}] not found")
         if self.find_table(db_idx, tb.get_name()) == -1:
-            return False
-        return mongo_db.delete_one(db.get_name(), tb.get_name(), {"_id": key})
-
-    def delete_many(self, db: Database, tb: Table, keys: str) -> bool:
-        pass
+            raise ValueError(f"Table [{tb.get_name()}] not found")
+        return mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
 
 
 def create_default_databases() -> list[Database]:
@@ -129,14 +144,14 @@ def create_empty_database() -> Database:
     return Database()
 
 
-def create_empty_foreign_key() -> dict:
-    return {
-        "attributes": [],
-        "references": {
-            "table": "",
-            "attributes": []
-        }
-    }
+# def create_empty_foreign_key() -> dict:
+#     return {
+#         "attributes": [],
+#         "references": {
+#             "table": "",
+#             "attributes": []
+#         }
+#     }
 
 
 def create_empty_table() -> Table:
@@ -151,6 +166,10 @@ def create_empty_index() -> Index:
     return Index()
 
 
+def create_empty_primary_key() -> PrimaryKey:
+    return PrimaryKey()
+
+
 def build_key_value_pair(record: dict, column_names: list[str], primary_key_names: list[str]) -> tuple[str, str]:
     """
     Build a key-value pair, from a record in a table.
@@ -158,12 +177,13 @@ def build_key_value_pair(record: dict, column_names: list[str], primary_key_name
     Concatenate other colum values into the value.
     Only keeps the values that belong to existing table names.
     Ignores non-existent names.
+    Separator character is "#".
     """
     key: str = str()
     value: str = str()
     separator_char = "#"
     for col in column_names:
-        part: str = f'{record.get(col,"")}{separator_char}'
+        part: str = f'{record.get(col, "")}{separator_char}'
         if col in primary_key_names:
             key += part
         else:

@@ -14,62 +14,57 @@ class _MongoHost:
         return self.__host_str
 
 
-def insert_one(db_name: str, collection_name: str, key: str, value: str) -> bool:
+def insert_one(db_name: str, collection_name: str, key_value_pair: tuple[str, str]) -> str:
     """
     Insert a document into a collection without any validation.
-    Returns True if the document is inserted successfully.
-    Returns False if there are duplicate keys.
+    Returns the key of the inserted document on success.
     """
     with pymongo.MongoClient(str(_MongoHost())) as client:
         db = client[db_name]
         collection = db[collection_name]
         # noinspection PyUnresolvedReferences
         try:
+            key, value = key_value_pair
             collection.insert_one({"_id": key, "value": value})  # insert a key-value pair into mongoDB collection
         except pymongo.errors.DuplicateKeyError:
             # catch the error if there are duplicate keys
-            return False
-        return True
+            raise ValueError(f"Duplicate key [{key}] in collection [{collection_name}]")
+        return key
 
 
-def insert_many(db_name: str, collection_name: str, documents: list[dict]) -> tuple[bool, list]:
-    """
-    Insert multiple documents into a collection without any validation.
-    Ordering is not guaranteed.
-    If there are duplicate keys, the function will return False and a list of duplicate keys.
-    Otherwise, the function will return True and an empty list.
-    """
-    with pymongo.MongoClient(str(_MongoHost())) as client:
-        db = client[db_name]
-        collection = db[collection_name]
-        # noinspection PyUnresolvedReferences
-        try:
-            # insert the documents into mongoDB collection
-            # set ordered=False to continue inserting even if there are duplicate keys
-            collection.insert_many(documents, ordered=False)
-        except pymongo.errors.BulkWriteError as e:
-            # catch the error if there are duplicate keys
-            # return the list of duplicate keys
-            return False, [error["op"]["_id"] for error in e.details["writeErrors"]]
-        return True, []
+# def insert_many(db_name: str, collection_name: str, key_value_pairs: list[tuple[str, str]]) -> list[str]:
+#     """
+#     Insert multiple documents into a collection without any validation.
+#     Ordering is not guaranteed.
+#     Returns a list of keys of the inserted documents on success.
+#     """
+#     with pymongo.MongoClient(str(_MongoHost())) as client:
+#         db = client[db_name]
+#         collection = db[collection_name]
+#         documents = [{"_id": key, "value": value} for key, value in key_value_pairs]
+#         # noinspection PyUnresolvedReferences
+#         try:
+#             # insert the documents into mongoDB collection
+#             # set ordered=False to continue inserting even if there are duplicate keys
+#             result = collection.insert_many(documents, ordered=False)
+#         except pymongo.errors.BulkWriteError as e:
+#             # catch the error if there are duplicate keys
+#             # get the duplicate keys from the error message
+#
+#             pass
+#         return True, []
 
 
-def delete_one(db_name: str, collection_name: str, query: dict) -> bool:
+def delete(db_name: str, collection_name: str, query: dict) -> int:
     """
     Delete a document from a collection, without any validation.
-    Returns True if the document is deleted successfully.
-    Returns False if the document is not found.
+    Returns the number of deleted documents.
     """
     with pymongo.MongoClient(str(_MongoHost())) as client:
         db = client[db_name]
         collection = db[collection_name]
-        result = collection.delete_one(query)
-        return result.deleted_count > 0
-
-
-# TO-DO: implement delete_many
-def delete_many():
-    pass
+        result = collection.delete_many(query)
+        return result.deleted_count
 
 
 # # not very useful cause mongoDB doesn't create the database until a collection is created
