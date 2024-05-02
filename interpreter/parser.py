@@ -38,11 +38,8 @@ class Parser:
             token_lists.append(TokenList(tokens))
 
         for token_list in token_lists:
-            try:
-                ast = self.__parse_token_list(token_list)
-                self.__ast_list.append(ast)
-            except Exception:
-                raise
+            ast = self.__parse_token_list(token_list)
+            self.__ast_list.append(ast)
 
     def __parse_token_list(self, token_list: TokenList):
         token = token_list.consume_of_type(TokenType.MAIN_KEYWORD)

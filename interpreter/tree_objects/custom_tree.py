@@ -1,17 +1,19 @@
 from abc import ABC, abstractmethod
 from treelib import Tree
+from dbmanager import DbManager
 
 
 class CustomTree(Tree, ABC):
     """
     A Tree that has a root node and some additional methods.
     """
+
     def __init__(self):
         super().__init__()
         self.create_node(self.__class__.__name__)  # add root node
 
     @abstractmethod
-    def validate(self):
+    def validate(self, dbm: DbManager = None, mongo_client=None):
         """Check if any rules are being violated during execution."""
         pass
 

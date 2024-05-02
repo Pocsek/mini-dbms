@@ -1,5 +1,6 @@
 from interpreter.tree_objects.executable_tree import ExecutableTree
 from interpreter.leaf_objects.char_const import CharConst
+from dbmanager import DbManager
 
 
 class Use(ExecutableTree):
@@ -7,17 +8,18 @@ class Use(ExecutableTree):
         super().__init__()
         self.__db_name = CharConst(db_name)
 
-    def validate(self):
+    def validate(self, dbm: DbManager = None, mongo_client=None):
         """
         Check if a database with the given name exists.
         """
         pass
 
-    def execute(self):
+    def _execute(self, dbm: DbManager = None, mongo_client=None):
         """
         Change the working DB.
         """
-        pass
+        dbm.set_working_db_index(dbm.find_database(self.__db_name.get_value()))
+        print(f"Changed database context to '{dbm.get_working_db().get_name()}'.")
 
     def connect_nodes_to_root(self):
         self.add_node(self.__db_name, self.root)

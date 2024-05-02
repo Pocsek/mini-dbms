@@ -24,7 +24,7 @@ class DbManager:
         with open("databases.json", "w") as f:
             json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
-    # # cannot really sync databases with mongoDB, because mongoDB doesn't create the database until a collection is created
+    # cannot really sync databases with mongoDB, because mongoDB doesn't create the database until a collection is created
     # def sync_databases_with_mongo(self):
     #     mongo_dbs = mongo_db.get_database_names()
     #     for db in self.get_databases():

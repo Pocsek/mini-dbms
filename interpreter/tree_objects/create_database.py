@@ -1,5 +1,7 @@
 from interpreter.tree_objects.executable_tree import ExecutableTree
 from interpreter.leaf_objects.char_const import CharConst
+from dbmanager import DbManager
+from database_objects import Database
 
 
 class CreateDatabase(ExecutableTree):
@@ -7,18 +9,19 @@ class CreateDatabase(ExecutableTree):
         super().__init__()
         self.__db_name = CharConst(db_name)
 
-    def validate(self):
+    def validate(self, dbm: DbManager = None, mongo_client=None):
         """
         Check if there already exists a database with the given name.
         """
         pass
 
-    def execute(self):
+    def _execute(self, dbm: DbManager = None, mongo_client=None):
         """
         Update the json structure with the new database.
-        Update in MongoDB as well.
         """
-        pass
+        new_db = Database(self.__db_name.get_value())
+        dbm.add_database(new_db)
+        dbm.update_databases()
 
     def connect_nodes_to_root(self):
         self.add_node(self.__db_name, self.root)

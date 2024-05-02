@@ -1,3 +1,4 @@
+from dbmanager import DbManager
 from interpreter.tree_objects.executable_tree import ExecutableTree
 from interpreter.tree_objects.column_definitions import ColumnDefinitions
 from interpreter.leaf_objects.char_const import CharConst
@@ -11,17 +12,17 @@ class CreateTable(ExecutableTree):
         self.__col_defs = ColumnDefinitions()
         self.__constr_defs = TableLevelConstraintDefinitions()
 
-    def validate(self):
+    def validate(self, dbm: DbManager = None, mongo_client=None):
         """
         Check if there already exists a table with the given name.
         """
         pass
 
-    def execute(self):
+    def _execute(self, dbm: DbManager = None, mongo_client=None):
         """
         Update the json structure with the new table.
-        Update in MongoDB as well.
         """
+        pass
 
     def connect_nodes_to_root(self):
         self.add_node(self.__name, self.root)

@@ -1,10 +1,15 @@
 from .column_definition import ColumnDefinition
 from .column_definitions import ColumnDefinitions
 from .create_table import CreateTable
+from .drop_table import DropTable
 from .custom_tree import CustomTree
 from .executable_tree import ExecutableTree
 from .inline_constraint_definitions import InlineConstraintDefinitions
 from .table_level_constraint_definitions import TableLevelConstraintDefinitions
 from .use import Use
 from .create_database import CreateDatabase
-
+from .drop_database import DropDatabase
+from .create_index import CreateIndex
+from .drop_index import DropIndex
+from .insert_into import InsertInto
+from .delete_from import DeleteFrom

@@ -1,11 +1,13 @@
 from treelib import Node, Tree
 from dbmanager import DbManager
 
+from .tree_objects import CustomTree
+
 
 class Executor:
     """
     The Executor class is responsible for executing a list of ASTs (a.k.a. a list of commands).
-    Keeps track of the execution status:
+    Keeps track of the execution status: whether the database was modified.
     """
     def __init__(self, dbm: DbManager):
         self.__dbm = dbm
@@ -19,17 +21,16 @@ class Executor:
     def modified(self):
         return self.__modified
 
-    def execute(self, ast_list: list[Tree]):
+    def execute(self, ast_list: list[CustomTree]):
+        """
+        Execute a list of ASTs (a.k.a. a list of commands).
+        """
         for ast in ast_list:
             self.__execute_tree(ast)
 
-    def __execute_tree(self, tree: Tree):
-        # LOG executing tree ...
+    def __execute_tree(self, tree: CustomTree):
+        """
+        Execute a single AST.
+        """
         self.reset_state()
-        root = tree.get_node(tree.root)
-        return self.__execute_subtree(root)
-
-    def __execute_subtree(self, node: Node):
-        # LOG executing subtree ...
-        pass
-
+        tree.execute(self.__dbm)
