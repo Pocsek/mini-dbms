@@ -13,7 +13,7 @@ class Dbo(ABC):
         pass
 
     @abstractmethod
-    # load data from a dictionary
+    # load data from a dictionary into the object and return the object
     def from_dict(self, data: dict):
         pass
 

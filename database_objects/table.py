@@ -1,12 +1,13 @@
 from database_objects.column import Column
 from database_objects.dbo import Dbo
 from database_objects.index import Index
+from database_objects.primary_key import PrimaryKey
 
 
 class Table(Dbo):
-    __collection_name: str = ""
     __columns: list[Column] = list()
     __indexes: list[Index] = list()
+    __primary_key: PrimaryKey | None = None
 
     # TO-DO: add keys, create a key class, possibly one for each type of key
     # "keys": {
@@ -17,7 +18,6 @@ class Table(Dbo):
 
     def __init__(self,
                  name: str = "",
-                 collection_name: str = "",
                  columns: list[Column] | None = None,
                  indexes: list[Index] | None = None):
         if columns is None:
@@ -25,29 +25,30 @@ class Table(Dbo):
         if indexes is None:
             indexes = list()
         self.__name = name
-        self.__collection_name = collection_name
         self.__columns = columns
         self.__indexes = indexes
 
     def __dict__(self) -> dict:
         return {
             "name": self.__name,
-            "collection_name": self.__collection_name,
             "columns": [column.__dict__() for column in self.__columns],
-            "indexes": [index.__dict__() for index in self.__indexes]
+            "indexes": [index.__dict__() for index in self.__indexes],
+            "primary_key": self.__primary_key.__dict__() if self.__primary_key is not None else {}
         }
 
-    def from_dict(self, data: dict):
+    def from_dict(self, data: dict) -> 'Table':
         self.__name = data.get("name", "")
-        self.__collection_name = data.get("collection_name", "")
         self.__columns = [Column().from_dict(column) for column in data.get("columns", [])]
         self.__indexes = [Index().from_dict(index) for index in data.get("indexes", [])]
+        pk_dict = data.get("primary_key", {})
+        if pk_dict:  # ensure that the primary key was provided
+            self.__primary_key = PrimaryKey().from_dict(pk_dict)
+        else:
+            self.__primary_key = None
+        return self
 
     def get_name(self) -> str:
         return self.__name
-
-    def get_collection_name(self) -> str:
-        return self.__collection_name
 
     def get_columns(self) -> list[Column]:
         return self.__columns
@@ -58,9 +59,6 @@ class Table(Dbo):
     def set_name(self, name: str):
         self.__name = name
 
-    def set_collection_name(self, collection_name: str):
-        self.__collection_name = collection_name
-
     def set_columns(self, columns: list[Column]):
         self.__columns = columns
 
@@ -68,7 +66,18 @@ class Table(Dbo):
         self.__indexes = indexes
 
     def add_column(self, column: Column):
+        # TO-DO: check if the column already exists
         self.__columns.append(column)
 
     def add_index(self, index: Index):
+        # TO-DO: check if the index already exists
         self.__indexes.append(index)
+
+    def get_primary_key(self) -> PrimaryKey:
+        return self.__primary_key
+
+    def set_primary_key(self, primary_key: PrimaryKey):
+        self.__primary_key = primary_key
+
+    def get_column_names(self) -> list[str]:
+        return [col.get_name() for col in self.__columns]

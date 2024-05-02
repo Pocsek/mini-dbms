@@ -23,10 +23,11 @@ class Index(Dbo):
             "index": self.__index
         }
 
-    def from_dict(self, data: dict):
+    def from_dict(self, data: dict) -> 'Index':
         self.__name = data.get("name", "")
         self.__columns = [Column().from_dict(column) for column in data.get("columns", [])]
         self.__index = data.get("index", -1)
+        return self
 
     def get_name(self) -> str:
         return self.__name

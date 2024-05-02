@@ -19,9 +19,10 @@ class Database(Dbo):
             "tables": [table.__dict__() for table in self.__tables]
         }
 
-    def from_dict(self, data: dict):
+    def from_dict(self, data: dict) -> 'Database':
         self.__name = data.get("name", "")
         self.__tables = [Table().from_dict(table) for table in data.get("tables", [])]
+        return self
 
     def get_tables(self) -> list[Table]:
         return self.__tables

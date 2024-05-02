@@ -10,13 +10,13 @@ class Column(Dbo):
 
     def __init__(self,
                  name: str = "",
-                 _type: str = "",
+                 data_type: str = "",
                  allow_nulls: bool = True,
                  identity: bool = False,
                  identity_seed: int = 0,
                  identity_increment: int = 0):
         self.__name = name
-        self.__type = _type
+        self.__type = data_type
         self.__allow_nulls = allow_nulls
         self.__identity = identity
         self.__identity_seed = identity_seed
@@ -32,13 +32,14 @@ class Column(Dbo):
             "identity_increment": self.__identity_increment
         }
 
-    def from_dict(self, data: dict):
+    def from_dict(self, data: dict) -> 'Column':
         self.__name = data.get("name", "")
         self.__type = data.get("type", "")
         self.__allow_nulls = data.get("allow_nulls", True)
         self.__identity = data.get("identity", False)
         self.__identity_seed = data.get("identity_seed", 0)
         self.__identity_increment = data.get("identity_increment", 0)
+        return self
 
     def get_name(self) -> str:
         return self.__name
