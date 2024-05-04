@@ -1,7 +1,7 @@
 from treelib import Node, Tree
 from dbmanager import DbManager
 
-from .tree_objects import CustomTree
+from .tree_objects import ExecutableTree
 
 
 class Executor:
@@ -21,14 +21,14 @@ class Executor:
     def modified(self):
         return self.__modified
 
-    def execute(self, ast_list: list[CustomTree]):
+    def execute(self, ast_list: list[ExecutableTree]):
         """
         Execute a list of ASTs (a.k.a. a list of commands).
         """
         for ast in ast_list:
             self.__execute_tree(ast)
 
-    def __execute_tree(self, tree: CustomTree):
+    def __execute_tree(self, tree: ExecutableTree):
         """
         Execute a single AST.
         """

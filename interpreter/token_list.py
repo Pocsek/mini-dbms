@@ -17,7 +17,9 @@ class TokenList:
         return self.__cursor < len(self.__tokens)
 
     def peek(self):
-        """Returns the token at the cursor"""
+        """Returns the token at the cursor without moving the cursor."""
+        if not self.has_next():
+            raise IndexError("Cursor out of bounds.")
         return self.__tokens[self.__cursor]
 
     def peek_type(self):
@@ -76,9 +78,8 @@ class TokenList:
         :return: <the new position of the cursor>, <an object of the same type as 'consumer' with its fields set
         respectively>
         """
-
-        self.__cursor, token_obj = consumer.consume(self)
-        return token_obj
+        consumer.consume(self)
+        return consumer
 
 
 
