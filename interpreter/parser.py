@@ -17,6 +17,7 @@ class Parser:
 
     The Parser class is also responsible for validating the syntax of the commands.
     """
+
     def __init__(self):
         self.__ast_list = None
 
@@ -106,8 +107,6 @@ class Parser:
                     # handle constraint definition
                     pass
 
-
-
             # look for a column definition
             # try:
             # col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
@@ -155,7 +154,41 @@ class Parser:
         pass
 
     def __parse_insert(self, token_list: TokenList):
-        pass
+        # Example use:
+        # insert into table_name (col1, col2, col3) values (val1, val2, val3), (val4, val5, val6)
+        tree = InsertInto()  # create the tree
+        token_list.consume_concrete("into")
+        table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+        tree.set_table_name(str(table_name))  # add the table name to the tree
+        if token_list.has_next():
+            if token_list.peek_type() == TokenType.PARENTHESIS:
+                # if the column names are specified
+                tidents: TIdentifiers = token_list.consume_group(TIdentifiers())
+                for ident in tidents.get_identifiers():  # add the column names to the tree if they are specified
+                    tree.add_column_name(str(ident))
+            else:
+                # if the column names are not specified
+                pass
+            # parse the values
+            token_list.consume_concrete("values")
+            list_of_tvalues: list[TValues] = []
+            while token_list.has_next():  # while there is a ',' continue reading tvalues
+                tvals: TValues = token_list.consume_group(TValues())
+                list_of_tvalues.append(tvals)
+                if token_list.has_next():
+                    next_token = token_list.peek()
+                    if next_token == ",":
+                        token_list.consume_concrete(",")
+                    else:
+                        break
+            for tvals in list_of_tvalues:  # add the values to the tree
+                tree.add_value([str(val) for val in tvals.get_values()])
+
+        else:
+            raise SyntaxError("Unexpected end of command. Expected '(' or 'values'.")
+        tree.finalize()
+        return tree
+
 
     def __parse_select(self, token_list: TokenList):
         pass
@@ -165,5 +198,3 @@ class Parser:
 
     def __parse_delete(self, token_list: TokenList):
         pass
-
-

@@ -3,14 +3,44 @@ from interpreter.tree_objects.executable_tree import ExecutableTree
 
 
 class InsertInto(ExecutableTree):
+    """
+    Represents an INSERT INTO command.
+    Examples:
+        INSERT INTO table_name (column1, column2, column3) VALUES (value1, value2, value3), (value4, value5, value6)
+        INSERT INTO table_name VALUES (value1, value2, value3), (value4, value5, value6)
+    """
+
     def __init__(self):
         super().__init__()
+        self.__table_name: str = ""
+        self.__column_names: list[str] = []
+        self.__values: list[list[str]] = []  # a list where a value is a record to be inserted, a record is a list
 
     def _execute(self, dbm: DbManager = None, mongo_client=None):
-        pass
+        db_idx = dbm.get_working_db_index()
+        table_idx = dbm.find_table(db_idx, self.__table_name)
+        db = dbm.get_working_db()
+        table = db.get_tables()[table_idx]
+        records = self.__make_records()
+        dbm.insert(db, table, records)
 
     def validate(self, dbm: DbManager = None, mongo_client=None):
-        pass
+        # check if all column names are valid
+        # check if all values are valid
+        # check if the number of values is equal to the number of column names
+        # if identity is set the column can't be inserted -> won't be implemented in the first version
+        db_idx = dbm.get_working_db_index()
+        table_idx = dbm.find_table(db_idx, self.__table_name)
+        if table_idx == -1:
+            raise ValueError(f"Table [{self.__table_name}] does not exist in the database.")
+        existing_column_names = dbm.get_column_names(db_idx, table_idx)
+        if len(self.__column_names) != 0:
+            # if column names are specified, validate them
+            self.__validate_column_names(existing_column_names)
+        else:
+            # if column names are not specified, use the existing column names
+            self.__column_names = existing_column_names
+        self.__validate_values()
 
     def connect_nodes_to_root(self):
         pass
@@ -18,3 +48,40 @@ class InsertInto(ExecutableTree):
     def connect_subtrees_to_root(self):
         pass
 
+    def set_table_name(self, table_name: str):
+        self.__table_name = table_name
+
+    def get_table_name(self) -> str:
+        return self.__table_name
+
+    def add_column_name(self, column_name: str):
+        self.__column_names.append(column_name)
+
+    def get_column_names(self) -> list[str]:
+        return self.__column_names
+
+    def add_value(self, value: list[str]):
+        self.__values.append(value)
+
+    def get_values(self) -> list[list[str]]:
+        return self.__values
+
+    def __validate_column_names(self, existing_column_names: list[str]):
+        pass
+
+    def __validate_values(self):
+        pass
+
+    def __make_records(self) -> list[dict]:
+        """
+        Pair the column names with the values to create records.
+
+        No validation is done here.
+        """
+        records = []
+        for value in self.__values:
+            record = {}
+            for col_name, val in zip(self.__column_names, value):
+                record[col_name] = val
+            records.append(record)
+        return records
