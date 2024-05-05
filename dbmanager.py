@@ -124,6 +124,7 @@ class DbManager:
         Deletes records from a table.
         Checks if the database and table exist.
         Returns the number of deleted records.
+
         Currently, only deletes by primary-key.
         """
         # TO-DO: provide better feedback on what went wrong
@@ -131,8 +132,12 @@ class DbManager:
         db_idx = self.find_database(db.get_name())
         if db_idx == -1:
             raise ValueError(f"Database [{db.get_name()}] not found")
-        if self.find_table(db_idx, tb.get_name()) == -1:
+        tb_idx = self.find_table(db_idx, tb.get_name())
+        if tb_idx == -1:
             raise ValueError(f"Table [{tb.get_name()}] not found")
+        tb = self.get_databases()[db_idx].get_tables()[tb_idx]
+        if not tb.has_primary_key():  # check if the table has a primary key because we can only delete by primary key
+            raise ValueError(f"Table [{tb.get_name()}] has no primary key")
         return mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
 
 

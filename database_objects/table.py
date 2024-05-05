@@ -81,3 +81,6 @@ class Table(Dbo):
 
     def get_column_names(self) -> list[str]:
         return [col.get_name() for col in self.__columns]
+
+    def has_primary_key(self) -> bool:
+        return self.__primary_key is not None
