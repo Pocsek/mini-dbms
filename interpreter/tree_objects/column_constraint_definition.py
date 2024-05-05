@@ -1,13 +1,13 @@
 """NOT IMPLEMENTED"""
-
+from dbmanager import DbManager
 from .custom_tree import CustomTree
 
 
-class InlineConstraintDefinitions(CustomTree):
+class ColumnConstraintDefinition(CustomTree):
     def __init__(self):
         super().__init__()
 
-    def validate(self) -> None:
+    def validate(self, dbm: DbManager = None, mongo_client=None):
         pass
 
     def connect_nodes_to_root(self) -> None:

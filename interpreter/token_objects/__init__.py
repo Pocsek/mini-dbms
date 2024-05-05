@@ -5,3 +5,4 @@ from .tinline_primary_key import TInlinePrimaryKey
 from .tobj import TObj
 from .ttable_level_primary_key import TTableLevelPrimaryKey
 from .toptional_command_end import TOptionalCommandEnd
+from .tconstraint_definition import TConstraintDefinition

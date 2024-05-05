@@ -90,41 +90,26 @@ class Parser:
         return tree
 
     def __parse_create_table(self, token_list: TokenList):
+        tree = CreateTable()
+
         table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-        tree = CreateTable(table_name)
+        tree.set_name(table_name)
 
         token_list.consume_concrete("(")
-
         while token_list.has_next():
             tok_type = token_list.peek_type()
             match tok_type:
                 case TokenType.IDENTIFIER:
                     tcol_def = token_list.consume_group(TColumnDefinition())
-                    col_def = ColumnDefinition(tcol_def.get_name(), tcol_def.get_type(), tcol_def.get_constraints())
+                    col_def = ColumnDefinition(tcol_def.get_name(), tcol_def.get_data_type(), tcol_def.get_constraints())
                     tree.add_column_definition(col_def)
                 case TokenType.KEYWORD:
                     # handle constraint definition
+                    tconstr_def = token_list.consume_group(TConstraintDefinition())
+                    # constr_def = ConstraintDefinition(...)
+                    # tree.add_constraint_definition(constr_def)
                     pass
 
-
-
-            # look for a column definition
-            # try:
-            # col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-            # col_type = token_list.consume_of_type(TokenType.DATATYPE)
-            # col_def = ColumnDefinition(col_name, col_type)
-            #
-            # constraint = None
-            # if token_list.peek() not in (",", ")"):
-            #     match token_list.expect_type(TokenType.KEYWORD):
-            #         case "primary":
-            #             token_list.consume_group(TInlinePrimaryKey())
-            #             constraint = PrimaryKey()
-            #         case "foreign":
-            #             pass
-            #     col_def.add_constraint(constraint)
-            #
-            #
             # # parsing was successful -> add new nodes to the tree
             # if token_list.peek() in (",", ")"):
             #     col_def.finalize()
@@ -142,7 +127,6 @@ class Parser:
             # token_list.consume(TokenType.SEPARATOR, ",")
 
         tree.finalize()
-        print(tree)
         return tree
 
     def __parse_create_index(self, token_list: TokenList):
