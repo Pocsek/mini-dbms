@@ -13,6 +13,69 @@ class CreateTable(ExecutableTree):
 
         At the column level, a constraint is defined as part of a column definition, and is applied only to that column.
         At the table level, a constraint is defined as a table constraint, and can be applied to more than one column.
+
+        Examples:
+            1.
+            CREATE TABLE Products (
+                ProductID INT PRIMARY KEY,
+                Price FLOAT
+            )
+
+            2.
+            CREATE TABLE Products (
+                ProductID INT CONSTRAINT PK_Products PRIMARY KEY,
+                Price FLOAT
+            )
+
+            3.
+            CREATE TABLE Products (
+                ProductID INT,
+                Price FLOAT,
+                CONSTRAINT PK_Products PRIMARY KEY (ProductID)
+            )
+
+            4.
+            CREATE TABLE Products (
+                ProductID INT,
+                Price FLOAT,
+                CONSTRAINT PK_Products PRIMARY KEY (ProductID, Price)
+            )
+
+            5.
+            CREATE TABLE Prices (
+                ID INT PRIMARY KEY,
+                Price FLOAT UNIQUE
+            )
+
+            CREATE TABLE Products (
+                ProductID INT PRIMARY KEY,
+                Price FLOAT REFERENCES Prices(Price)
+            )
+
+            6.
+            CREATE TABLE Products (
+                ProductID INT PRIMARY KEY,
+                Price FLOAT FOREIGN KEY REFERENCES Prices(Price) ON DELETE CASCADE NOT NULL
+            )
+
+            7.
+            CREATE TABLE Products (
+                ProductID INT PRIMARY KEY,
+                Price FLOAT CONSTRAINT FK_Price_Products_Prices FOREIGN KEY REFERENCES Prices(Price)
+            )
+
+            8.
+            CREATE TABLE Products (
+                ProductID INT PRIMARY KEY,
+                Price FLOAT,
+                CONSTRAINT FK_Price_Products_Prices FOREIGN KEY (Price) REFERENCES Prices(Price)
+            )
+
+            9.
+            CREATE TABLE Products (
+                ProductID INT PRIMARY KEY,
+                Price FLOAT DEFAULT 1.0 NULL CHECK (Price > 0) UNIQUE
+            )
         """
         super().__init__()
         self.__name = ""
