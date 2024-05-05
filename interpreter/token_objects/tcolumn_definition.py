@@ -1,8 +1,6 @@
 from .tobj import TObj
-from .tinline_primary_key import TInlinePrimaryKey
-
 from ..token_classification import TokenType
-from ..leaf_objects import PrimaryKey
+from .tcolumn_constraint_definition import TColumnConstraintDefinition
 
 
 class TColumnDefinition(TObj):
@@ -16,31 +14,12 @@ class TColumnDefinition(TObj):
         self.__col_name = tokens.consume_of_type(TokenType.IDENTIFIER)
         self.__data_type = tokens.consume_of_type(TokenType.DATATYPE)
 
-        while tokens.peek() not in (",", ")"):
-            constraint = None
-            match tokens.expect_type(TokenType.KEYWORD):
-                case "check":
-                    pass
-                case "constraint":
-                    pass
-                case "default":
-                    pass
-                case "foreign":
-                    pass
-                case "not":
-                    pass
-                case "null":
-                    pass
-                case "primary":
-                    tokens.consume_group(TInlinePrimaryKey())
-                    constraint = PrimaryKey()
-                case "unique":
-                    pass
-                case _:
-                    raise SyntaxError(f"Unexpected token at {tokens.peek()}")
-            self.__col_constraints.append(constraint)
-
-        tokens.increment_cursor()
+        try:
+            while tokens.peek() not in (",", ")"):
+                coL_constr_def = tokens.consume_group(TColumnConstraintDefinition())
+                self.__col_constraints.append(coL_constr_def)
+        except IndexError:
+            raise SyntaxError("Unexpected end of command. Expected ',' or ')'")
 
     def get_name(self):
         return self.__col_name
@@ -48,5 +27,5 @@ class TColumnDefinition(TObj):
     def get_data_type(self):
         return self.__data_type
 
-    def get_constraints(self):
+    def get_col_constraints(self):
         return self.__col_constraints

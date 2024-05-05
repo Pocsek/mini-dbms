@@ -1,8 +1,8 @@
 from dbmanager import DbManager
 from interpreter.tree_objects.custom_tree import CustomTree
 from interpreter.tree_objects.executable_tree import ExecutableTree
-from interpreter.leaf_objects.char_const import CharConst
 from interpreter.tree_objects.table_constraint_definition import TableConstraintDefinition
+from .column_definition import ColumnDefinition
 from database_objects import Table, Column
 
 
@@ -92,13 +92,9 @@ class CreateTable(ExecutableTree):
         """
         Update the json structure with the new table.
         """
-
-        columns = Column()
-        for col_def in self.__col_defs:
-            pass
-
-
-
+        # columns = Column()
+        # for col_def in self.__col_defs:
+        #     pass
 
     def connect_nodes_to_root(self):
         pass
@@ -118,7 +114,7 @@ class CreateTable(ExecutableTree):
     def get_constraint_definitions(self):
         return self.__table_constr_defs
 
-    def add_column_definition(self, col_def):
+    def add_column_definition(self, col_def: ColumnDefinition):
         self.__col_defs.append(col_def)
 
     def add_table_constraint_definition(self, constr_def):

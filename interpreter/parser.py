@@ -100,31 +100,19 @@ class Parser:
             tok_type = token_list.peek_type()
             match tok_type:
                 case TokenType.IDENTIFIER:
+                    # A column definition is expected
                     tcol_def = token_list.consume_group(TColumnDefinition())
-                    col_def = ColumnDefinition(tcol_def.get_name(), tcol_def.get_data_type(), tcol_def.get_constraints())
+                    col_def = ColumnDefinition(tcol_def)
                     tree.add_column_definition(col_def)
                 case TokenType.KEYWORD:
-                    # handle constraint definition
-                    tconstr_def = token_list.consume_group(TConstraintDefinition())
+                    # A table constraint definition is expected
+                    # tconstr_def = token_list.consume_group(TTableConstraintDefinition())
                     # constr_def = ConstraintDefinition(...)
                     # tree.add_constraint_definition(constr_def)
                     pass
-
-            # # parsing was successful -> add new nodes to the tree
-            # if token_list.peek() in (",", ")"):
-            #     col_def.finalize()
-            #     tree.add_column_definition(col_def)
-            #     token_list.increment_cursor()
-            # except SyntaxError:
-            #     passed = False
-
-            # look for a constraint definition
-            # if not passed:
-            #     token_list.consume_concrete("constraint")
-            #     constr_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-            #     token_list.consume_of_type(TokenType.SECONDARY_KEYWORD)
-
-            # token_list.consume(TokenType.SEPARATOR, ",")
+                case _:
+                    # end of definition or end of command expected
+                    token_list.consume_either([",", ")"])
 
         tree.finalize()
         return tree
