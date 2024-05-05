@@ -25,9 +25,16 @@ class InsertInto(ExecutableTree):
         dbm.insert(db, table, records)
 
     def validate(self, dbm: DbManager = None, mongo_client=None):
-        # check if all column names are valid
+        """
+        In the future it should be dependent on constraints, and type validation.
+
+        For example:
+        - identity
+        - primary key
+        - default
+        -etc.
+        """
         # check if all values are valid
-        # check if the number of values is equal to the number of column names
         # if identity is set the column can't be inserted -> won't be implemented in the first version
         db_idx = dbm.get_working_db_index()
         table_idx = dbm.find_table(db_idx, self.__table_name)
@@ -40,7 +47,7 @@ class InsertInto(ExecutableTree):
         else:
             # if column names are not specified, use the existing column names
             self.__column_names = existing_column_names
-        self.__validate_values()
+        self.__validate_values()  # validate the values
 
     def connect_nodes_to_root(self):
         pass
@@ -67,10 +74,26 @@ class InsertInto(ExecutableTree):
         return self.__values
 
     def __validate_column_names(self, existing_column_names: list[str]):
-        pass
+        """
+        Check if all column names are valid and not repeated.
+        """
+        for col_name in self.__column_names:
+            if col_name not in existing_column_names:
+                raise ValueError(f"Column [{col_name}] does not exist in the table.")
+            if self.__column_names.count(col_name) > 1:
+                raise ValueError(f"Column [{col_name}] is repeated.")
 
     def __validate_values(self):
-        pass
+        """
+        Check if all values are valid and the number of values is equal to the number of column names.
+
+        !Currently, type validation is not implemented!
+        """
+        required_nr_values = len(self.__column_names)
+        for value in self.__values:
+            if len(value) != required_nr_values:
+                raise ValueError(f"Expected {required_nr_values} values, found {len(value)}.")
+            # check if the types are correct
 
     def __make_records(self) -> list[dict]:
         """
