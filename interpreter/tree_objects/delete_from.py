@@ -43,6 +43,8 @@ class DeleteFrom(ExecutableTree):
                 raise ValueError(f"Column [{col}] does not exist in the table [{self.__table_name}].")
         # check if the condition refers to only the primary key
         pr = tb.get_primary_key()
+        if not pr:
+            raise ValueError(f"Table [{self.__table_name}] has no primary key.")
         pr_column_names = pr.get_column_names()
         for col in self.__condition.keys():
             if col not in pr_column_names:
