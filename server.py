@@ -44,7 +44,7 @@ def respond_to_client(client_socket: socket, commands: str):
         ex.execute(ps.get_ast_list())
     except Exception as e:
         response = f"Error: {e.__str__()}"
-        # traceback.print_exc()  # only for debugging, if error traceback is needed
+        traceback.print_exc()  # only for debugging, if error traceback is needed
         print("Error: " + e.__str__())  # this should be logged in a file in the future
         log("Error: " + e.__str__())
         # if the database was modified, load the last stable state

@@ -197,4 +197,25 @@ class Parser:
         pass
 
     def __parse_delete(self, token_list: TokenList):
-        pass
+        # Example use: delete from table_name where condition
+        token_list.consume_concrete("from")  # consume the 'from' keyword
+        table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+        token_list.consume_concrete("where")
+        column_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+        token_list.consume_concrete("=")
+        tok_type = token_list.peek_type()
+        value = token_list.peek()
+        if tok_type == TokenType.NUM_CONST:
+            value = token_list.consume_of_type(TokenType.NUM_CONST)
+        elif tok_type == TokenType.CHAR_CONST:
+            value = token_list.consume_of_type(TokenType.CHAR_CONST)
+        else:
+            raise SyntaxError(f"Unexpected token at {value}")
+
+        tree = DeleteFrom()
+        tree.set_table_name(str(table_name))
+        tree.set_condition({str(column_name): value})
+        tree.finalize()
+        return tree
+
+
