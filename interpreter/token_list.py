@@ -81,6 +81,16 @@ class TokenList:
         consumer.consume(self)
         return consumer
 
-
-
+    def consume_either(self, target_token_list):
+        """
+        Attempts to consume a token from the token list. If the token is not in the target token list, raises an
+        exception.
+        """
+        cur_token = ""
+        for target_token in target_token_list:
+            cur_token = self.peek()
+            if cur_token == target_token:
+                self.increment_cursor()
+                return
+        raise SyntaxError(f"Expected one of {target_token_list}, found {cur_token}")
 
