@@ -14,3 +14,9 @@ class Identity(CObj):
         """
         pass
 
+    def get_seed(self):
+        return None
+
+    def get_increment(self):
+        return None
+

@@ -30,7 +30,7 @@ class TColumnConstraintDefinition(TObj):
                 # CONSTRAINT constraint_name
                 token_list.consume_concrete("constraint")
                 self.__constr_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-                self.consume(token_list)
+                self.consume(token_list)  # continuation in other cases
             case "default":
                 # DEFAULT value
                 token_list.consume_concrete("default")
@@ -42,38 +42,7 @@ class TColumnConstraintDefinition(TObj):
                 # FOREIGN KEY REFERENCES ref_table_name (ref_col_name)
                 token_list.consume_concrete("foreign")
                 token_list.consume_concrete("key")
-                token_list.consume_concrete("references")
-                self.__ref_table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-                token_list.consume_concrete("(")
-                self.__ref_col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-                token_list.consume_concrete(")")
-
-                if token_list.peek() == "on":
-                    token_list.consume_concrete("on")
-                    operation_type = token_list.consume_either(["delete", "update"])  # DELETE or UPDATE
-
-                    # temporary solution:
-                    behavior_first = token_list.consume_either(["no", "cascade", "set"])
-                    match behavior_first:
-                        case "no":
-                            token_list.consume_concrete("action")
-                            # To-do
-                        case "cascade":
-                            # To-do
-                            pass
-                        case "set":
-                            behavior_second = token_list.consume_either(["null", "default"])
-                            if behavior_second == "null":
-                                # To-do
-                                pass
-                            else:
-                                # To-do
-                                pass
-                    # To-do:
-                    # - add keywords NO ACTION, CASCADE, SET NULL, SET DEFAULT to token_classification.py
-
-                # To-do: Implement ForeignKey class
-                # self.__constr_type = ForeignKey()
+                self.consume(token_list)  # continuation in "references" case
             case "not":
                 token_list.consume_concrete("not")
                 token_list.consume_concrete("null")
@@ -99,6 +68,30 @@ class TColumnConstraintDefinition(TObj):
                 token_list.consume_concrete("(")
                 self.__ref_col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
                 token_list.consume_concrete(")")
+
+                if token_list.peek() == "on":
+                    token_list.consume_concrete("on")
+                    operation_type = token_list.consume_either(["delete", "update"])  # DELETE or UPDATE
+
+                    # To-do:
+                    # - add keywords NO ACTION, CASCADE, SET NULL, SET DEFAULT to token_classification.py
+                    # -> temporary solution:
+                    behavior_first = token_list.consume_either(["no", "cascade", "set"])
+                    match behavior_first:
+                        case "no":
+                            token_list.consume_concrete("action")
+                            # To-do
+                        case "cascade":
+                            # To-do
+                            pass
+                        case "set":
+                            behavior_second = token_list.consume_either(["null", "default"])
+                            if behavior_second == "null":
+                                # To-do
+                                pass
+                            else:
+                                # To-do
+                                pass
 
                 # To-do: Implement ForeignKey class
                 # self.__constr_type = ForeignKey()

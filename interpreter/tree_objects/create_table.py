@@ -92,9 +92,22 @@ class CreateTable(ExecutableTree):
         """
         Update the json structure with the new table.
         """
-        # columns = Column()
-        # for col_def in self.__col_defs:
-        #     pass
+        columns = []
+        for col_def in self.__col_defs:
+            identity_seed, identity_increment = col_def.get_identity_values()
+
+            columns.append(Column(
+                col_def.get_name(),
+                col_def.get_datatype(),
+                col_def.is_allow_nulls(),
+                identity_seed is not None,
+                identity_seed,
+                identity_increment
+            ))
+
+        dbm.get_working_db().add_table(Table(self.__name, columns))
+        dbm.update_databases()
+        print(f"Table '{self.__name}' in database '{dbm.get_working_db().get_name()}' created successfully.")
 
     def connect_nodes_to_root(self):
         pass

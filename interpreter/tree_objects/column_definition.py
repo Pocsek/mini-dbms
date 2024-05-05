@@ -1,7 +1,7 @@
-"""NOT IMPLEMENTED"""
 from dbmanager import DbManager
 from .custom_tree import CustomTree
 from ..token_objects.tcolumn_definition import TColumnDefinition
+from ..constraint_objects import *
 
 
 class ColumnDefinition(CustomTree):
@@ -9,7 +9,7 @@ class ColumnDefinition(CustomTree):
         super().__init__()
         self.__name = tcol_def.get_name()
         self.__datatype = tcol_def.get_data_type()
-        self.__col_constraints = tcol_def.get_col_constraints()  # a list of Constraint objects
+        self.__col_constraints = tcol_def.get_col_constraints()  # a list of CObj (constraint) objects
 
     def validate(self, dbm: DbManager = None, mongo_client=None):
         """
@@ -22,3 +22,23 @@ class ColumnDefinition(CustomTree):
 
     def connect_subtrees_to_root(self):
         pass
+
+    def get_name(self):
+        return self.__name
+
+    def get_datatype(self):
+        return self.__datatype
+
+    def is_allow_nulls(self):
+        for col_constraint in self.__col_constraints:
+            if isinstance(col_constraint, Null):
+                return True
+            elif isinstance(col_constraint, NotNull):
+                return False
+        return True
+
+    def get_identity_values(self):
+        for col_constraint in self.__col_constraints:
+            if isinstance(col_constraint, Identity):
+                return col_constraint.get_seed(), col_constraint.get_increment()
+        return None, None

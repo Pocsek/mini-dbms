@@ -102,8 +102,7 @@ class Parser:
                 case TokenType.IDENTIFIER:
                     # A column definition is expected
                     tcol_def = token_list.consume_group(TColumnDefinition())
-                    col_def = ColumnDefinition(tcol_def)
-                    tree.add_column_definition(col_def)
+                    tree.add_column_definition(ColumnDefinition(tcol_def))
                 case TokenType.KEYWORD:
                     # A table constraint definition is expected
                     # tconstr_def = token_list.consume_group(TTableConstraintDefinition())

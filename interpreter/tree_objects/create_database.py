@@ -22,6 +22,7 @@ class CreateDatabase(ExecutableTree):
         new_db = Database(self.__db_name.get_value())
         dbm.add_database(new_db)
         dbm.update_databases()
+        print(f"Database '{self.__db_name.get_value()}' created successfully.")
 
     def connect_nodes_to_root(self):
         self.add_node(self.__db_name, self.root)
