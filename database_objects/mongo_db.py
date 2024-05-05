@@ -57,7 +57,7 @@ def insert_one(db_name: str, collection_name: str, key_value_pair: tuple[str, st
 
 def delete(db_name: str, collection_name: str, query: dict) -> int:
     """
-    Delete a document from a collection, without any validation.
+    Deletes documents from a collection, without any validation.
     Returns the number of deleted documents.
     """
     with pymongo.MongoClient(str(_MongoHost())) as client:
