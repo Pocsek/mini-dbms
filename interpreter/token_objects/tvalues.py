@@ -3,6 +3,7 @@ from ..token_classification import TokenType
 from ..token_list import TokenList
 from ..tokenizer import Tokenizer
 
+
 class TValues(TObj):
     """
     Consumes a list of values between parentheses. Includes the parentheses.
@@ -30,10 +31,6 @@ class TValues(TObj):
             else:
                 raise SyntaxError("Unexpected end of command. Expected ')' or ','")
         self.set_length(len(self.__values) + 2)
-        return token_list.get_cursor(), self
-
-
-
 
     def get_length(self):
         return super().get_length()

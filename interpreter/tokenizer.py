@@ -72,8 +72,11 @@ class Tokenizer:
             return TokenType.BINARY_OPERATOR
         if token.isdigit():
             return TokenType.NUM_CONST
+
+        # not sure if this is correct
         if token.startswith("\"") or token.startswith("'") or token.endswith("\"") or token.endswith("'"):
             return TokenType.CHAR_CONST
+
         return TokenType.IDENTIFIER
 
 

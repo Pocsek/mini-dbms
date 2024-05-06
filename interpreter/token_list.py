@@ -1,5 +1,6 @@
 from .token_classification import TokenType
 from .tokenizer import Tokenizer
+from .token_objects.tobj import TObj
 
 
 class TokenList:
@@ -62,21 +63,21 @@ class TokenList:
 
     def consume_concrete(self, target_token):
         """
-        Returns the token at the cursor from the token list and increments the cursor if the token matches the
-        target token, else raises an exception.
+        Returns the target token and increments the cursor if the target token matches the token at the cursor,
+        else raises an exception.
         """
         if not self.has_next():
             raise SyntaxError(f"Unexpected end of command. Expected '{target_token}'")
 
         self.expect_concrete(target_token)
         self.increment_cursor()
+        return target_token
 
-    def consume_group(self, consumer):
+    def consume_group(self, consumer: TObj):
         """
-        Process a given type of token and move the cursor the needed amount.
-        :param consumer: a token to be consumed (a token object instance)
-        :return: <the new position of the cursor>, <an object of the same type as 'consumer' with its fields set
-        respectively>
+        Process a given type of TObj.
+        :param consumer: a group of tokens to be consumed (TObj)
+        :return: the modified consumer
         """
         consumer.consume(self)
         return consumer
@@ -85,12 +86,13 @@ class TokenList:
         """
         Attempts to consume a token from the token list. If the token is not in the target token list, raises an
         exception.
+        :return: the consumed token (if successful)
         """
         cur_token = ""
         for target_token in target_token_list:
             cur_token = self.peek()
             if cur_token == target_token:
                 self.increment_cursor()
-                return
+                return cur_token
         raise SyntaxError(f"Expected one of {target_token_list}, found {cur_token}")
 
