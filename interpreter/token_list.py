@@ -1,6 +1,5 @@
 from .token_classification import TokenType
 from .tokenizer import Tokenizer
-from .token_objects.tobj import TObj
 
 
 class TokenList:
@@ -73,10 +72,10 @@ class TokenList:
         self.increment_cursor()
         return target_token
 
-    def consume_group(self, consumer: TObj):
+    def consume_group(self, consumer):
         """
-        Process a given type of TObj.
-        :param consumer: a group of tokens to be consumed (TObj)
+        Process a group of tokens defined by a TObj.
+        :param consumer: a subclass of TObj
         :return: the modified consumer
         """
         consumer.consume(self)

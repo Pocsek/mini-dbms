@@ -30,13 +30,6 @@ class TValues(TObj):
                     token_list.consume_concrete(",")
             else:
                 raise SyntaxError("Unexpected end of command. Expected ')' or ','")
-        self.set_length(len(self.__values) + 2)
-
-    def get_length(self):
-        return super().get_length()
-
-    def set_length(self, value):
-        super().set_length(value)
 
     def get_values(self):
         return self.__values
