@@ -6,9 +6,15 @@ from .token_classification import *
 
 class Tokenizer:
     @classmethod
-    # takes a string of SQL commands and turns it into a list of strings where each keyword, operator, separator, etc. is a
-    # different list element -> this is an essential step to take before starting to interpret the commands
     def tokenize(cls, commands_string) -> list[str]:
+        """
+        Takes a string of SQL commands and turns it into a list of strings.
+        Each keyword, operator, separator, number will be a different list element except for strings between quotes.
+        Strings between quotes will be a single list element.
+        :param commands_string: string of SQL commands
+        :return: list of tokens (strings)
+        """
+
         tokenized = re.sub(r"([(),;])", r" \1 ", commands_string)  # put space around parentheses, separators
         tokenized = sqlparse.format(
             tokenized,
@@ -21,6 +27,34 @@ class Tokenizer:
         tokenized = re.sub(" +", " ", tokenized)  # remove extra spaces
         tokenized = tokenized.strip()  # remove possible trailing space
         tokenized = tokenized.split(" ")  # split by spaces
+
+        # join strings between quotes
+        i = 0
+        while i < len(tokenized):
+            if len(tokenized[i]) > 1 and (
+                    (tokenized[i].startswith("\"") and
+                     tokenized[i].endswith("\"")) or
+                    (tokenized[i].startswith("'") and
+                     tokenized[i].endswith("'"))
+            ):
+                # if token starts and ends with the same quote, then skip token
+                # length of token is checked to handle cases when token is just a quote
+                i += 1
+                continue
+            if tokenized[i].startswith("\"") or tokenized[i].startswith("'"):
+                # if token starts with a quote
+                j = i + 1
+                while j < len(tokenized) and not tokenized[j].endswith("\"") and not tokenized[j].endswith("'"):
+                    # find the end of the string
+                    j += 1
+
+                # 1. Take all the tokens from the start to the end of the string (from `i` to `j + 1'),
+                #   join them together with spaces in between, and put the resulting string inside a list.
+                #   -> if not put inside a list, every character will become a separate token
+                # 2. Replace the original tokens representing the string (from `i` to `j + 1`) in the
+                #   `tokenized` list with the new single token representing the entire string.
+                tokenized[i:j + 1] = [" ".join(tokenized[i:j + 1])]
+            i += 1
 
         # cast datatypes to lowercase
         for i, val in enumerate(tokenized):
@@ -73,10 +107,15 @@ class Tokenizer:
         if token.isdigit():
             return TokenType.NUM_CONST
 
-        # not sure if this is correct
-        if token.startswith("\"") or token.startswith("'") or token.endswith("\"") or token.endswith("'"):
+        # a valid string must start and end with the same quote
+        if (token.startswith("\"") and token.endswith("\"")) or (token.startswith("'") and token.endswith("'")):
             return TokenType.CHAR_CONST
 
+        # if the previous if statement proved to be false and the token starts or ends with a quote, raise an error
+        if token.startswith("\"") or token.startswith("'") or token.endswith("\"") or token.endswith("'"):
+            raise SyntaxError(f"Incorrectly put string quotes at: {token}")
+
+        # if the token is not any of the above, it must be an identifier
         return TokenType.IDENTIFIER
 
 
