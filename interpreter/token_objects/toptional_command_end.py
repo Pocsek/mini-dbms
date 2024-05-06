@@ -11,4 +11,3 @@ class TOptionalCommandEnd(TObj):
             tokens.consume_concrete(";")
         except SyntaxError:
             pass
-        return tokens.get_cursor(), self
