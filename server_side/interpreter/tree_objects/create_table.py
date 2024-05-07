@@ -1,6 +1,7 @@
 from server_side.dbmanager import DbManager
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
 from server_side.database_objects import Table, Column
+from server_side.interpreter.tree_objects.column_definition import ColumnDefinition
 
 
 class CreateTable(ExecutableTree):

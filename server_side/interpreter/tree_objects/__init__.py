@@ -3,8 +3,6 @@ from .create_table import CreateTable
 from .drop_table import DropTable
 from .custom_tree import CustomTree
 from .executable_tree import ExecutableTree
-from .column_constraint_definition import ColumnConstraintDefinition
-from .table_constraint_definition import TableConstraintDefinition
 from .use import Use
 from .create_database import CreateDatabase
 from .drop_database import DropDatabase
