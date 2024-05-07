@@ -3,8 +3,9 @@ from threading import Thread
 from datetime import datetime
 import traceback
 
-from dbmanager import *
-from interpreter import *
+from server_side.dbmanager import *
+from server_side.interpreter import *
+from server_side import __working_dir__
 
 
 stop_threads = False
@@ -17,7 +18,8 @@ ex = Executor(dbm)
 
 def log(message: str):
     filename = "logfile.txt"
-    f = open(filename, "a")
+    f_path = os.path.join(__working_dir__, filename)
+    f = open(f_path, "a")
     time = datetime.now()
     f.write(str(time) + " -- " + message + '\n')
     f.close()
@@ -44,7 +46,7 @@ def respond_to_client(client_socket: socket, commands: str):
         ex.execute(ps.get_ast_list())
     except Exception as e:
         response = f"Error: {e.__str__()}"
-        # traceback.print_exc()  # only for debugging, if error traceback is needed
+        traceback.print_exc()  # only for debugging, if error traceback is needed
         print("Error: " + e.__str__())  # this should be logged in a file in the future
         log("Error: " + e.__str__())
         # if the database was modified, load the last stable state
