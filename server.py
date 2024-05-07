@@ -5,6 +5,7 @@ import traceback
 
 from server_side.dbmanager import *
 from server_side.interpreter import *
+from server_side import __working_dir__
 
 
 stop_threads = False
@@ -16,8 +17,9 @@ ex = Executor(dbm)
 
 
 def log(message: str):
-    filename = "../logfile.txt"
-    f = open(filename, "a")
+    filename = "logfile.txt"
+    f_path = os.path.join(__working_dir__, filename)
+    f = open(f_path, "a")
     time = datetime.now()
     f.write(str(time) + " -- " + message + '\n')
     f.close()

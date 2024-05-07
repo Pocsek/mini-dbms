@@ -1,27 +1,32 @@
 import json
 import os
+
 from server_side.database_objects import Database, Table, Column, Index, PrimaryKey, mongo_db
+from server_side import __working_dir__
+
 
 
 class DbManager:
     __dbs: list[Database] = []
     __working_db = 0  # the index of the database we're currently using
+    # the file where the database sceleton is stored:
+    __db_file: str = os.path.join(__working_dir__, "databases.json")
 
     def __init__(self):
         self.load_databases()
 
     def load_databases(self):
-        if os.path.exists("databases.json"):
-            with open("databases.json", "r") as f:
+        if os.path.exists(self.__db_file):
+            with open(self.__db_file, "r") as f:
                 data: list[dict] = json.load(f)  # decode (JSON -> python dict)
                 self.__dbs = [Database().from_dict(db) for db in data]
         else:
-            with open("databases.json", "w") as f:
+            with open(self.__db_file, "w") as f:
                 self.__dbs = create_default_databases()
                 json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
     def update_databases(self):
-        with open("databases.json", "w") as f:
+        with open(self.__db_file, "w") as f:
             json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
     # cannot really sync databases with mongoDB, because mongoDB doesn't create the database until a collection is created
