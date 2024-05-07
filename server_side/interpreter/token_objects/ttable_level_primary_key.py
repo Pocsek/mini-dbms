@@ -1,4 +1,4 @@
-from .tobj import TObj
+from server_side.interpreter.token_objects.tobj import TObj
 from server_side.interpreter.token_list import TokenList
 
 
