@@ -52,3 +52,6 @@ class DatabaseStructure:
 
     def get_working_db_index(self) -> int:
         return self.__working_db
+
+    def get_table_names(self, db_idx: int) -> list[str]:
+        return self.__databases[db_idx].get_table_names()

@@ -74,21 +74,21 @@ def handle_client(client_socket, addr):
                 client_socket.close()
                 log("Socket closed" + str(addr))
                 return
-            case "show databases":
-                # return the names of the databases separated by a space
-                databases: list[str] = dbm.get_database_names()
-                response: str = " ".join(databases)
-                client_socket.send(len(response).to_bytes(4, byteorder='big'))
-                client_socket.sendall(str.encode(response))
-                continue
-            case "show tables":
-                # return the names of the tables in the working database separated by a space
-                tables: list[str] = dbm.get_table_names(dbm.get_working_db_index())
-                response: str = " ".join(tables)
-                print(response)
-                client_socket.send(len(response).to_bytes(4, byteorder='big'))
-                client_socket.sendall(str.encode(response))
-                continue
+            # case "show databases":
+            #     # return the names of the databases separated by a space
+            #     databases: list[str] = dbm.get_database_names()
+            #     response: str = " ".join(databases)
+            #     client_socket.send(len(response).to_bytes(4, byteorder='big'))
+            #     client_socket.sendall(str.encode(response))
+            #     continue
+            # case "show tables":
+            #     # return the names of the tables in the working database separated by a space
+            #     tables: list[str] = dbm.get_table_names(dbm.get_working_db_index())
+            #     response: str = " ".join(tables)
+            #     print(response)
+            #     client_socket.send(len(response).to_bytes(4, byteorder='big'))
+            #     client_socket.sendall(str.encode(response))
+            #     continue
             case "~show structure~":
                 structure: dict = dbm.__dict__()
                 json_structure: str = json.dumps(structure, indent=4)
