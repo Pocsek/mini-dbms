@@ -44,6 +44,7 @@ def respond_to_client(client_socket: socket, commands: str):
     try:
         ps.parse(commands)
         ex.execute(ps.get_ast_list())
+
     except Exception as e:
         response = f"Error: {e.__str__()}"
         traceback.print_exc()  # only for debugging, if error traceback is needed
@@ -63,14 +64,37 @@ def handle_client(client_socket, addr):
     Handles the client connection and the commands received from the client socket. It will keep the connection open
     until the client sends the "exit" command.
     """
+    global dbm
     while True:
         command_length: int = int.from_bytes(client_socket.recv(4), byteorder="big")
         commands: str = client_socket.recv(command_length).decode()
         log("Received commands:\n" + commands + "----end of commands")
-        if commands == "exit":
-            client_socket.close()
-            log("Socket closed" + str(addr))
-            return
+        match commands:
+            case "exit":
+                client_socket.close()
+                log("Socket closed" + str(addr))
+                return
+            # case "show databases":
+            #     # return the names of the databases separated by a space
+            #     databases: list[str] = dbm.get_database_names()
+            #     response: str = " ".join(databases)
+            #     client_socket.send(len(response).to_bytes(4, byteorder='big'))
+            #     client_socket.sendall(str.encode(response))
+            #     continue
+            # case "show tables":
+            #     # return the names of the tables in the working database separated by a space
+            #     tables: list[str] = dbm.get_table_names(dbm.get_working_db_index())
+            #     response: str = " ".join(tables)
+            #     print(response)
+            #     client_socket.send(len(response).to_bytes(4, byteorder='big'))
+            #     client_socket.sendall(str.encode(response))
+            #     continue
+            case "~show structure~":
+                structure: dict = dbm.__dict__()
+                json_structure: str = json.dumps(structure, indent=4)
+                client_socket.send(len(json_structure).to_bytes(4, byteorder='big'))
+                client_socket.sendall(str.encode(json_structure))
+                continue
         respond_to_client(client_socket, commands)
 
 

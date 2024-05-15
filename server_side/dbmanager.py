@@ -15,6 +15,12 @@ class DbManager:
     def __init__(self):
         self.load_databases()
 
+    def __dict__(self) -> dict:
+        return {
+            "databases": [db.__dict__() for db in self.__dbs],
+            "working_db": self.__working_db
+        }
+
     def load_databases(self):
         if os.path.exists(self.__db_file):
             with open(self.__db_file, "r") as f:
@@ -71,6 +77,9 @@ class DbManager:
             if tb.get_name() == table_name:
                 return idx
         return -1
+
+    def get_database_names(self) -> list[str]:
+        return [db.get_name() for db in self.get_databases()]
 
     def get_table_names(self, db_idx) -> list[str]:
         return [tb.get_name() for tb in self.get_databases()[db_idx].get_tables()]

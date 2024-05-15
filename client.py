@@ -1,4 +1,11 @@
-from socket import socket, AF_INET, SOCK_STREAM
+import json
+
+from client_side.server_connection import ServerConnection
+from client_side.database_structure import DatabaseStructure
+from client_side.tab_completer import TabCompleter
+
+CLI_COMMANDS = ["show databases", "show tables"]  # client-side commands
+FORBIDDEN_COMMANDS = ["~show structure~"]  # commands that are not allowed to be sent by the client
 
 
 def get_user_input() -> (str, bool):
@@ -12,26 +19,64 @@ def get_user_input() -> (str, bool):
                 return commands[:-1], True  # return commands string without trailing newline character
             case "exit":
                 return "exit", False
+
+        if command.lower() in CLI_COMMANDS + FORBIDDEN_COMMANDS:
+            # if the command is a CLI or a FORBIDDEN command, return it immediately
+            return command, True
+
         # the exit and go commands won't make it into the commands string
         if command != "":
             commands += command + "\n"
 
 
+def get_database_structure(s: ServerConnection) -> DatabaseStructure:
+    s.send("~show structure~")
+    response = s.receive()
+    structure: dict = json.loads(response)
+    ds = DatabaseStructure()
+    ds.from_dict(structure)
+    return ds
+
+
+def set_tab_completer(tab_completer: TabCompleter, ds: DatabaseStructure) -> TabCompleter:
+    tab_completer.set_database_names(ds.get_database_names())
+    tab_completer.set_table_names(ds.get_table_names(ds.get_working_db_index()))
+    return tab_completer
+
+
+def execute_cli_command(command: str, ds: DatabaseStructure):
+    match command.lower():
+        case "show databases":
+            print("Databases: ", " ".join(ds.get_database_names()))
+        case "show tables":
+            print("Tables: ", " ".join(ds.get_table_names(ds.get_working_db_index())))
+
+
 def main():
-    s = socket(AF_INET, SOCK_STREAM)
     host = 'localhost'
     port = 12345
-    s.connect((host, port))
+    try:
+        s = ServerConnection(host, port)
+    except ConnectionRefusedError:
+        print("The server is not running.")
+        return
     try:
         while True:
+            ds = get_database_structure(s)
+            tab_completer = set_tab_completer(TabCompleter(), ds)
+            # print(ds.get_database_names(), ds.get_working_db_index())
             commands, keep_running = get_user_input()
             command_length: int = len(commands)
             if command_length != 0:
-                s.sendall(command_length.to_bytes(4, byteorder="big"))  # send buffer size
-                s.sendall(commands.encode())  # send commands
+                if commands in CLI_COMMANDS:
+                    execute_cli_command(commands, ds)
+                    continue
+                if commands in FORBIDDEN_COMMANDS:
+                    print("This command is not allowed.")
+                    continue
+                s.send(commands)
                 if keep_running:
-                    response_length: int = int.from_bytes(s.recv(4), byteorder="big")
-                    response = s.recv(response_length).decode()
+                    response = s.receive()
                     print(response)
                 else:
                     s.close()
