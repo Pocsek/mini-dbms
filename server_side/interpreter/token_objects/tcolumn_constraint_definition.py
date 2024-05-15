@@ -1,4 +1,4 @@
-from .tobj import TObj
+from server_side.interpreter.token_objects.tobj import TObj
 from server_side.interpreter.token_list import TokenList
 from server_side.interpreter.token_classification import TokenType
 from server_side.interpreter.token_objects.tlogical_expression import TLogicalExpression
@@ -8,10 +8,10 @@ from server_side.interpreter.constraint_objects import *
 
 class TColumnConstraintDefinition(TObj):
     """[CONSTRAINT constraint_name] constraint_type ( constraint_args )"""
-    def __init__(self):
+    def __init__(self, src_col_name=None):
         self.__constr_name = None
-        self.__constr_type = CObj()
-        self.__src_col_name = None
+        self.__constr_type: CObj | None = None
+        self.__src_col_name = src_col_name if src_col_name is not None else None
         self.__ref_table_name = None
         self.__ref_col_name = None
 
@@ -58,9 +58,7 @@ class TColumnConstraintDefinition(TObj):
             case "primary":
                 token_list.consume_concrete("primary")
                 token_list.consume_concrete("key")
-
-                # To-do: Implement PrimaryKey class
-                # self.__constr_type = PrimaryKey()
+                self.__constr_type = PrimaryKey([self.__src_col_name])
             case "references":
                 # REFERENCES ref_table_name (ref_col_name)
                 token_list.consume_concrete("references")
@@ -102,3 +100,18 @@ class TColumnConstraintDefinition(TObj):
                 # self.__constr_type = Unique()
             case _:
                 raise SyntaxError(f"Unexpected token at {token_list.peek()}")
+
+    def get_constraint_name(self):
+        return self.__constr_name
+
+    def get_constraint_type(self):
+        return self.__constr_type
+
+    def get_source_column_name(self):
+        return self.__src_col_name
+
+    def get_referenced_table_name(self):
+        return self.__ref_table_name
+
+    def get_referenced_column_name(self):
+        return self.__ref_col_name

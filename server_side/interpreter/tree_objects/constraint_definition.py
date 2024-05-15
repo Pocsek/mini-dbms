@@ -1,18 +1,20 @@
 """NOT IMPLEMENTED"""
 
 from server_side.dbmanager import DbManager
-from server_side.interpreter.tree_objects.constraint_definition import ConstraintDefinition
 from server_side.interpreter.tree_objects.custom_tree import CustomTree
-from server_side.interpreter.token_objects.tcolumn_definition import TColumnDefinition
+from server_side.interpreter.token_objects.tcolumn_constraint_definition import TColumnConstraintDefinition
 from server_side.interpreter.constraint_objects import *
 
 
-class ColumnDefinition(CustomTree):
-    def __init__(self, tcol_def: TColumnDefinition):
+class ConstraintDefinition(CustomTree):
+    def __init__(self, tcol_constr_def: TColumnConstraintDefinition = None):
         super().__init__()
-        self.__name = tcol_def.get_name()
-        self.__datatype = tcol_def.get_data_type()
-        self.__col_constraints: list[ConstraintDefinition] = tcol_def.get_col_constraints()
+        if tcol_constr_def is not None:
+            self.__constr_name = tcol_constr_def.get_constraint_name()
+            self.__constr_type = tcol_constr_def.get_constraint_type()
+            self.__src_col_name = tcol_constr_def.get_source_column_name()
+            self.__ref_table_name = tcol_constr_def.get_referenced_table_name()
+            self.__ref_col_names = [tcol_constr_def.get_referenced_column_name()]
 
     def validate(self, dbm: DbManager = None, mongo_client=None):
         """
@@ -48,3 +50,18 @@ class ColumnDefinition(CustomTree):
             if isinstance(col_constraint, Identity):
                 return col_constraint.get_seed(), col_constraint.get_increment()
         return None, None
+
+    def get_constraint_name(self):
+        return self.__constr_name
+
+    def get_constraint_type(self):
+        return self.__constr_type
+
+    def get_source_column_name(self):
+        return self.__src_col_name
+
+    def get_referenced_table_name(self):
+        return self.__ref_table_name
+
+    def get_referenced_column_names(self):
+        return self.__ref_col_names

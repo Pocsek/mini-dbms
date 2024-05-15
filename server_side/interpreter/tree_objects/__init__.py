@@ -1,4 +1,5 @@
 from .column_definition import ColumnDefinition
+from .constraint_definition import ConstraintDefinition
 from .create_table import CreateTable
 from .drop_table import DropTable
 from .custom_tree import CustomTree

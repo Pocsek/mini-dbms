@@ -77,7 +77,7 @@ class CreateTable(ExecutableTree):
         """
         super().__init__()
         self.__name = ""
-        self.__col_defs = []
+        self.__col_defs: list[ColumnDefinition] = []
         self.__table_constr_defs = []
 
     def validate(self, dbm: DbManager = None, mongo_client=None):
