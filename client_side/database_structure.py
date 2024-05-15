@@ -11,6 +11,7 @@ class DatabaseStructure:
      tables and columns from the client side.
     """
     __databases: list[Database] = list()
+    __working_db: int = 0  # the index of the database we're currently using
 
     def __init__(self, databases: list[Database] | None = None):
         if databases is None:
@@ -29,9 +30,9 @@ class DatabaseStructure:
         response: str = connection.receive()
         self.from_dict(json.loads(response))
 
-
-    def from_dict(self, data: dict):
+    def from_dict(self, data: dict) -> 'DatabaseStructure':
         self.__databases = [Database().from_dict(database) for database in data.get("databases", [])]
+        self.__working_db = data.get("working_db", 0)
         return self
 
     def get_databases(self) -> list[Database]:
@@ -49,4 +50,5 @@ class DatabaseStructure:
     def get_database_names(self) -> list[str]:
         return [database.get_name() for database in self.__databases]
 
-
+    def get_working_db_index(self) -> int:
+        return self.__working_db

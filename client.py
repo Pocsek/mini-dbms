@@ -1,4 +1,7 @@
+import json
+
 from client_side.server_connection import ServerConnection
+from client_side.database_structure import DatabaseStructure
 
 
 def get_user_input() -> (str, bool):
@@ -12,9 +15,22 @@ def get_user_input() -> (str, bool):
                 return commands[:-1], True  # return commands string without trailing newline character
             case "exit":
                 return "exit", False
+            case "~show structure~":
+                # not a command the client can use
+                return "", True
         # the exit and go commands won't make it into the commands string
         if command != "":
             commands += command + "\n"
+
+
+def get_database_structure(s: ServerConnection) -> DatabaseStructure:
+    s.send("~show structure~")
+    response = s.receive()
+    structure: dict = json.loads(response)
+    ds = DatabaseStructure()
+    ds.from_dict(structure)
+    return ds
+
 
 
 def main():
@@ -27,6 +43,8 @@ def main():
         return
     try:
         while True:
+            ds = get_database_structure(s)
+            print(ds.get_database_names(), ds.get_working_db_index())
             commands, keep_running = get_user_input()
             command_length: int = len(commands)
             if command_length != 0:
