@@ -13,3 +13,6 @@ class PrimaryKey(CObj):
         Check if another primary key already exists in the parent table.
         """
         pass
+
+    def get_column_names(self):
+        return self.__column_names

@@ -1,3 +1,4 @@
+from server_side.interpreter.token_objects.tvalues import TValues
 from server_side.interpreter.token_objects.tobj import TObj
 from server_side.interpreter.token_objects.tidentifiers import TIdentifiers
 from server_side.interpreter.token_objects.toptional_on_delete_or_update import TOptionalOnDeleteOrUpdate
@@ -45,17 +46,28 @@ class TColumnConstraintDefinition(TObj):
                 token_list.consume_concrete("foreign")
                 token_list.consume_concrete("key")
                 self.consume(token_list)  # continuation in "references" case
+            case "identity":
+                # IDENTITY[(seed, increment)]
+                token_list.consume_concrete("identity")
+                seed, increment = 1, 1
+                if token_list.peek() == "(":
+                    try:
+                        seed, increment = token_list.consume_group(TValues()).get_values()
+                        seed, increment = int(seed), int(increment)
+                    except ValueError:
+                        raise SyntaxError("Expected two values in parentheses")
+                    except SyntaxError:
+                        raise
+                self.__constr_type = Identity(seed, increment)
+
             case "not":
                 token_list.consume_concrete("not")
                 token_list.consume_concrete("null")
+                self.__constr_type = NotNull(self.__src_col_name)
 
-                # To-do: Implement NotNull class
-                # self.__constr_type = NotNull()
             case "null":
                 token_list.consume_concrete("null")
-
-                # To-do: Implement Null class
-                # self.__constr_type = Null()
+                self.__constr_type = Null(self.__src_col_name)
 
             case "primary":
                 token_list.consume_concrete("primary")
@@ -93,9 +105,7 @@ class TColumnConstraintDefinition(TObj):
                 )
             case "unique":
                 token_list.consume_concrete("unique")
-
-                # To-do: Implement Unique class
-                # self.__constr_type = Unique()
+                self.__constr_type = Unique([self.__src_col_name])
             case _:
                 raise SyntaxError(f"Unexpected token at {token_list.peek()}")
 

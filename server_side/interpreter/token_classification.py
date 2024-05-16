@@ -42,6 +42,7 @@ class Literal:
         "from",
         "group",
         "having",
+        "identity",
         "index",
         "inner",
         "into",
