@@ -84,3 +84,9 @@ class Table(Dbo):
 
     def has_primary_key(self) -> bool:
         return self.__primary_key is not None
+
+    def add_key_constraint(self, key):
+        """Note: Convert the key - constraint object (CObj) to a database object (Dbo) before adding it to the table."""
+        if isinstance(key, PrimaryKey):
+            self.__primary_key = PrimaryKey(key)
+        # TODO: add other key types

@@ -43,8 +43,8 @@ class TestParseCreateTable(TestCase):
         self.assertEqual(len(ast_list[0].get_column_definitions()), 1)
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_name(), "col1")
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_datatype(), "int")
-        self.assertIsInstance(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), PrimaryKey)
-        self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_constraint_type().get_column_names(), ["col1"])
+        self.assertIsInstance(ast_list[0].get_column_definitions()[0].get_col_constraints()[0], PrimaryKey)
+        self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_column_names(), ["col1"])
 
     def test_foreign_key(self):
         raw_command = "create table test_table (col1 int foreign key references test_table2(col2))"
@@ -56,7 +56,7 @@ class TestParseCreateTable(TestCase):
         self.assertEqual(len(ast_list[0].get_column_definitions()), 1)
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_name(), "col1")
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_datatype(), "int")
-        self.assertIsInstance(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), ForeignKey)
+        self.assertIsInstance(ast_list[0].get_column_definitions()[0].get_col_constraints()[0], ForeignKey)
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_source_column_names(),
                          ["col1"])
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_referenced_table_name(), "test_table2")
@@ -72,35 +72,35 @@ class TestParseCreateTable(TestCase):
         self.assertEqual(len(ast_list[0].get_column_definitions()), 1)
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_name(), "col1")
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_datatype(), "int")
-        self.assertIsInstance(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), Unique)
-        self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_constraint_type().get_column_names(), ["col1"])
+        self.assertIsInstance(ast_list[0].get_column_definitions()[0].get_col_constraints()[0], Unique)
+        self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_column_names(), ["col1"])
 
     def test_identity1(self):
         raw_command = "create table test_table (col1 int identity)"
         self.parser.parse(raw_command)
         ast = self.parser.get_ast_list()[0]
-        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), Identity)
-        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type().get_seed(), 1)
-        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type().get_increment(), 1)
+        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0], Identity)
+        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_seed(), 1)
+        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_increment(), 1)
 
     def test_identity2(self):
         raw_command = "create table test_table (col1 int identity(3,2))"
         self.parser.parse(raw_command)
         ast = self.parser.get_ast_list()[0]
-        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), Identity)
-        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type().get_seed(), 3)
-        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type().get_increment(), 2)
+        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0], Identity)
+        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_seed(), 3)
+        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_increment(), 2)
 
     def test_null(self):
         raw_command = "create table test_table (col1 int null)"
         self.parser.parse(raw_command)
         ast = self.parser.get_ast_list()[0]
-        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), Null)
-        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type().get_column_name(), "col1")
+        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0], Null)
+        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_column_name(), "col1")
 
     def test_not_null(self):
         raw_command = "create table test_table (col1 int not null)"
         self.parser.parse(raw_command)
         ast = self.parser.get_ast_list()[0]
-        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), NotNull)
-        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_constraint_type().get_column_name(), "col1")
+        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0], NotNull)
+        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_column_name(), "col1")

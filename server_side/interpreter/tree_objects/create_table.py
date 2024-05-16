@@ -93,20 +93,21 @@ class CreateTable(ExecutableTree):
         Update the json structure with the new table.
         """
         table = Table()
-        columns = []
+        table.set_name(self.__name)
         for col_def in self.__col_defs:
-            identity_seed, identity_increment = col_def.get_identity_values()
+            # create column, add it to the table
+            column = Column()
+            column.set_name(col_def.get_name())
+            column.set_type(col_def.get_datatype())
+            column.set_allow_nulls(col_def.is_allow_nulls())
+            column.set_identity(col_def.get_identity_values())
+            column.set_default_value(col_def.get_default_value())
+            table.add_column(column)
+            # add key constraints to the table
+            for key in col_def.get_keys():
+                table.add_key_constraint(key)
 
-            columns.append(Column(
-                col_def.get_name(),
-                col_def.get_datatype(),
-                col_def.is_allow_nulls(),
-                identity_seed is not None,
-                identity_seed,
-                identity_increment
-            ))
-
-        dbm.get_working_db().add_table(Table(self.__name, columns))
+        dbm.get_working_db().add_table(table)
         dbm.update_databases()
         print(f"Table '{self.__name}' in database '{dbm.get_working_db().get_name()}' created successfully.")
 

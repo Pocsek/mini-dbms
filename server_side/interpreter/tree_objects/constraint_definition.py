@@ -10,7 +10,7 @@ class ConstraintDefinition(CustomTree):
         super().__init__()
         if tcol_constr_def is not None:
             self.__constr_name = tcol_constr_def.get_constraint_name()
-            self.__constr_type = tcol_constr_def.get_constraint_type()
+            self.__constr_type = tcol_constr_def.get_constraint()
             self.__src_col_names = [tcol_constr_def.get_source_column_name()]
             self.__ref_table_name = tcol_constr_def.get_referenced_table_name()
             self.__ref_col_names = [tcol_constr_def.get_referenced_column_name()]

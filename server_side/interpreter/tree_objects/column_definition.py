@@ -12,7 +12,7 @@ class ColumnDefinition(CustomTree):
         super().__init__()
         self.__name = tcol_def.get_name()
         self.__datatype = tcol_def.get_data_type()
-        self.__col_constraints: list[ConstraintDefinition] = tcol_def.get_col_constraints()
+        self.__col_constraints: list[CObj] = tcol_def.get_col_constraints()
 
     def validate(self, dbm: DbManager = None, mongo_client=None):
         """
@@ -48,3 +48,25 @@ class ColumnDefinition(CustomTree):
             if isinstance(col_constraint, Identity):
                 return col_constraint.get_seed(), col_constraint.get_increment()
         return None, None
+
+    def get_default_value(self):
+        # TODO: Implement this
+        # for col_constraint in self.__col_constraints:
+        #     if isinstance(col_constraint.get_constraint_type(), Default):
+        #         return col_constraint.get_value()
+        return None
+
+    def get_check(self):
+        for col_constraint in self.__col_constraints:
+            if isinstance(col_constraint, Check):
+                return col_constraint
+        return None
+
+    def get_keys(self):
+        keys = []
+        for col_constraint in self.__col_constraints:
+            if isinstance(col_constraint, PrimaryKey) \
+                    or isinstance(col_constraint, ForeignKey) \
+                    or isinstance(col_constraint, Unique):
+                keys.append(col_constraint)
+        return keys

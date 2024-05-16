@@ -3,7 +3,6 @@ from server_side.interpreter.token_objects.tcolumn_constraint_definition import 
 from server_side.interpreter.token_objects.tobj import TObj
 
 from server_side.interpreter.token_classification import TokenType
-from server_side.interpreter.tree_objects.constraint_definition import ConstraintDefinition
 
 
 class TColumnDefinition(TObj):
@@ -11,7 +10,7 @@ class TColumnDefinition(TObj):
     def __init__(self):
         self.__col_name = None
         self.__data_type = None
-        self.__col_constraints: list[ConstraintDefinition] = []
+        self.__col_constraints: list[CObj] = []
 
     def consume(self, tokens):
         self.__col_name = tokens.consume_of_type(TokenType.IDENTIFIER)
@@ -20,7 +19,7 @@ class TColumnDefinition(TObj):
         try:
             while tokens.peek() not in (",", ")"):
                 col_constr_def = tokens.consume_group(TColumnConstraintDefinition(self.__col_name))
-                self.__col_constraints.append(ConstraintDefinition(col_constr_def))
+                self.__col_constraints.append(col_constr_def.get_constraint())
         except IndexError:
             raise SyntaxError("Unexpected end of command. Expected ',' or ')'")
 

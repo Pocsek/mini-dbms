@@ -13,7 +13,7 @@ class TColumnConstraintDefinition(TObj):
     """[CONSTRAINT constraint_name] constraint_type ( constraint_args )"""
     def __init__(self, src_col_name=None):
         self.__constr_name = None
-        self.__constr_type: CObj | None = None
+        self.__constr: CObj | None = None
         self.__src_col_name = src_col_name if src_col_name is not None else None
         self.__ref_table_name = None
         self.__ref_col_name = None
@@ -58,21 +58,21 @@ class TColumnConstraintDefinition(TObj):
                         raise SyntaxError("Expected two values in parentheses")
                     except SyntaxError:
                         raise
-                self.__constr_type = Identity(seed, increment)
+                self.__constr = Identity(seed, increment)
 
             case "not":
                 token_list.consume_concrete("not")
                 token_list.consume_concrete("null")
-                self.__constr_type = NotNull(self.__src_col_name)
+                self.__constr = NotNull(self.__src_col_name)
 
             case "null":
                 token_list.consume_concrete("null")
-                self.__constr_type = Null(self.__src_col_name)
+                self.__constr = Null(self.__src_col_name)
 
             case "primary":
                 token_list.consume_concrete("primary")
                 token_list.consume_concrete("key")
-                self.__constr_type = PrimaryKey([self.__src_col_name])
+                self.__constr = PrimaryKey([self.__src_col_name])
             case "references":
                 # REFERENCES ref_table_name (ref_col_name)
                 token_list.consume_concrete("references")
@@ -95,7 +95,7 @@ class TColumnConstraintDefinition(TObj):
                         else:
                             on_update = on_clause.get_action()
 
-                self.__constr_type = ForeignKey(
+                self.__constr = ForeignKey(
                     [self.__src_col_name],
                     self.__ref_table_name,
                     [self.__ref_col_name],
@@ -105,15 +105,15 @@ class TColumnConstraintDefinition(TObj):
                 )
             case "unique":
                 token_list.consume_concrete("unique")
-                self.__constr_type = Unique([self.__src_col_name])
+                self.__constr = Unique([self.__src_col_name])
             case _:
                 raise SyntaxError(f"Unexpected token at {token_list.peek()}")
 
     def get_constraint_name(self):
         return self.__constr_name
 
-    def get_constraint_type(self):
-        return self.__constr_type
+    def get_constraint(self):
+        return self.__constr
 
     def get_source_column_name(self):
         return self.__src_col_name

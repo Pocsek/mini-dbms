@@ -8,11 +8,15 @@ class PrimaryKey(Dbo):
     __name: str = ""
     __column_names: list[str] = list()
 
-    def __init__(self, name: str = "", column_names: list[str] | None = None):
-        if column_names is None:
-            column_names = list()
-        self.__name = name
-        self.__column_names = column_names
+    def __init__(self, primary_key_cobj=None, name: str = "", column_names: list[str] | None = None):
+        if primary_key_cobj is not None:
+            self.__name = primary_key_cobj.get_constraint_name()
+            self.__column_names = primary_key_cobj.get_column_names()
+        else:
+            if column_names is None:
+                column_names = list()
+            self.__name = name
+            self.__column_names = column_names
 
     def __dict__(self) -> dict:
         return {
