@@ -1,4 +1,3 @@
-"""NOT IMPLEMENTED"""
 from server_side.dbmanager import DbManager
 from .cobj import CObj
 

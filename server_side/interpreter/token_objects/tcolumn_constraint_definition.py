@@ -1,4 +1,6 @@
 from server_side.interpreter.token_objects.tobj import TObj
+from server_side.interpreter.token_objects.tidentifiers import TIdentifiers
+from server_side.interpreter.token_objects.toptional_on_delete_or_update import TOptionalOnDeleteOrUpdate
 from server_side.interpreter.token_list import TokenList
 from server_side.interpreter.token_classification import TokenType
 from server_side.interpreter.token_objects.tlogical_expression import TLogicalExpression
@@ -63,36 +65,32 @@ class TColumnConstraintDefinition(TObj):
                 # REFERENCES ref_table_name (ref_col_name)
                 token_list.consume_concrete("references")
                 self.__ref_table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-                token_list.consume_concrete("(")
-                self.__ref_col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-                token_list.consume_concrete(")")
+                identifiers = token_list.consume_group(TIdentifiers())
+                if len(identifiers.get_identifiers()) > 1:
+                    raise SyntaxError("Multiple columns referenced in a single column constraint")
+                self.__ref_col_name = identifiers.get_identifiers()[0]
 
-                if token_list.peek() == "on":
-                    token_list.consume_concrete("on")
-                    operation_type = token_list.consume_either(["delete", "update"])  # DELETE or UPDATE
+                on_delete = None
+                on_update = None
+                existsNext = True
+                while existsNext:
+                    on_clause = token_list.consume_group(TOptionalOnDeleteOrUpdate())
+                    if not on_clause.exists():
+                        existsNext = False
+                    else:
+                        if on_clause.get_type() == "delete":
+                            on_delete = on_clause.get_action()
+                        else:
+                            on_update = on_clause.get_action()
 
-                    # To-do:
-                    # - add keywords NO ACTION, CASCADE, SET NULL, SET DEFAULT to token_classification.py
-                    # -> temporary solution:
-                    behavior_first = token_list.consume_either(["no", "cascade", "set"])
-                    match behavior_first:
-                        case "no":
-                            token_list.consume_concrete("action")
-                            # To-do
-                        case "cascade":
-                            # To-do
-                            pass
-                        case "set":
-                            behavior_second = token_list.consume_either(["null", "default"])
-                            if behavior_second == "null":
-                                # To-do
-                                pass
-                            else:
-                                # To-do
-                                pass
-
-                # To-do: Implement ForeignKey class
-                # self.__constr_type = ForeignKey()
+                self.__constr_type = ForeignKey(
+                    [self.__src_col_name],
+                    self.__ref_table_name,
+                    [self.__ref_col_name],
+                    on_delete,
+                    on_update,
+                    self.__constr_name
+                )
             case "unique":
                 token_list.consume_concrete("unique")
 

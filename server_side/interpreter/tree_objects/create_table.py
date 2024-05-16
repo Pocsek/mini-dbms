@@ -83,6 +83,8 @@ class CreateTable(ExecutableTree):
     def validate(self, dbm: DbManager = None, mongo_client=None):
         """
         Check if there already exists a table with the given name.
+        Call the validate method of the column definitions.
+        Call the validate method of the table constraint definitions.
         """
         pass
 
@@ -90,6 +92,7 @@ class CreateTable(ExecutableTree):
         """
         Update the json structure with the new table.
         """
+        table = Table()
         columns = []
         for col_def in self.__col_defs:
             identity_seed, identity_increment = col_def.get_identity_values()

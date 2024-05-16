@@ -19,7 +19,7 @@ class TColumnDefinition(TObj):
 
         try:
             while tokens.peek() not in (",", ")"):
-                col_constr_def = tokens.consume_group(TColumnConstraintDefinition())
+                col_constr_def = tokens.consume_group(TColumnConstraintDefinition(self.__col_name))
                 self.__col_constraints.append(ConstraintDefinition(col_constr_def))
         except IndexError:
             raise SyntaxError("Unexpected end of command. Expected ',' or ')'")

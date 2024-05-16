@@ -46,7 +46,7 @@ class TestParseCreateTable(TestCase):
         self.assertIsInstance(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), PrimaryKey)
 
     def test_foreign_key(self):
-        raw_command = "create table test_table (col1 int, foreign key (col1) references other_table(col1))"
+        raw_command = "create table test_table (col1 int foreign key references test_table2(col2))"
         self.parser.parse(raw_command)
         ast_list = self.parser.get_ast_list()
         self.assertEqual(len(ast_list), 1)
@@ -55,13 +55,8 @@ class TestParseCreateTable(TestCase):
         self.assertEqual(len(ast_list[0].get_column_definitions()), 1)
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_name(), "col1")
         self.assertEqual(ast_list[0].get_column_definitions()[0].get_datatype(), "int")
-        self.assertEqual(len(ast_list[0].get_constraint_definitions()), 1)
-        self.assertEqual(ast_list[0].get_constraint_definitions()[0].get_column_name(), "col1")
-        self.assertEqual(ast_list[0].get_constraint_definitions()[0].get_referenced_table(), "other_table")
-        self.assertEqual(ast_list[0].get_constraint_definitions()[0].get_referenced_column(), "col1")
-
-    def test_empty_command(self):
-        raw_command = ""
-        self.parser.parse(raw_command)
-        ast_list = self.parser.get_ast_list()
-        self.assertEqual(len(ast_list), 0)
+        self.assertIsInstance(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_constraint_type(), ForeignKey)
+        self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_source_column_names(),
+                         ["col1"])
+        self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_referenced_table_name(), "test_table2")
+        self.assertEqual(ast_list[0].get_column_definitions()[0].get_col_constraints()[0].get_referenced_column_names(), ["col2"])

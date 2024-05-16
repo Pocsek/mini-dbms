@@ -1,6 +1,7 @@
 from .tcolumn_definition import TColumnDefinition
 from .tobj import TObj
 from .toptional_command_end import TOptionalCommandEnd
+from .toptional_on_delete_or_update import TOptionalOnDeleteOrUpdate
 from .tcolumn_constraint_definition import TColumnConstraintDefinition
 from .ttable_constraint_definition import TTableConstraintDefinition
 from .tlogical_expression import TLogicalExpression

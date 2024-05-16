@@ -9,9 +9,6 @@ class TokenType:
     NUM_CONST = "Numeric Constant"
     CHAR_CONST = "Character Constant"
     IDENTIFIER = "Identifier"
-    # TABLE_REFERENCE = 10
-    # COLUMN_REFERENCE = 11
-    # RESULT_COLUMN_REFERENCE = 12  # e.g.: first row of a select command
 
 
 class Literal:
@@ -27,10 +24,12 @@ class Literal:
     )
 
     KEYWORDS = (
+        "action",
         "add",
         "as",
         "asc",
         "by",
+        "cascade",
         "check"
         "column",
         "constraint",
@@ -51,12 +50,15 @@ class Literal:
         "left",
         "like",
         "limit",
+        "no",
         "not",
         "null",
         "order",
         "outer",
         "primary",
+        "references",
         "right",
+        "set",
         "table",
         "top",
         "unique",
