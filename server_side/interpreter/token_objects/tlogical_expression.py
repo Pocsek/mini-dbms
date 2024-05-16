@@ -5,6 +5,17 @@ from server_side.interpreter.token_list import TokenList
 
 
 class TLogicalExpression(TObj):
+    """
+    Consumes a logical expression that has a true/false outcome.
+    A logical expression can consist of:
+        - numbers
+        - column references
+        - comparison operators
+
+    Examples:
+        1. (col1 > 5)
+        2. (col1 = 5 AND col2 < 10)
+    """
     def __init__(self):
         pass
 
