@@ -50,10 +50,9 @@ class ColumnDefinition(CustomTree):
         return None, None
 
     def get_default_value(self):
-        # TODO: Implement this
-        # for col_constraint in self.__col_constraints:
-        #     if isinstance(col_constraint.get_constraint_type(), Default):
-        #         return col_constraint.get_value()
+        for col_constraint in self.__col_constraints:
+            if isinstance(col_constraint, Default):
+                return col_constraint.get_default_value()
         return None
 
     def get_check(self):

@@ -104,3 +104,10 @@ class TestParseCreateTable(TestCase):
         ast = self.parser.get_ast_list()[0]
         self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0], NotNull)
         self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_column_name(), "col1")
+
+    def test_default(self):
+        raw_command = "create table test_table (col1 int default 1)"
+        self.parser.parse(raw_command)
+        ast = self.parser.get_ast_list()[0]
+        self.assertIsInstance(ast.get_column_definitions()[0].get_col_constraints()[0], Default)
+        self.assertEqual(ast.get_column_definitions()[0].get_col_constraints()[0].get_default_value(), 1)

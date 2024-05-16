@@ -1,11 +1,11 @@
-"""NOT IMPLEMENTED"""
 from server_side.dbmanager import DbManager
 from .cobj import CObj
 
 
 class Default(CObj):
-    def __init__(self, name=None):
-        super().__init__(name)
+    def __init__(self, default_value, constr_name=None):
+        super().__init__(constr_name)
+        self.__default_value = default_value
 
     def validate(self, dbm: DbManager = None):
         pass
@@ -15,3 +15,5 @@ class Default(CObj):
         """
         pass
 
+    def get_default_value(self):
+        return self.__default_value

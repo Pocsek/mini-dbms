@@ -38,9 +38,7 @@ class TColumnConstraintDefinition(TObj):
                 # DEFAULT value
                 token_list.consume_concrete("default")
                 t = token_list.consume_group(TValue())
-
-                # To-do: Implement Default class
-                # self.__constr_type = Default()
+                self.__constr = Default(t.get_value())
             case "foreign":
                 # FOREIGN KEY REFERENCES ref_table_name (ref_col_name)
                 token_list.consume_concrete("foreign")
