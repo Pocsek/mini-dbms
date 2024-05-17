@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from server_side.dbmanager import DbManager
 
 
 class CObj(ABC):
@@ -8,7 +7,10 @@ class CObj(ABC):
         self.__constr_name = constr_name
 
     @abstractmethod
-    def validate(self, dbm: DbManager = None):
+    def validate(self, dbm):
+        """
+        :param dbm: DbManager instance
+        """
         pass
 
     def get_constraint_name(self):

@@ -1,5 +1,3 @@
-from server_side.dbmanager import DbManager
-
 from server_side.interpreter.tree_objects import ExecutableTree
 
 
@@ -8,8 +6,8 @@ class Executor:
     The Executor class is responsible for executing a list of ASTs (a.k.a. a list of commands).
     Keeps track of the execution status: whether the database was modified.
     """
-    def __init__(self, dbm: DbManager):
-        self.__dbm = dbm
+    def __init__(self, dbm):
+        self.__dbm = dbm  # DbManager instance
         self.__modified = None
         self.__nr_rows_affected = None
 

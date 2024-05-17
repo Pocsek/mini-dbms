@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from treelib import Tree
-from server_side.dbmanager import DbManager
 
 
 class CustomTree(Tree, ABC):
@@ -13,8 +12,13 @@ class CustomTree(Tree, ABC):
         self.create_node(self.__class__.__name__)  # add root node
 
     @abstractmethod
-    def validate(self, dbm: DbManager = None, mongo_client=None):
-        """Check if any rules are being violated during execution."""
+    def validate(self, dbm=None, mongo_client=None):
+        """
+        Check if any rules are being violated during execution.
+
+        :param dbm: DbManager object
+        :param mongo_client: MongoClient object
+        """
         pass
 
     @abstractmethod

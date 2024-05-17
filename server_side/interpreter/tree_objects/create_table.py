@@ -1,6 +1,4 @@
-from server_side.dbmanager import DbManager
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
-from server_side.database_objects import Table, Column
 from server_side.interpreter.tree_objects.column_definition import ColumnDefinition
 
 
@@ -80,7 +78,7 @@ class CreateTable(ExecutableTree):
         self.__col_defs: list[ColumnDefinition] = []
         self.__table_constr_defs = []
 
-    def validate(self, dbm: DbManager = None, mongo_client=None):
+    def validate(self, dbm=None, mongo_client=None):
         """
         Check if there already exists a table with the given name.
         Call the validate method of the column definitions.
@@ -88,10 +86,11 @@ class CreateTable(ExecutableTree):
         """
         pass
 
-    def _execute(self, dbm: DbManager = None, mongo_client=None):
+    def _execute(self, dbm=None, mongo_client=None):
         """
         Update the json structure with the new table.
         """
+        from server_side.database_objects import Table, Column
         table = Table()
         table.set_name(self.__name)
         for col_def in self.__col_defs:

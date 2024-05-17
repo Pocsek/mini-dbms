@@ -1,4 +1,3 @@
-from server_side.dbmanager import DbManager
 from .cobj import CObj
 
 
@@ -7,7 +6,7 @@ class Default(CObj):
         super().__init__(constr_name)
         self.__default_value = default_value
 
-    def validate(self, dbm: DbManager = None):
+    def validate(self, dbm):
         pass
         """
         Check if the column already has a constraint of this type.

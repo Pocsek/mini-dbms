@@ -1,4 +1,3 @@
-from server_side.dbmanager import DbManager
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
 
 
@@ -14,7 +13,7 @@ class DeleteFrom(ExecutableTree):
         self.__table_name: str = ""
         self.__condition: dict = {}  # the condition given in the where clause interpreted as a dictionary
 
-    def _execute(self, dbm: DbManager = None, mongo_client=None):
+    def _execute(self, dbm=None, mongo_client=None):
         db_idx = dbm.get_working_db_index()
         table_idx = dbm.find_table(db_idx, self.__table_name)
         db = dbm.get_working_db()
@@ -23,7 +22,7 @@ class DeleteFrom(ExecutableTree):
         key = self.__make_key(pr.get_column_names(), self.__condition)
         del_count = dbm.delete(db, table, key)
 
-    def validate(self, dbm: DbManager = None, mongo_client=None):
+    def validate(self, dbm=None, mongo_client=None):
         """
         Checks if the table exists in the database.
         Checks if the condition refers to existing columns.

@@ -120,6 +120,36 @@ class Parser:
         pass
 
     def __parse_drop(self, token_list: TokenList):
+        token = token_list.consume_of_type(TokenType.KEYWORD)
+        match token:
+            case "database":
+                return self.__parse_drop_database(token_list)
+            case "table":
+                return self.__parse_drop_table(token_list)
+            case _:
+                raise SyntaxError(f"Invalid syntax at '{token}'")
+
+    def __parse_drop_database(self, token_list: TokenList):
+        if_exists = False
+        if token_list.peek_type() == TokenType.KEYWORD:
+            token_list.consume_concrete("if")
+            token_list.consume_concrete("exists")
+            if_exists = True
+
+        db_names = []
+        while token_list.has_next():
+            db_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+            db_names.append(db_name)
+            if token_list.peek() == ",":
+                token_list.consume_concrete(",")
+            else:
+                token_list.consume_group(TOptionalCommandEnd())
+
+        tree = DropDatabase(db_names, if_exists)
+        tree.finalize()
+        return tree
+
+    def __parse_drop_table(self, token_list: TokenList):
         pass
 
     def __parse_alter(self, token_list: TokenList):

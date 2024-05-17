@@ -1,4 +1,3 @@
-from server_side.dbmanager import DbManager
 from .cobj import CObj
 
 
@@ -11,7 +10,7 @@ class ForeignKey(CObj):
         self.__on_delete = on_delete if on_delete is not None else None
         self.__on_update = on_update if on_update is not None else None
 
-    def validate(self, dbm: DbManager = None):
+    def validate(self, dbm):
         """
         Check whether the source columns exist.
         Check if the source columns already have a constraint of this type.

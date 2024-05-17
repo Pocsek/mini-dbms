@@ -1,6 +1,5 @@
 """NOT IMPLEMENTED"""
 
-from server_side.dbmanager import DbManager
 from server_side.interpreter.tree_objects.custom_tree import CustomTree
 from server_side.interpreter.token_objects.tcolumn_constraint_definition import TColumnConstraintDefinition
 
@@ -19,7 +18,7 @@ class ConstraintDefinition(CustomTree):
         else:
             raise ValueError("No constraint definition provided")
 
-    def validate(self, dbm: DbManager = None, mongo_client=None):
+    def validate(self, dbm=None, mongo_client=None):
         """
         Check if there already exists a constraint with the given name.
         Call the validate method of the constraint object (CObj).

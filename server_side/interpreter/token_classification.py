@@ -43,6 +43,7 @@ class Literal:
         "group",
         "having",
         "identity",
+        "if",
         "index",
         "inner",
         "into",

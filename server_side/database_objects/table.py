@@ -2,13 +2,10 @@ from server_side.database_objects.column import Column
 from server_side.database_objects.dbo import Dbo
 from server_side.database_objects.index import Index
 from server_side.database_objects.primary_key import PrimaryKey
+from server_side.interpreter.constraint_objects.primary_key import PrimaryKey as PrimaryKeyCObj
 
 
 class Table(Dbo):
-    __columns: list[Column] = list()
-    __indexes: list[Index] = list()
-    __primary_key: PrimaryKey | None = None
-
     # TO-DO: add keys, create a key class, possibly one for each type of key
     # "keys": {
     #     "primary_key": [],
@@ -19,7 +16,8 @@ class Table(Dbo):
     def __init__(self,
                  name: str = "",
                  columns: list[Column] | None = None,
-                 indexes: list[Index] | None = None):
+                 indexes: list[Index] | None = None,
+                 primary_key: PrimaryKey | None = None):
         if columns is None:
             columns = list()
         if indexes is None:
@@ -27,6 +25,7 @@ class Table(Dbo):
         self.__name = name
         self.__columns = columns
         self.__indexes = indexes
+        self.__primary_key = primary_key
 
     def __dict__(self) -> dict:
         return {
@@ -87,6 +86,7 @@ class Table(Dbo):
 
     def add_key_constraint(self, key):
         """Note: Convert the key - constraint object (CObj) to a database object (Dbo) before adding it to the table."""
-        if isinstance(key, PrimaryKey):
+        if isinstance(key, PrimaryKeyCObj):
             self.__primary_key = PrimaryKey(key)
+
         # TODO: add other key types

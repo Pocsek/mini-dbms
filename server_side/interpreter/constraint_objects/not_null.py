@@ -1,4 +1,3 @@
-from server_side.dbmanager import DbManager
 from .cobj import CObj
 
 
@@ -7,7 +6,7 @@ class NotNull(CObj):
         super().__init__()
         self.__col_name = col_name
 
-    def validate(self, dbm: DbManager = None):
+    def validate(self, dbm):
         """
         Check if the column already has a NULL constraint.
         """

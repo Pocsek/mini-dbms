@@ -1,6 +1,5 @@
 """NOT IMPLEMENTED"""
 
-from server_side.dbmanager import DbManager
 from server_side.interpreter.tree_objects.constraint_definition import ConstraintDefinition
 from server_side.interpreter.tree_objects.custom_tree import CustomTree
 from server_side.interpreter.token_objects.tcolumn_definition import TColumnDefinition
@@ -14,7 +13,7 @@ class ColumnDefinition(CustomTree):
         self.__datatype = tcol_def.get_data_type()
         self.__col_constraints: list[CObj] = tcol_def.get_col_constraints()
 
-    def validate(self, dbm: DbManager = None, mongo_client=None):
+    def validate(self, dbm=None, mongo_client=None):
         """
         Check if there already exists a column in the parent table with the given name.
         """
@@ -37,10 +36,10 @@ class ColumnDefinition(CustomTree):
 
     def is_allow_nulls(self):
         for col_constraint in self.__col_constraints:
-            if isinstance(col_constraint, Null):
-                return True
-            elif isinstance(col_constraint, NotNull):
+            if isinstance(col_constraint, PrimaryKey) or isinstance(col_constraint, NotNull):
                 return False
+            elif isinstance(col_constraint, Null):
+                return True
         return True
 
     def get_identity_values(self):
