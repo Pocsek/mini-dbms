@@ -109,7 +109,9 @@ class Parser:
                     pass
                 case _:
                     # end of definition or end of command expected
-                    token_list.consume_either([",", ")"])
+                    t = token_list.consume_either([",", ")"])
+                    if t == ")":
+                        token_list.consume_group(TOptionalCommandEnd())
 
         tree.finalize()
         return tree
