@@ -106,9 +106,8 @@ class CreateTable(ExecutableTree):
             for key in col_def.get_keys():
                 table.add_key_constraint(key)
 
-        dbm.get_working_db().add_table(table)
-        dbm.update_databases()
-        print(f"Table '{self.__name}' in database '{dbm.get_working_db().get_name()}' created successfully.")
+        dbm.create_table(table)
+        print(f"Table '{table.get_name()}' created successfully.")
 
     def connect_nodes_to_root(self):
         pass
