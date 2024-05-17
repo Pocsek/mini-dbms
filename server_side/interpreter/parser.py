@@ -140,9 +140,9 @@ class Parser:
         while token_list.has_next():
             db_name = token_list.consume_of_type(TokenType.IDENTIFIER)
             db_names.append(db_name)
-            if token_list.peek() == ",":
+            try:
                 token_list.consume_concrete(",")
-            else:
+            except:
                 token_list.consume_group(TOptionalCommandEnd())
 
         tree = DropDatabase(db_names, if_exists)

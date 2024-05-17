@@ -54,6 +54,14 @@ def insert_one(db_name: str, collection_name: str, key_value_pair: tuple[str, st
 #             pass
 #         return True, []
 
+def drop_database(db_name: str):
+    """
+    Deletes a database only if it exists.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        if db_name in client.list_database_names():
+            client.drop_database(db_name)
+
 
 def delete(db_name: str, collection_name: str, query: dict) -> int:
     """

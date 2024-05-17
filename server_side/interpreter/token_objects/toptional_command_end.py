@@ -9,5 +9,5 @@ class TOptionalCommandEnd(TObj):
     def consume(self, tokens):
         try:
             tokens.consume_concrete(";")
-        except SyntaxError:
+        except:
             pass

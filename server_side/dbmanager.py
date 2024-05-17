@@ -54,8 +54,24 @@ class DbManager:
     #             # TO-DO: create table
     #             pass
 
+    def drop_database(self, db_name):
+        # delete db in MongoDB
+        mongo_db.drop_database(db_name)
+
+        # update json structure
+        self.__dbs.pop(self.get_db_index(db_name))
+        self.update_databases()
+
+    def get_default_database_names(self) -> list[str]:
+        return [db.get_name() for db in create_default_databases()]
+
     def get_databases(self) -> list[Database]:
         return self.__dbs
+
+    def get_db_index(self, db_name):
+        for (idx, db) in enumerate(self.__dbs):
+            if db.get_name() == db_name:
+                return idx
 
     def get_working_db_index(self) -> int:
         return self.__working_db

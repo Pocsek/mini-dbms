@@ -19,15 +19,26 @@ class DropDatabase(ExecutableTree):
 
     def _execute(self, dbm=None, mongo_client=None):
         """
-        Delete the databases both through the MongoDb client and
+        Delete the databases in MongoDB and update the databases.json structure.
+        If the "if_exists" attribute is true, only try to delete the databases that exist.
         """
-        pass
+        for db_name in self.__db_names:
+            if dbm.find_database(db_name) == -1 and self.__if_exists:
+                continue
+            dbm.drop_database(db_name)
+            print(f"Database '{db_name}' dropped successfully.")
 
     def validate(self, dbm=None, mongo_client=None):
         """
-        If the "if_exists" attribute is false, only then check if the databases exist.
+        If the "if_exists" attribute is false, only then check if the databases exist in the json structure.
         """
-        pass
+        if self.__if_exists:
+            return
+        for db_name in self.__db_names:
+            if dbm.find_database(db_name) == -1:
+                raise ValueError(f"Database '{db_name}' does not exist")
+            if db_name in dbm.get_default_database_names():
+                raise ValueError(f"Database '{db_name}' is a default database and cannot be dropped")
 
     def connect_nodes_to_root(self):
         pass
