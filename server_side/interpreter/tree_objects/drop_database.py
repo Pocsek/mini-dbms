@@ -7,10 +7,6 @@ class DropDatabase(ExecutableTree):
 
     Syntax:
         DROP DATABASE [ IF EXISTS ] database_name [ ,...n ] [;]
-
-    Examples:
-        1. DROP TABLE table_name;
-        2. DROP TABLE IF EXISTS table_name;
     """
     def __init__(self, db_names, if_exists):
         super().__init__()
@@ -32,13 +28,12 @@ class DropDatabase(ExecutableTree):
         """
         If the "if_exists" attribute is false, only then check if the databases exist in the json structure.
         """
-        if self.__if_exists:
-            return
         for db_name in self.__db_names:
-            if dbm.find_database(db_name) == -1:
-                raise ValueError(f"Database '{db_name}' does not exist")
             if db_name in dbm.get_default_database_names():
                 raise ValueError(f"Database '{db_name}' is a default database and cannot be dropped")
+            if not self.__if_exists:
+                if dbm.find_database(db_name) == -1:
+                    raise ValueError(f"Database '{db_name}' does not exist")
 
     def connect_nodes_to_root(self):
         pass
