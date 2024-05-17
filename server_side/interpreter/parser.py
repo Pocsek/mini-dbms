@@ -150,7 +150,24 @@ class Parser:
         return tree
 
     def __parse_drop_table(self, token_list: TokenList):
-        pass
+        if_exists = False
+        if token_list.peek_type() == TokenType.KEYWORD:
+            token_list.consume_concrete("if")
+            token_list.consume_concrete("exists")
+            if_exists = True
+
+        table_names = []
+        while token_list.has_next():
+            table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+            table_names.append(table_name)
+            try:
+                token_list.consume_concrete(",")
+            except:
+                token_list.consume_group(TOptionalCommandEnd())
+
+        tree = DropTable(table_names, if_exists)
+        tree.finalize()
+        return tree
 
     def __parse_alter(self, token_list: TokenList):
         pass

@@ -63,6 +63,15 @@ def drop_database(db_name: str):
             client.drop_database(db_name)
 
 
+def drop_collection(db_name: str, collection_name: str):
+    """
+    Deletes a collection.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        db = client[db_name]
+        db.drop_collection(collection_name)
+
+
 def delete(db_name: str, collection_name: str, query: dict) -> int:
     """
     Deletes documents from a collection, without any validation.

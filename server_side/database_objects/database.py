@@ -41,3 +41,9 @@ class Database(Dbo):
             if table.get_name() == name:
                 return table
         return None
+
+    def remove_table(self, name: str):
+        for idx, table in enumerate(self.__tables):
+            if table.get_name() == name:
+                self.__tables.pop(idx)
+                return

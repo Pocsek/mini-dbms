@@ -62,6 +62,16 @@ class DbManager:
         self.__dbs.pop(self.get_db_index(db_name))
         self.update_databases()
 
+    def drop_table(self, table_name):
+        # delete collection in MongoDB
+        mongo_db.drop_collection(self.get_working_db().get_name(), table_name)
+
+        # update json structure
+        db = self.get_working_db()
+        db.remove_table(table_name)
+        self.update_databases()
+
+
     def get_default_database_names(self) -> list[str]:
         return [db.get_name() for db in create_default_databases()]
 
