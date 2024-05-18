@@ -7,13 +7,14 @@ class Use(ExecutableTree):
         super().__init__()
         self.__db_name = CharConst(db_name)
 
-    def validate(self, dbm=None):
+    def validate(self, dbm, **kwargs):
         """
         Check if a database with the given name exists.
         """
-        pass
+        if dbm.find_database(self.__db_name.get_value()) == -1:
+            raise ValueError(f"Database '{self.__db_name.get_value()}' does not exist.")
 
-    def _execute(self, dbm=None):
+    def _execute(self, dbm):
         """
         Change the working DB.
         """

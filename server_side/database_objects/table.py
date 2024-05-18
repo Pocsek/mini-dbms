@@ -51,6 +51,18 @@ class Table(Dbo):
     def get_name(self) -> str:
         return self.__name
 
+    def get_column(self, col_name):
+        for col in self.__columns:
+            if col.get_name() == col_name:
+                return col
+        raise ValueError(f"Column {col_name} not found")
+
+    def exists_column(self, col_name):
+        for col in self.__columns:
+            if col.get_name() == col_name:
+                return True
+        return False
+
     def get_columns(self) -> list[Column]:
         return self.__columns
 
@@ -86,12 +98,6 @@ class Table(Dbo):
     def has_primary_key(self) -> bool:
         return self.__primary_key is not None
 
-    def find_column(self, col_name):
-        for col in self.__columns:
-            if col.get_name() == col_name:
-                return col
-        raise ValueError(f"Column {col_name} not found")
-
     def add_key(self, key):
         """
         Adds a key to the table.
@@ -102,7 +108,7 @@ class Table(Dbo):
             self.__primary_key = PrimaryKey(key)
             # every column that is part of the primary key should not allow nulls
             for col_name in key.get_column_names():
-                self.find_column(col_name).set_allow_nulls(False)
+                self.get_column(col_name).set_allow_nulls(False)
         elif isinstance(key, ForeignKeyCObj):
             self.__foreign_keys.append(ForeignKey(key))
         elif isinstance(key, UniqueCObj):

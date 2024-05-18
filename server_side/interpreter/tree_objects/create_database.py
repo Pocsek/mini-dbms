@@ -7,13 +7,14 @@ class CreateDatabase(ExecutableTree):
         super().__init__()
         self.__db_name = CharConst(db_name)
 
-    def validate(self, dbm=None):
+    def validate(self, dbm, **kwargs):
         """
         Check if there already exists a database with the given name.
         """
-        pass
+        if dbm.find_database(self.__db_name.get_value()) != -1:
+            raise ValueError(f"Database with name '{self.__db_name.get_value()}' already exists.")
 
-    def _execute(self, dbm=None):
+    def _execute(self, dbm):
         """
         Update the json structure with the new database.
         """

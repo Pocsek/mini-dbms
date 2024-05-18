@@ -13,7 +13,7 @@ class DropDatabase(ExecutableTree):
         self.__db_names = db_names
         self.__if_exists = if_exists
 
-    def _execute(self, dbm=None):
+    def _execute(self, dbm):
         """
         Delete the databases in MongoDB and update the databases.json structure.
         If the "if_exists" attribute is true, only try to delete the databases that exist.
@@ -24,7 +24,7 @@ class DropDatabase(ExecutableTree):
             dbm.drop_database(db_name)
             print(f"Database '{db_name}' dropped successfully.")
 
-    def validate(self, dbm=None):
+    def validate(self, dbm, **kwargs):
         """
         If the "if_exists" attribute is false, only then check if the databases exist in the json structure.
         """

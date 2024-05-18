@@ -10,13 +10,14 @@ class ForeignKey(CObj):
         self.__on_delete = on_delete if on_delete is not None else None
         self.__on_update = on_update if on_update is not None else None
 
-    def validate(self, dbm):
+    def validate(self, dbm, **kwargs):
         """
         Check whether the source columns exist.
         Check if the source columns already have a constraint of this type.
         Check whether the referenced table exists.
         Check whether the referenced columns exist.
         Check whether the referenced columns make a primary key or have unique constraint on them.
+        :param **kwargs:
         """
         pass
 

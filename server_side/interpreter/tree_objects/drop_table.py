@@ -13,7 +13,7 @@ class DropTable(ExecutableTree):
         self.__table_names = table_names
         self.__if_exists = if_exists
 
-    def _execute(self, dbm=None):
+    def _execute(self, dbm):
         """
         Delete the tables in the working database and update the databases.json structure.
         If the "if_exists" attribute is true, only try to delete the tables that exist.
@@ -25,12 +25,13 @@ class DropTable(ExecutableTree):
             dbm.drop_table(table_name)
             print(f"Table '{table_name}' dropped successfully.")
 
-    def validate(self, dbm=None):
+    def validate(self, dbm, **kwargs):
         """
         Check integrity violations.
 
         If the "if_exists" attribute is false, only then check if the tables exist in the working database inside the
         json structure.
+        :param **kwargs:
         """
         # TODO: Check integrity violations.
 

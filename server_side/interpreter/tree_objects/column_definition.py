@@ -10,11 +10,20 @@ class ColumnDefinition(CustomTree):
         self.__datatype = tcol_def.get_data_type()
         self.__col_constraints: list[CObj] = tcol_def.get_col_constraints()
 
-    def validate(self, dbm=None):
+    def validate(self, dbm, **kwargs):
         """
-        Check if there already exists a column in the parent table with the given name.
+        Check if there is another column with the same name in the column definitions.
+        Call the validate method of the column constraints.
         """
-        pass
+        col_defs: list = kwargs.get("column_definitions")
+        if col_defs:
+            col_defs.remove(self)  # exclude self from the list
+            for col_def in col_defs:
+                if col_def.get_name() == self.__name:
+                    raise ValueError(f"Column with name '{self.__name}' already exists.")
+
+        for col_constraint in self.__col_constraints:
+            col_constraint.validate(dbm, column_definition=self)
 
     def connect_nodes_to_root(self) -> None:
         pass
@@ -70,3 +79,18 @@ class ColumnDefinition(CustomTree):
                     or isinstance(col_constraint, Unique):
                 keys.append(col_constraint)
         return keys
+
+    def has_constraint(self, constraint_type: str) -> bool:
+        for col_constraint in self.__col_constraints:
+            if type(col_constraint).__name__ == constraint_type:
+                return True
+        return False
+
+    def validate_has_constraint_not_more_than_once(self, constraint_type: str):
+        cnt = 0
+        for col_constraint in self.__col_constraints:
+            if type(col_constraint).__name__ == constraint_type:
+                cnt += 1
+                if cnt > 1:
+                    raise ValueError(f"Column '{self.__name}': cannot have more than one {constraint_type} "
+                                     f"constraints on the same column.")

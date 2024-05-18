@@ -7,7 +7,7 @@ class CObj(ABC):
         self.__constr_name = constr_name
 
     @abstractmethod
-    def validate(self, dbm):
+    def validate(self, dbm, **kwargs):
         """
         :param dbm: DbManager instance
         """

@@ -79,15 +79,26 @@ class CreateTable(ExecutableTree):
         self.__col_defs: list[ColumnDefinition] = []
         self.__table_constraints: list[CObj] = []
 
-    def validate(self, dbm=None):
+    def validate(self, dbm, **kwargs):
         """
         Check if there already exists a table with the given name.
         Call the validate method of the column definitions.
         Call the validate method of the table constraint definitions.
         """
-        pass
+        db = dbm.get_working_db()
+        if db.get_table(self.__name):
+            raise ValueError(f"Table with name '{self.__name}' already exists.")
+        for col_def in self.__col_defs:
+            col_def.validate(dbm,
+                             column_definition=col_def,
+                             column_definitions=self.__col_defs,
+                             table_constraints=self.__table_constraints)
+        for constr in self.__table_constraints:
+            constr.validate(dbm,
+                            column_definitions=self.__col_defs,
+                            table_constraints=self.__table_constraints)
 
-    def _execute(self, dbm=None):
+    def _execute(self, dbm):
         """
         Update the json structure with the new table.
         """

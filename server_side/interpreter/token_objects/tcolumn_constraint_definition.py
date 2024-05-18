@@ -67,7 +67,7 @@ class TColumnConstraintDefinition(TObj):
                         raise SyntaxError("Expected two values in parentheses")
                     except SyntaxError:
                         raise
-                self.__constr = Identity(seed, increment)
+                self.__constr = Identity(seed, increment, self.__src_col_name)
 
             case "not":
                 token_list.consume_concrete("not")

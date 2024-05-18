@@ -15,7 +15,7 @@ class InsertInto(ExecutableTree):
         self.__column_names: list[str] = []
         self.__values: list[list[str]] = []  # a list where a value is a record to be inserted, a record is a list
 
-    def _execute(self, dbm=None):
+    def _execute(self, dbm):
         db_idx = dbm.get_working_db_index()
         table_idx = dbm.find_table(db_idx, self.__table_name)
         db = dbm.get_working_db()
@@ -23,7 +23,7 @@ class InsertInto(ExecutableTree):
         records = self.__make_records()
         dbm.insert(db, table, records)
 
-    def validate(self, dbm=None):
+    def validate(self, dbm, **kwargs):
         """
         In the future it should be dependent on constraints, and type validation.
 
@@ -32,6 +32,7 @@ class InsertInto(ExecutableTree):
         - primary key
         - default
         -etc.
+        :param **kwargs:
         """
         # check if all values are valid
         # if identity is set the column can't be inserted -> won't be implemented in the first version

@@ -6,9 +6,10 @@ class Check(CObj):
     def __init__(self, constr_name=None):
         super().__init__(constr_name)
 
-    def validate(self, dbm):
+    def validate(self, dbm, **kwargs):
         """
         Check if the column already has a constraint of this type.
+        :param **kwargs:
         """
         pass
 

@@ -12,9 +12,9 @@ class CustomTree(Tree, ABC):
         self.create_node(self.__class__.__name__)  # add root node
 
     @abstractmethod
-    def validate(self, dbm=None):
+    def validate(self, dbm, **kwargs):
         """
-        Check if any rules are being violated during execution.
+        Check if any rules are being violated during execution. If so, then raise an exception.
 
         :param dbm: DbManager object
         """

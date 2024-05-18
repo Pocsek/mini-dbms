@@ -6,7 +6,7 @@ class Unique(CObj):
         super().__init__(constr_name)
         self.__col_names = col_names
 
-    def validate(self, dbm):
+    def validate(self, dbm, **kwargs):
         """
         Check if the column already has a constraint of this type.
         """

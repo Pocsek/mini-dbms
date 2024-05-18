@@ -10,10 +10,10 @@ class ExecutableTree(CustomTree, ABC):
         super().__init__()
 
     @abstractmethod
-    def _execute(self, dbm=None):
+    def _execute(self, dbm):
         pass
 
-    def execute(self, dbm=None):
+    def execute(self, dbm):
         """
         Perform validation, then execute the tree.
 

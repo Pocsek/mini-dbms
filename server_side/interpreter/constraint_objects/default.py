@@ -1,4 +1,5 @@
-from .cobj import CObj
+# from .cobj import CObj
+from server_side.interpreter.constraint_objects import *
 
 
 class Default(CObj):
@@ -7,13 +8,35 @@ class Default(CObj):
         self.__col_name = col_name
         self.__default_value = default_value
 
-    def validate(self, dbm):
-        pass
+    def validate(self, dbm, **kwargs):
         """
         Check if the column already has a constraint of this type.
         Check if the given default value matches the column's datatype.
         """
-        pass
+        column_definition = kwargs.get("column_definition")
+        if not column_definition:
+            raise ValueError("Column definition not given in DEFAULT constraint validation.")
+        column_definition.validate_has_constraint_not_more_than_once(Default.__name__)
+
+        col_dtype = column_definition.get_datatype()
+        matching = True
+        match col_dtype:
+            case "int":
+                if not self.__default_value.is_int():
+                    matching = False
+            case "float":
+                if not self.__default_value.is_float():
+                    matching = False
+            case "str":
+                if not self.__default_value.is_str():
+                    matching = False
+            case "bool":
+                if not self.__default_value.is_bool():
+                    matching = False
+            case _:
+                raise ValueError(f"Unknown datatype '{col_dtype}'.")
+        if not matching:
+            raise ValueError(f"Default value '{self.__default_value.get_value()}' does not match column's datatype.")
 
     def get_column_name(self):
         return self.__col_name
