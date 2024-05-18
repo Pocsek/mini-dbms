@@ -32,6 +32,11 @@ class ColumnDefinition(CustomTree):
         return self.__col_constraints
 
     def is_allow_nulls(self):
+        """
+        A column cannot be null if:
+            - it is part of a primary key
+            - or has a "not null" constraint applied to it
+        """
         for col_constraint in self.__col_constraints:
             if isinstance(col_constraint, PrimaryKey) or isinstance(col_constraint, NotNull):
                 return False

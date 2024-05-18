@@ -100,6 +100,9 @@ class Table(Dbo):
         """
         if isinstance(key, PrimaryKeyCObj):
             self.__primary_key = PrimaryKey(key)
+            # every column that is part of the primary key should not allow nulls
+            for col_name in key.get_column_names():
+                self.find_column(col_name).set_allow_nulls(False)
         elif isinstance(key, ForeignKeyCObj):
             self.__foreign_keys.append(ForeignKey(key))
         elif isinstance(key, UniqueCObj):
