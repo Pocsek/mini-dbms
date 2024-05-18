@@ -12,12 +12,11 @@ class CustomTree(Tree, ABC):
         self.create_node(self.__class__.__name__)  # add root node
 
     @abstractmethod
-    def validate(self, dbm=None, mongo_client=None):
+    def validate(self, dbm=None):
         """
         Check if any rules are being violated during execution.
 
         :param dbm: DbManager object
-        :param mongo_client: MongoClient object
         """
         pass
 

@@ -23,8 +23,9 @@
 + "DESCRIBE TABLE" command
 
 ## Lab3
-1. integrity validation for "insert into"
-2. integrity validation for "delete from"
+1. create index files
+2. integrity validation for "insert into"
+3. integrity validation for "delete from"
 
 ## Lab4
 1. parser for "select"

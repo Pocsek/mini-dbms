@@ -79,7 +79,7 @@ class CreateTable(ExecutableTree):
         self.__col_defs: list[ColumnDefinition] = []
         self.__table_constraints: list[CObj] = []
 
-    def validate(self, dbm=None, mongo_client=None):
+    def validate(self, dbm=None):
         """
         Check if there already exists a table with the given name.
         Call the validate method of the column definitions.
@@ -87,7 +87,7 @@ class CreateTable(ExecutableTree):
         """
         pass
 
-    def _execute(self, dbm=None, mongo_client=None):
+    def _execute(self, dbm=None):
         """
         Update the json structure with the new table.
         """

@@ -7,13 +7,13 @@ class CreateDatabase(ExecutableTree):
         super().__init__()
         self.__db_name = CharConst(db_name)
 
-    def validate(self, dbm=None, mongo_client=None):
+    def validate(self, dbm=None):
         """
         Check if there already exists a database with the given name.
         """
         pass
 
-    def _execute(self, dbm=None, mongo_client=None):
+    def _execute(self, dbm=None):
         """
         Update the json structure with the new database.
         """

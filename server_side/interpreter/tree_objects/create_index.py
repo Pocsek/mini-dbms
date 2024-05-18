@@ -5,10 +5,10 @@ class CreateIndex(ExecutableTree):
     def __init__(self):
         super().__init__()
 
-    def _execute(self, dbm=None, mongo_client=None):
+    def _execute(self, dbm=None):
         pass
 
-    def validate(self, dbm=None, mongo_client=None):
+    def validate(self, dbm=None):
         pass
 
     def connect_nodes_to_root(self):

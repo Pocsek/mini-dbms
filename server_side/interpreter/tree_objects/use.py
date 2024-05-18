@@ -7,13 +7,13 @@ class Use(ExecutableTree):
         super().__init__()
         self.__db_name = CharConst(db_name)
 
-    def validate(self, dbm=None, mongo_client=None):
+    def validate(self, dbm=None):
         """
         Check if a database with the given name exists.
         """
         pass
 
-    def _execute(self, dbm=None, mongo_client=None):
+    def _execute(self, dbm=None):
         """
         Change the working DB.
         """

@@ -10,7 +10,7 @@ class ColumnDefinition(CustomTree):
         self.__datatype = tcol_def.get_data_type()
         self.__col_constraints: list[CObj] = tcol_def.get_col_constraints()
 
-    def validate(self, dbm=None, mongo_client=None):
+    def validate(self, dbm=None):
         """
         Check if there already exists a column in the parent table with the given name.
         """
