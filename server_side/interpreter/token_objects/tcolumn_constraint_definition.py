@@ -38,7 +38,7 @@ class TColumnConstraintDefinition(TObj):
                 # DEFAULT value
                 token_list.consume_concrete("default")
                 t = token_list.consume_group(TValue())
-                self.__constr = Default(t.get_value())
+                self.__constr = Default(t.get_value(), self.__constr_name)
             case "foreign":
                 # FOREIGN KEY REFERENCES ref_table_name (ref_col_name)
                 token_list.consume_concrete("foreign")
@@ -70,7 +70,7 @@ class TColumnConstraintDefinition(TObj):
             case "primary":
                 token_list.consume_concrete("primary")
                 token_list.consume_concrete("key")
-                self.__constr = PrimaryKey([self.__src_col_name])
+                self.__constr = PrimaryKey([self.__src_col_name], self.__constr_name)
             case "references":
                 # REFERENCES ref_table_name (ref_col_name)
                 token_list.consume_concrete("references")
@@ -103,7 +103,7 @@ class TColumnConstraintDefinition(TObj):
                 )
             case "unique":
                 token_list.consume_concrete("unique")
-                self.__constr = Unique([self.__src_col_name])
+                self.__constr = Unique([self.__src_col_name], self.__constr_name)
             case _:
                 raise SyntaxError(f"Unexpected token at {token_list.peek()}")
 
