@@ -1,6 +1,3 @@
-"""NOT IMPLEMENTED"""
-
-from server_side.interpreter.tree_objects.constraint_definition import ConstraintDefinition
 from server_side.interpreter.tree_objects.custom_tree import CustomTree
 from server_side.interpreter.token_objects.tcolumn_definition import TColumnDefinition
 from server_side.interpreter.constraint_objects import *

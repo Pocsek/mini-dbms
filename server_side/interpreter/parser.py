@@ -103,10 +103,8 @@ class Parser:
                     tree.add_column_definition(ColumnDefinition(tcol_def))
                 case TokenType.KEYWORD:
                     # A table constraint definition is expected
-                    # tconstr_def = token_list.consume_group(TTableConstraintDefinition())
-                    # constr_def = ConstraintDefinition(...)
-                    # tree.add_constraint_definition(constr_def)
-                    pass
+                    tconstr_def = token_list.consume_group(TTableConstraintDefinition())
+                    tree.add_table_constraint(tconstr_def.get_constraint())
                 case _:
                     # end of definition or end of command expected
                     t = token_list.consume_either([",", ")"])

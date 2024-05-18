@@ -10,7 +10,18 @@ from server_side.interpreter.constraint_objects import *
 
 
 class TColumnConstraintDefinition(TObj):
-    """[CONSTRAINT constraint_name] constraint_type ( constraint_args )"""
+    """
+    A column constraint is a constraint that is applied to a single column. It is defined within a column definition.
+
+    Syntax:
+        [CONSTRAINT constraint_name] constraint_type <constraint_args>
+
+    Example:
+        CREATE TABLE t1 (
+            col1 INT PRIMARY KEY
+        );
+    """
+
     def __init__(self, src_col_name=None):
         self.__constr_name = None
         self.__constr: CObj | None = None
@@ -27,7 +38,7 @@ class TColumnConstraintDefinition(TObj):
                 t = token_list.consume_group(TLogicalExpression())
                 token_list.consume_concrete(")")
 
-                # To-do: Implement Check class
+                # TODO: Implement Check class
                 # self.__constr_type = Check()
             case "constraint":
                 # CONSTRAINT constraint_name

@@ -4,9 +4,12 @@ from server_side.database_objects.index import Index
 from server_side.database_objects.primary_key import PrimaryKey
 from server_side.database_objects.foreign_key import ForeignKey
 from server_side.database_objects.unique import Unique
-from server_side.interpreter.constraint_objects.primary_key import PrimaryKey as PrimaryKeyCObj
-from server_side.interpreter.constraint_objects.foreign_key import ForeignKey as ForeignKeyCObj
-from server_side.interpreter.constraint_objects.unique import Unique as UniqueCObj
+from server_side.interpreter.constraint_objects import (
+    PrimaryKey as PrimaryKeyCObj,
+    ForeignKey as ForeignKeyCObj,
+    Unique as UniqueCObj,
+    Check as CheckCObj,
+)
 
 
 class Table(Dbo):
@@ -83,11 +86,36 @@ class Table(Dbo):
     def has_primary_key(self) -> bool:
         return self.__primary_key is not None
 
-    def add_key_constraint(self, key):
-        """Note: Convert the key - constraint object (CObj) to a database object (Dbo) before adding it to the table."""
+    def find_column(self, col_name):
+        for col in self.__columns:
+            if col.get_name() == col_name:
+                return col
+        raise ValueError(f"Column {col_name} not found")
+
+    def add_key(self, key):
+        """
+        Adds a key to the table.
+
+        Note: Convert the key - constraint object (CObj) to a database object (Dbo) before adding it to the table.
+        """
         if isinstance(key, PrimaryKeyCObj):
             self.__primary_key = PrimaryKey(key)
         elif isinstance(key, ForeignKeyCObj):
             self.__foreign_keys.append(ForeignKey(key))
         elif isinstance(key, UniqueCObj):
             self.__unique_keys.append(Unique(key))
+        else:
+            raise ValueError(f"Invalid key type: {type(key)}")
+
+    def add_constraint(self, constraint):
+        """
+        Adds a constraint to the corresponding column.
+
+        :param constraint: CObj object
+        """
+
+        if isinstance(constraint, CheckCObj):
+            # TODO: implement Check
+            pass
+        else:
+            raise ValueError(f"Invalid constraint type: {type(constraint)}")

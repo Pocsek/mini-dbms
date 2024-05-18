@@ -1,5 +1,6 @@
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
 from server_side.interpreter.tree_objects.column_definition import ColumnDefinition
+from server_side.interpreter.constraint_objects import CObj, PrimaryKey, ForeignKey, Unique
 
 
 class CreateTable(ExecutableTree):
@@ -76,7 +77,7 @@ class CreateTable(ExecutableTree):
         super().__init__()
         self.__name = ""
         self.__col_defs: list[ColumnDefinition] = []
-        self.__table_constr_defs = []
+        self.__table_constraints: list[CObj] = []
 
     def validate(self, dbm=None, mongo_client=None):
         """
@@ -104,7 +105,13 @@ class CreateTable(ExecutableTree):
             table.add_column(column)
             # add key constraints to the table
             for key in col_def.get_keys():
-                table.add_key_constraint(key)
+                table.add_key(key)
+        for constr in self.__table_constraints:
+            # add constraint to the table
+            if _is_key(constr):
+                table.add_key(constr)
+            else:
+                table.add_constraint(constr)
 
         dbm.create_table(table)
         print(f"Table '{table.get_name()}' created successfully.")
@@ -125,10 +132,14 @@ class CreateTable(ExecutableTree):
         return self.__col_defs
 
     def get_constraint_definitions(self):
-        return self.__table_constr_defs
+        return self.__table_constraints
 
     def add_column_definition(self, col_def: ColumnDefinition):
         self.__col_defs.append(col_def)
 
-    def add_table_constraint_definition(self, constr_def):
-        self.__table_constr_defs.append(constr_def)
+    def add_table_constraint(self, constr_def):
+        self.__table_constraints.append(constr_def)
+
+
+def _is_key(constraint: CObj):
+    return isinstance(constraint, PrimaryKey) or isinstance(constraint, ForeignKey) or isinstance(constraint, Unique)
