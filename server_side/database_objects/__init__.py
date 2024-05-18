@@ -8,5 +8,6 @@ from .index import Index
 from .dbo import Dbo
 from .primary_key import PrimaryKey
 from .foreign_key import ForeignKey
+from .unique import Unique
 from . import mongo_db
 
