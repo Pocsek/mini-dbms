@@ -15,18 +15,21 @@ class ColumnDefinition(CustomTree):
         Check if there is another column with the same name in the column definitions.
         Call the validate method of the column constraints.
         """
-        col_defs: list = kwargs.get("column_definitions")
-        if col_defs:
-            for col_def in col_defs:
-                if col_def == self:  # exclude self from the list
-                    continue
-                if col_def.get_name() == self.__name:
-                    raise ValueError(f"Column with name '{self.__name}' already exists.")
+        col_defs: list[ColumnDefinition] | None = kwargs.get("column_definitions")
+        if not col_defs:
+            raise ValueError("List of column definitions not given in column definition validation.")
 
-        table_constraints: list = kwargs.get("table_constraints")
+        for col_def in col_defs:
+            if col_def == self:  # exclude self from the list
+                continue
+            if col_def.get_name() == self.__name:
+                raise ValueError(f"Column with name '{self.__name}' already exists.")
+
+        table_constraints: list[CObj] = kwargs.get("table_constraints")
         for col_constraint in self.__col_constraints:
             col_constraint.validate(dbm,
                                     column_definition=self,
+                                    column_definitions=col_defs,
                                     table_constraints=table_constraints)
 
     def connect_nodes_to_root(self) -> None:
@@ -84,17 +87,17 @@ class ColumnDefinition(CustomTree):
                 keys.append(col_constraint)
         return keys
 
-    def has_constraint(self, constraint_type: str) -> bool:
+    def has_constraint(self, constraint_type: type) -> bool:
         for col_constraint in self.__col_constraints:
-            if type(col_constraint).__name__ == constraint_type:
+            if isinstance(col_constraint, constraint_type):
                 return True
         return False
 
-    def validate_has_constraint_not_more_than_once(self, constraint_type: str):
+    def validate_has_constraint_not_more_than_once(self, constraint_type: type):
         cnt = 0
         for col_constraint in self.__col_constraints:
-            if type(col_constraint).__name__ == constraint_type:
+            if isinstance(col_constraint, constraint_type):
                 cnt += 1
                 if cnt > 1:
-                    raise ValueError(f"Column '{self.__name}': cannot have more than one {constraint_type} "
+                    raise ValueError(f"Column '{self.__name}': cannot have more than one '{constraint_type.__name__}' "
                                      f"constraints on the same column.")

@@ -1,5 +1,4 @@
-# from .cobj import CObj
-from server_side.interpreter.constraint_objects import *
+from .cobj import CObj
 
 
 class NotNull(CObj):
@@ -15,12 +14,13 @@ class NotNull(CObj):
         column_definition = kwargs.get("column_definition")
         if not column_definition:
             raise ValueError("Column definition not given in NOT NULL constraint validation.")
-        # TODO column_definition.validate_has_constraint_not_more_than_once(NotNull.__name__)
-        # TODO if column_definition.has_constraint(Null.__name__):
-        #     raise ValueError(
-        #         f"Column '{self.__col_name}': cannot have both a NULL constraint and a NOT NULL constraint on the "
-        #         f"same column."
-        #     )
+        column_definition.validate_has_constraint_not_more_than_once(NotNull)
+        from .null import Null
+        if column_definition.has_constraint(Null):
+            raise ValueError(
+                f"Column '{self.__col_name}': cannot have both a NULL constraint and a NOT NULL constraint on the "
+                f"same column."
+            )
 
     def get_column_name(self):
         return self.__col_name

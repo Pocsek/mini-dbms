@@ -1,6 +1,5 @@
-# from .cobj import CObj
-# from .primary_key import PrimaryKey
-from server_side.interpreter.constraint_objects import *
+from .cobj import CObj
+from .primary_key import PrimaryKey
 
 
 class Null(CObj):
@@ -17,15 +16,16 @@ class Null(CObj):
         column_definition = kwargs.get("column_definition")
         if not column_definition:
             raise ValueError("Column definition not given in NULL constraint validation.")
-        # TODO column_definition.validate_has_constraint_not_more_than_once(Null.__name__)
-        # TODO if column_definition.has_constraint(NotNull.__name__):
-        #     raise ValueError(
-        #         f"Column '{self.__col_name}': cannot have both NULL and NOT NULL constraints on the same column."
-        #     )
-        # TODO if column_definition.has_constraint(PrimaryKey.__name__):
-        #     raise ValueError(
-        #         f"Column '{self.__col_name}': cannot have a NULL constraint on a primary key."
-        #     )
+        column_definition.validate_has_constraint_not_more_than_once(Null)
+        from .not_null import NotNull
+        if column_definition.has_constraint(NotNull):
+            raise ValueError(
+                f"Column '{self.__col_name}': cannot have both NULL and NOT NULL constraints on the same column."
+            )
+        if column_definition.has_constraint(PrimaryKey):
+            raise ValueError(
+                f"Column '{self.__col_name}': cannot have a NULL constraint on a primary key."
+            )
 
     def get_column_name(self):
         return self.__col_name

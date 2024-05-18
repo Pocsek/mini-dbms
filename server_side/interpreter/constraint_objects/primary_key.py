@@ -1,5 +1,4 @@
-# from .cobj import CObj
-from server_side.interpreter.constraint_objects import *
+from .cobj import CObj
 
 
 class PrimaryKey(CObj):
@@ -25,21 +24,18 @@ class PrimaryKey(CObj):
         if not column_definitions:
             raise ValueError(f"Column definitions not given in PRIMARY KEY constraint validation.")
 
-        table_constraints = kwargs.get("table_constraints")
-        if not table_constraints:
-            raise ValueError(f"Table constraints not given in PRIMARY KEY constraint validation.")
-
+        table_constraints = kwargs.get("table_constraints", [])
 
         column_definition = kwargs.get("column_definition")
         if column_definition:  # the constraint is defined inside a column definition
-            # TODO column_definition.validate_has_constraint_not_more_than_once(PrimaryKey.__name__)
+            column_definition.validate_has_constraint_not_more_than_once(PrimaryKey)
 
-            # TODO for col_def in column_definitions:
-            #     if col_def == column_definition:  # exclude self from the list
-            #         continue:
-            #     if col_def.has_constraint(PrimaryKey.__name__):
-            #         raise ValueError(f"Column '{column_definition.get_name()}': cannot have more than one PRIMARY KEY "
-            #                          f"constraints on the same table.")
+            for col_def in column_definitions:
+                if col_def == column_definition:  # exclude self from the list
+                    continue
+                if col_def.has_constraint(PrimaryKey):
+                    raise ValueError(f"Column '{column_definition.get_name()}': cannot have more than one PRIMARY KEY "
+                                     f"constraints on the same table.")
 
             for constr in table_constraints:
                 if isinstance(constr, PrimaryKey):
@@ -53,13 +49,14 @@ class PrimaryKey(CObj):
                     raise ValueError(f"Table '{kwargs.get('table_name')}': cannot have more than one PRIMARY KEY "
                                      f"constraints on the same table.")
 
+            from .null import Null
             for col_name in self.__column_names:
                 found = False
                 for col_def in column_definitions:
                     if col_def.get_name() == col_name:
-                        # TODO if col_def.has_constraint(Null.__name__):
-                        #     raise ValueError(f"Column '{col_name}': cannot be part of a PRIMARY KEY constraint "
-                        #                      f"if it has a NULL constraint.")
+                        if col_def.has_constraint(Null):
+                            raise ValueError(f"Column '{col_name}': cannot be part of a PRIMARY KEY constraint "
+                                             f"if it has a NULL constraint.")
                         found = True
                         break
                 if not found:

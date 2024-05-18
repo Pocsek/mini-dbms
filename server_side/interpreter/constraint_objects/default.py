@@ -1,5 +1,4 @@
-# from .cobj import CObj
-from server_side.interpreter.constraint_objects import *
+from .cobj import CObj
 
 
 class Default(CObj):
@@ -16,7 +15,7 @@ class Default(CObj):
         column_definition = kwargs.get("column_definition")
         if not column_definition:
             raise ValueError("Column definition not given in DEFAULT constraint validation.")
-        # TODO column_definition.validate_has_constraint_not_more_than_once(Default.__name__)
+        column_definition.validate_has_constraint_not_more_than_once(Default)
 
         col_dtype = column_definition.get_datatype()
         matching = True
