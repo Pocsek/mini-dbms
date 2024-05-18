@@ -16,27 +16,27 @@ class Default(CObj):
         column_definition = kwargs.get("column_definition")
         if not column_definition:
             raise ValueError("Column definition not given in DEFAULT constraint validation.")
-        column_definition.validate_has_constraint_not_more_than_once(Default.__name__)
+        # TODO column_definition.validate_has_constraint_not_more_than_once(Default.__name__)
 
         col_dtype = column_definition.get_datatype()
         matching = True
         match col_dtype:
             case "int":
-                if not self.__default_value.is_int():
+                if not isinstance(self.__default_value, int):
                     matching = False
             case "float":
-                if not self.__default_value.is_float():
+                if not isinstance(self.__default_value, float):
                     matching = False
             case "str":
-                if not self.__default_value.is_str():
+                if not isinstance(self.__default_value, str):
                     matching = False
             case "bool":
-                if not self.__default_value.is_bool():
+                if not isinstance(self.__default_value, bool):
                     matching = False
             case _:
                 raise ValueError(f"Unknown datatype '{col_dtype}'.")
         if not matching:
-            raise ValueError(f"Default value '{self.__default_value.get_value()}' does not match column's datatype.")
+            raise ValueError(f"Default value '{self.__default_value}' does not match column's datatype.")
 
     def get_column_name(self):
         return self.__col_name

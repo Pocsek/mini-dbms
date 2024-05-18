@@ -18,16 +18,17 @@ class Identity(CObj):
         column_definition = kwargs.get("column_definition")
         if not column_definition:
             raise ValueError("Column definition not given in IDENTITY constraint validation.")
-        column_definition.validate_has_constraint_not_more_than_once(Identity.__name__)
+        # TODO column_definition.validate_has_constraint_not_more_than_once(Identity.__name__)
 
         column_definitions = kwargs.get("column_definitions")
         if not column_definitions:
             raise ValueError(f"Column definitions not given in IDENTITY constraint validation.")
-        column_definitions.remove(column_definition)  # exclude self from the list
-        for col_def in column_definitions:
-            if col_def.has_constraint(Identity.__name__):
-                raise ValueError(f"Column '{column_definition.get_name()}': cannot have more than one IDENTITY "
-                                 f"constraints on the same table.")
+        # TODO for col_def in column_definitions:
+        #     if col_def == column_definition:  # exclude self from the list
+        #         continue
+        #     if col_def.has_constraint(Identity.__name__):
+        #         raise ValueError(f"Column '{column_definition.get_name()}': cannot have more than one IDENTITY "
+        #                          f"constraints on the same table.")
 
         if not isinstance(self.__seed, int):
             raise ValueError(f"Column '{column_definition.get_name()}': seed must be an integer.")

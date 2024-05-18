@@ -32,21 +32,23 @@ class PrimaryKey(CObj):
 
         column_definition = kwargs.get("column_definition")
         if column_definition:  # the constraint is defined inside a column definition
-            column_definition.validate_has_constraint_not_more_than_once(PrimaryKey.__name__)
+            # TODO column_definition.validate_has_constraint_not_more_than_once(PrimaryKey.__name__)
 
-            column_definitions.remove(column_definition)  # exclude self from the list
-            for col_def in column_definitions:
-                if col_def.has_constraint(PrimaryKey.__name__):
-                    raise ValueError(f"Column '{column_definition.get_name()}': cannot have more than one PRIMARY KEY "
-                                     f"constraints on the same table.")
+            # TODO for col_def in column_definitions:
+            #     if col_def == column_definition:  # exclude self from the list
+            #         continue:
+            #     if col_def.has_constraint(PrimaryKey.__name__):
+            #         raise ValueError(f"Column '{column_definition.get_name()}': cannot have more than one PRIMARY KEY "
+            #                          f"constraints on the same table.")
 
             for constr in table_constraints:
                 if isinstance(constr, PrimaryKey):
                     raise ValueError(f"Column '{column_definition.get_name()}': cannot have more than one PRIMARY KEY "
                                      f"constraints on the same table.")
-        else:
-            table_constraints.remove(self)  # exclude self from the list
+        else:  # the constraint is a table constraint
             for constr in table_constraints:
+                if constr == self:  # exclude self from the list
+                    continue
                 if isinstance(constr, PrimaryKey):
                     raise ValueError(f"Table '{kwargs.get('table_name')}': cannot have more than one PRIMARY KEY "
                                      f"constraints on the same table.")
@@ -55,9 +57,9 @@ class PrimaryKey(CObj):
                 found = False
                 for col_def in column_definitions:
                     if col_def.get_name() == col_name:
-                        if col_def.has_constraint(Null.__name__):
-                            raise ValueError(f"Column '{col_name}': cannot be part of a PRIMARY KEY constraint "
-                                             f"if it has a NULL constraint.")
+                        # TODO if col_def.has_constraint(Null.__name__):
+                        #     raise ValueError(f"Column '{col_name}': cannot be part of a PRIMARY KEY constraint "
+                        #                      f"if it has a NULL constraint.")
                         found = True
                         break
                 if not found:

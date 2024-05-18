@@ -17,13 +17,17 @@ class ColumnDefinition(CustomTree):
         """
         col_defs: list = kwargs.get("column_definitions")
         if col_defs:
-            col_defs.remove(self)  # exclude self from the list
             for col_def in col_defs:
+                if col_def == self:  # exclude self from the list
+                    continue
                 if col_def.get_name() == self.__name:
                     raise ValueError(f"Column with name '{self.__name}' already exists.")
 
+        table_constraints: list = kwargs.get("table_constraints")
         for col_constraint in self.__col_constraints:
-            col_constraint.validate(dbm, column_definition=self)
+            col_constraint.validate(dbm,
+                                    column_definition=self,
+                                    table_constraints=table_constraints)
 
     def connect_nodes_to_root(self) -> None:
         pass

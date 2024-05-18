@@ -90,7 +90,6 @@ class CreateTable(ExecutableTree):
             raise ValueError(f"Table with name '{self.__name}' already exists.")
         for col_def in self.__col_defs:
             col_def.validate(dbm,
-                             column_definition=col_def,
                              column_definitions=self.__col_defs,
                              table_constraints=self.__table_constraints)
         for constr in self.__table_constraints:
