@@ -28,3 +28,9 @@ class ForeignKey(CObj):
 
     def get_referenced_column_names(self):
         return self.__ref_col_names
+
+    def get_on_delete(self):
+        return self.__on_delete
+
+    def get_on_update(self):
+        return self.__on_update
