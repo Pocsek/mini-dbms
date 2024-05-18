@@ -10,6 +10,7 @@ class Identity(CObj):
     def validate(self, dbm):
         """
         Check if the column already has a constraint of this type.
+        Assure that not other column has identity constraint, as only one column can have identity constraint per table.
         Check if the seed and increment values are valid.
         """
         pass
