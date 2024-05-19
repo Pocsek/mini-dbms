@@ -8,17 +8,11 @@ class PrimaryKey(CObj):
 
     def validate(self, dbm, **kwargs):
         """
-        If the constraint is defined inside a column definition:
-            - Check if the column already has a primary key constraint.
-            - Check if another column has a primary key constraint.
-            - Check inside the table constraints for primary key constraints.
-
-        Else (the constraint is defined as a table constraint):
-            - Check for other primary key constraints in the table constraints.
-            - Check if the referenced column names are valid.
-
-        In all cases:
-            - Check if any of the primary key columns have a null constraint.
+        Rules:
+            - Referenced columns should be existing columns.
+            - A table can contain only one primary key constraint.
+            - All columns defined within a primary key constraint must be defined as not null. If nullability isn't
+            specified, all columns participating in a primary key constraint have their nullability set to not null.
         """
         column_definitions = kwargs.get("column_definitions")
         if not column_definitions:

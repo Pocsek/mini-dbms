@@ -26,7 +26,7 @@ class Default(CObj):
             case "float":
                 if not isinstance(self.__default_value, float):
                     matching = False
-            case "str":
+            case "varchar":
                 if not isinstance(self.__default_value, str):
                     matching = False
             case "bool":
