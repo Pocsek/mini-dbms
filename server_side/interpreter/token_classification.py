@@ -6,6 +6,7 @@ class TokenType:
     SEPARATOR = "Separator"
     UNARY_OPERATOR = "Unary Operator"
     BINARY_OPERATOR = "Binary Operator"
+    LOGICAL_OPERATOR = "Logical Operator"
     NUM_CONST = "Numeric Constant"
     CHAR_CONST = "Character Constant"
     IDENTIFIER = "Identifier"
@@ -30,7 +31,7 @@ class Literal:
         "asc",
         "by",
         "cascade",
-        "check"
+        "check",
         "column",
         "constraint",
         "database",
@@ -112,6 +113,18 @@ class Literal:
         "*=",
         "/=",
         "%=",
+        "and",
+        "or"
+    )
+
+    LOGICAL_OPERATORS = (
+        ">",
+        "<",
+        "=",
+        ">=",
+        "<=",
+        "<>",
+        "!="
         "and",
         "or"
     )

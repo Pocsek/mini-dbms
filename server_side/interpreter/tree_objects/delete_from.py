@@ -29,7 +29,6 @@ class DeleteFrom(ExecutableTree):
         Checks if the condition refers to only the primary key.
 
         !In the future might want to validate the condition too!
-        :param **kwargs:
         """
         db_idx = dbm.get_working_db_index()
         tb_idx = dbm.find_table(db_idx, self.__table_name)

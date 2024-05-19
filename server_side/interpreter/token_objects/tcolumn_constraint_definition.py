@@ -35,11 +35,14 @@ class TColumnConstraintDefinition(TObj):
                 # CHECK (logical_expression)
                 token_list.consume_concrete("check")
                 token_list.consume_concrete("(")
-                t = token_list.consume_group(TLogicalExpression())
-                token_list.consume_concrete(")")
 
-                # TODO: Implement Check class
-                # self.__constr_type = Check()
+                # t = token_list.consume_group(TLogicalExpression()) TODO
+
+                col_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+                op = token_list.consume_of_type(TokenType.LOGICAL_OPERATOR)
+                value = token_list.consume_group(TValue()).get_value()
+                token_list.consume_concrete(")")
+                self.__constr = Check(col_name, op, value, self.__constr_name)
             case "constraint":
                 # CONSTRAINT constraint_name
                 token_list.consume_concrete("constraint")

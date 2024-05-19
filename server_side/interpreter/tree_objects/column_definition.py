@@ -87,6 +87,13 @@ class ColumnDefinition(CustomTree):
                 keys.append(col_constraint)
         return keys
 
+    def get_constraints(self):
+        constraints = self.__col_constraints.copy()
+        keys = self.get_keys()
+        for key in keys:
+            constraints.remove(key)
+        return constraints
+
     def has_constraint(self, constraint_type: type) -> bool:
         for col_constraint in self.__col_constraints:
             if isinstance(col_constraint, constraint_type):

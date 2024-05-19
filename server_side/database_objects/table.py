@@ -4,6 +4,7 @@ from server_side.database_objects.index import Index
 from server_side.database_objects.primary_key import PrimaryKey
 from server_side.database_objects.foreign_key import ForeignKey
 from server_side.database_objects.unique import Unique
+from server_side.database_objects.check import Check
 from server_side.interpreter.constraint_objects import (
     PrimaryKey as PrimaryKeyCObj,
     ForeignKey as ForeignKeyCObj,
@@ -19,7 +20,8 @@ class Table(Dbo):
                  indexes: list[Index] | None = None,
                  primary_key: PrimaryKey | None = None,
                  foreign_keys: list[ForeignKey] | None = None,
-                 unique_keys: list[Unique] | None = None
+                 unique_keys: list[Unique] | None = None,
+                 checks: list[Check] | None = None
                  ):
         self.__name = name
         self.__columns = columns if columns else []
@@ -27,6 +29,7 @@ class Table(Dbo):
         self.__primary_key = primary_key if primary_key else None
         self.__foreign_keys = foreign_keys if foreign_keys else []
         self.__unique_keys = unique_keys if unique_keys else []
+        self.__checks = checks if checks else []
 
     def __dict__(self) -> dict:
         return {
@@ -35,7 +38,8 @@ class Table(Dbo):
             "indexes": [index.__dict__() for index in self.__indexes],
             "primary_key": self.__primary_key.__dict__() if self.__primary_key is not None else {},
             "foreign_keys": [fk.__dict__() for fk in self.__foreign_keys] if self.__foreign_keys else [],
-            "unique_keys": [uk.__dict__() for uk in self.__unique_keys] if self.__unique_keys else []
+            "unique_keys": [uk.__dict__() for uk in self.__unique_keys] if self.__unique_keys else [],
+            "checks": [c.__dict__() for c in self.__checks] if self.__checks else []
         }
 
     def from_dict(self, data: dict) -> 'Table':
@@ -124,7 +128,6 @@ class Table(Dbo):
         """
 
         if isinstance(constraint, CheckCObj):
-            # TODO: implement Check
-            pass
+            self.__checks.append(Check(constraint))
         else:
             raise ValueError(f"Invalid constraint type: {type(constraint)}")

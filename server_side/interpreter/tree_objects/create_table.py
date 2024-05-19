@@ -116,6 +116,9 @@ class CreateTable(ExecutableTree):
             # add key constraints to the table
             for key in col_def.get_keys():
                 table.add_key(key)
+            # add other constraints to the table
+            for constr in col_def.get_constraints():
+                table.add_constraint(constr)
         for constr in self.__table_constraints:
             # add constraint to the table
             if _is_key(constr):

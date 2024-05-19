@@ -32,7 +32,6 @@ class InsertInto(ExecutableTree):
         - primary key
         - default
         -etc.
-        :param **kwargs:
         """
         # check if all values are valid
         # if identity is set the column can't be inserted -> won't be implemented in the first version

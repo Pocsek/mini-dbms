@@ -100,6 +100,8 @@ class Tokenizer:
             return TokenType.PARENTHESIS
         if token in Literal.SEPARATORS:
             return TokenType.SEPARATOR
+        if token in Literal.LOGICAL_OPERATORS:
+            return TokenType.LOGICAL_OPERATOR
         if token in Literal.UNARY_OPERATORS:
             return TokenType.UNARY_OPERATOR
         if token in Literal.BINARY_OPERATORS:
