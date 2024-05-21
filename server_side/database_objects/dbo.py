@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class Dbo(ABC):
-    __constraint_name: str = ""
+    __name: str = ""
 
     @abstractmethod
     def __init__(self):

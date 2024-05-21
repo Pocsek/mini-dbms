@@ -51,7 +51,6 @@ class DbManager:
     #     mongo_tables = mongo_db.get_collection_names(db.get_name())
     #     for tb in db.get_tables():
     #         if tb.get_name() not in mongo_tables:
-    #             # TO-DO: create table
     #             pass
 
     def create_table(self, table: Table):
