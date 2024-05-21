@@ -6,12 +6,10 @@ class TokenType:
     SEPARATOR = "Separator"
     UNARY_OPERATOR = "Unary Operator"
     BINARY_OPERATOR = "Binary Operator"
+    LOGICAL_OPERATOR = "Logical Operator"
     NUM_CONST = "Numeric Constant"
     CHAR_CONST = "Character Constant"
     IDENTIFIER = "Identifier"
-    # TABLE_REFERENCE = 10
-    # COLUMN_REFERENCE = 11
-    # RESULT_COLUMN_REFERENCE = 12  # e.g.: first row of a select command
 
 
 class Literal:
@@ -27,11 +25,13 @@ class Literal:
     )
 
     KEYWORDS = (
+        "action",
         "add",
         "as",
         "asc",
         "by",
-        "check"
+        "cascade",
+        "check",
         "column",
         "constraint",
         "database",
@@ -43,6 +43,8 @@ class Literal:
         "from",
         "group",
         "having",
+        "identity",
+        "if",
         "index",
         "inner",
         "into",
@@ -51,12 +53,15 @@ class Literal:
         "left",
         "like",
         "limit",
+        "no",
         "not",
         "null",
         "order",
         "outer",
         "primary",
+        "references",
         "right",
+        "set",
         "table",
         "top",
         "unique",
@@ -108,6 +113,18 @@ class Literal:
         "*=",
         "/=",
         "%=",
+        "and",
+        "or"
+    )
+
+    LOGICAL_OPERATORS = (
+        ">",
+        "<",
+        "=",
+        ">=",
+        "<=",
+        "<>",
+        "!="
         "and",
         "or"
     )

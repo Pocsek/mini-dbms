@@ -2,25 +2,21 @@ from server_side.database_objects.dbo import Dbo
 
 
 class Column(Dbo):
-    __type: str = ""
-    __allow_nulls: bool = True
-    __identity: bool = False
-    __identity_seed: int = 0
-    __identity_increment: int = 0
-
     def __init__(self,
                  name: str = "",
                  data_type: str = "",
                  allow_nulls: bool = True,
                  identity: bool = False,
                  identity_seed: int = 0,
-                 identity_increment: int = 0):
+                 identity_increment: int = 0,
+                 default_value=None):
         self.__name = name
         self.__type = data_type
         self.__allow_nulls = allow_nulls
         self.__identity = identity
         self.__identity_seed = identity_seed
         self.__identity_increment = identity_increment
+        self.__default_value = default_value
 
     def __dict__(self) -> dict:
         return {
@@ -29,7 +25,8 @@ class Column(Dbo):
             "allow_nulls": self.__allow_nulls,
             "identity": self.__identity,
             "identity_seed": self.__identity_seed,
-            "identity_increment": self.__identity_increment
+            "identity_increment": self.__identity_increment,
+            "default_value": self.__default_value
         }
 
     def from_dict(self, data: dict) -> 'Column':
@@ -39,6 +36,7 @@ class Column(Dbo):
         self.__identity = data.get("identity", False)
         self.__identity_seed = data.get("identity_seed", 0)
         self.__identity_increment = data.get("identity_increment", 0)
+        self.__default_value = data.get("default_value", None)
         return self
 
     def get_name(self) -> str:
@@ -59,6 +57,9 @@ class Column(Dbo):
     def get_identity_increment(self) -> int:
         return self.__identity_increment
 
+    def get_default_value(self):
+        return self.__default_value
+
     def set_name(self, name: str):
         self.__name = name
 
@@ -68,11 +69,11 @@ class Column(Dbo):
     def set_allow_nulls(self, allow_nulls: bool):
         self.__allow_nulls = allow_nulls
 
-    def set_identity(self, identity: bool):
-        self.__identity = identity
-
-    def set_identity_seed(self, identity_seed: int):
+    def set_identity(self, identity_values: tuple[int, int] | tuple[None, None]):
+        identity_seed, identity_increment = identity_values
+        self.__identity = identity_seed is not None and identity_increment is not None
         self.__identity_seed = identity_seed
-
-    def set_identity_increment(self, identity_increment: int):
         self.__identity_increment = identity_increment
+
+    def set_default_value(self, default_value):
+        self.__default_value = default_value

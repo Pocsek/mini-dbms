@@ -31,7 +31,7 @@ class DbManager:
                 self.__dbs = create_default_databases()
                 json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
-    def update_databases(self):
+    def update_db_structure_file(self):
         with open(self.__db_file, "w") as f:
             json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
@@ -51,11 +51,43 @@ class DbManager:
     #     mongo_tables = mongo_db.get_collection_names(db.get_name())
     #     for tb in db.get_tables():
     #         if tb.get_name() not in mongo_tables:
-    #             # TO-DO: create table
     #             pass
+
+    def create_table(self, table: Table):
+        # create collection in MongoDB
+        mongo_db.create_collection(self.get_working_db().get_name(), table.get_name())
+
+        # update structure file
+        self.get_working_db().add_table(table)
+        self.update_db_structure_file()
+
+    def drop_database(self, db_name):
+        # delete db in MongoDB
+        mongo_db.drop_database(db_name)
+
+        # update json structure
+        self.__dbs.pop(self.get_db_index(db_name))
+        self.update_db_structure_file()
+
+    def drop_table(self, table_name):
+        # delete collection in MongoDB
+        mongo_db.drop_collection(self.get_working_db().get_name(), table_name)
+
+        # update json structure
+        db = self.get_working_db()
+        db.remove_table(table_name)
+        self.update_db_structure_file()
+
+    def get_default_database_names(self) -> list[str]:
+        return [db.get_name() for db in create_default_databases()]
 
     def get_databases(self) -> list[Database]:
         return self.__dbs
+
+    def get_db_index(self, db_name):
+        for (idx, db) in enumerate(self.__dbs):
+            if db.get_name() == db_name:
+                return idx
 
     def get_working_db_index(self) -> int:
         return self.__working_db

@@ -1,6 +1,5 @@
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
 from server_side.interpreter.leaf_objects.char_const import CharConst
-from server_side.dbmanager import DbManager
 
 
 class Use(ExecutableTree):
@@ -8,13 +7,14 @@ class Use(ExecutableTree):
         super().__init__()
         self.__db_name = CharConst(db_name)
 
-    def validate(self, dbm: DbManager = None, mongo_client=None):
+    def validate(self, dbm, **kwargs):
         """
         Check if a database with the given name exists.
         """
-        pass
+        if dbm.find_database(self.__db_name.get_value()) == -1:
+            raise ValueError(f"Database '{self.__db_name.get_value()}' does not exist.")
 
-    def _execute(self, dbm: DbManager = None, mongo_client=None):
+    def _execute(self, dbm):
         """
         Change the working DB.
         """

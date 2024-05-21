@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from server_side.interpreter.tree_objects.custom_tree import CustomTree
-from server_side.dbmanager import DbManager
 
 
 class ExecutableTree(CustomTree, ABC):
@@ -11,17 +10,19 @@ class ExecutableTree(CustomTree, ABC):
         super().__init__()
 
     @abstractmethod
-    def _execute(self, dbm: DbManager = None, mongo_client=None):
+    def _execute(self, dbm):
         pass
 
-    def execute(self, dbm: DbManager = None, mongo_client=None):
+    def execute(self, dbm):
         """
         Perform validation, then execute the tree.
+
+        :param dbm: DbManager object
         """
 
         # method of CustomTree which calls the validate method on all of its children
-        self.validate(dbm, mongo_client)
+        self.validate(dbm)
 
         # method of ExecutableTree which calls the execute method of all its ExecutableTree children
-        self._execute(dbm, mongo_client)
+        self._execute(dbm)
 

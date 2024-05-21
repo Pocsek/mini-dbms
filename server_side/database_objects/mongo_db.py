@@ -55,6 +55,33 @@ def insert_one(db_name: str, collection_name: str, key_value_pair: tuple[str, st
 #         return True, []
 
 
+def create_collection(db_name: str, collection_name: str):
+    """
+    Create new collection in a database.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        db = client[db_name]
+        db.create_collection(collection_name)
+
+
+def drop_database(db_name: str):
+    """
+    Deletes a database only if it exists.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        if db_name in client.list_database_names():
+            client.drop_database(db_name)
+
+
+def drop_collection(db_name: str, collection_name: str):
+    """
+    Deletes a collection.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        db = client[db_name]
+        db.drop_collection(collection_name)
+
+
 def delete(db_name: str, collection_name: str, query: dict) -> int:
     """
     Deletes documents from a collection, without any validation.
