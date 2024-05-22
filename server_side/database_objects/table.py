@@ -10,6 +10,9 @@ from server_side.interpreter.constraint_objects import (
     ForeignKey as ForeignKeyCObj,
     Unique as UniqueCObj,
     Check as CheckCObj,
+    Identity as IdentityCObj,
+    Default as DefaultCObj,
+    NotNull as NotNullCObj
 )
 
 
@@ -122,12 +125,23 @@ class Table(Dbo):
 
     def add_constraint(self, constraint):
         """
-        Adds a constraint to the corresponding column.
+        Adds a constraint to the table or to the corresponding column.
 
         :param constraint: CObj object
         """
 
-        if isinstance(constraint, CheckCObj):
+        if isinstance(constraint, NotNullCObj):
+            col_name = constraint.get_column_name()
+            self.get_column(col_name).set_allow_nulls(False)
+        elif isinstance(constraint, DefaultCObj):
+            col_name = constraint.get_column_name()
+            self.get_column(col_name).set_default_value(constraint.get_default_value())
+        elif isinstance(constraint, CheckCObj):
             self.__checks.append(Check(constraint))
+        elif isinstance(constraint, IdentityCObj):
+            col_name = constraint.get_col_name()
+            self.get_column(col_name).set_identity(
+                (constraint.get_seed(), constraint.get_increment())
+            )
         else:
             raise ValueError(f"Invalid constraint type: {type(constraint)}")

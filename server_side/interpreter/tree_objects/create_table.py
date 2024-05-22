@@ -106,12 +106,7 @@ class CreateTable(ExecutableTree):
         table.set_name(self.__name)
         for col_def in self.__col_defs:
             # create column, add it to the table
-            column = Column()
-            column.set_name(col_def.get_name())
-            column.set_type(col_def.get_datatype())
-            column.set_allow_nulls(col_def.is_allow_nulls())
-            column.set_identity(col_def.get_identity_values())
-            column.set_default_value(col_def.get_default_value())
+            column = Column(name=col_def.get_name(), data_type=col_def.get_datatype())
             table.add_column(column)
             # add key constraints to the table
             for key in col_def.get_keys():
