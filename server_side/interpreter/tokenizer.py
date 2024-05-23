@@ -21,6 +21,7 @@ class Tokenizer:
             keyword_case="lower", # cast keywords to lowercase (create, select, group by, or, between, etc. EXCLUDING DATATYPES like int, float, etc.)
             strip_comments=True  # remove comments (both "--" and "/* */" variants)
         )
+        tokenized = re.sub(r"([,;])", r" \1 ", tokenized)  # put space around separators (again)
         tokenized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", tokenized)  # put space around compound operators
         tokenized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", tokenized)  # put space around simple operators
         tokenized = tokenized.replace("\n", " ")  # concatenate all lines into one line

@@ -47,37 +47,6 @@ class ColumnDefinition(CustomTree):
     def get_col_constraints(self):
         return self.__col_constraints
 
-    def is_allow_nulls(self):
-        """
-        A column cannot be null if:
-            - it is part of a primary key
-            - or has a "not null" constraint applied to it
-        """
-        for col_constraint in self.__col_constraints:
-            if isinstance(col_constraint, PrimaryKey) or isinstance(col_constraint, NotNull):
-                return False
-            elif isinstance(col_constraint, Null):
-                return True
-        return True
-
-    def get_identity_values(self):
-        for col_constraint in self.__col_constraints:
-            if isinstance(col_constraint, Identity):
-                return col_constraint.get_seed(), col_constraint.get_increment()
-        return None, None
-
-    def get_default_value(self):
-        for col_constraint in self.__col_constraints:
-            if isinstance(col_constraint, Default):
-                return col_constraint.get_default_value()
-        return None
-
-    def get_check(self):
-        for col_constraint in self.__col_constraints:
-            if isinstance(col_constraint, Check):
-                return col_constraint
-        return None
-
     def get_keys(self):
         keys = []
         for col_constraint in self.__col_constraints:
