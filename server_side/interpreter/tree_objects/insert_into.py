@@ -34,19 +34,27 @@ class InsertInto(ExecutableTree):
         -etc.
         """
         # check if all values are valid
-        # if identity is set the column can't be inserted -> won't be implemented in the first version
-        db_idx = dbm.get_working_db_index()
-        table_idx = dbm.find_table(db_idx, self.__table_name)
-        if table_idx == -1:
+
+        db = dbm.get_working_db()
+        table = db.get_table(self.__table_name)
+        if table is None:
             raise ValueError(f"Table [{self.__table_name}] does not exist in the database.")
-        existing_column_names = dbm.get_column_names(db_idx, table_idx)
+        existing_column_names = table.get_column_names()
         if len(self.__column_names) != 0:
             # if column names are specified, validate them
             self.__validate_column_names(existing_column_names)
         else:
             # if column names are not specified, use the existing column names
             self.__column_names = existing_column_names
-        self.__validate_values()  # validate the values
+
+        # TODO:
+        #  - if identity is declared, remove column with identity from column names
+        #  - create a system database that stores system level data e.g.: last identity value of a table
+        # identity_col = table.get_identity_column()
+        # if identity_col:
+        #     self.__column_names.remove(identity_col.get_name())
+
+        self.__validate_values(table)  # validate the values
 
     def connect_nodes_to_root(self):
         pass
@@ -82,17 +90,78 @@ class InsertInto(ExecutableTree):
             if self.__column_names.count(col_name) > 1:
                 raise ValueError(f"Column [{col_name}] is repeated.")
 
-    def __validate_values(self):
+    def __validate_values(self, table):
         """
         Check if all values are valid and the number of values is equal to the number of column names.
-
-        !Currently, type validation is not implemented!
         """
+        columns = [table.get_column(col_name) for col_name in self.__column_names]
         required_nr_values = len(self.__column_names)
         for value in self.__values:
             if len(value) != required_nr_values:
                 raise ValueError(f"Expected {required_nr_values} values, found {len(value)}.")
+            # TODO: handle case where table has identity column
+
             # check if the types are correct
+            for i, to_insert in enumerate(value):
+                if not self.__matches_type(to_insert, columns[i]):
+                    raise ValueError(f"Value [{to_insert}] does not match the type of column [{columns[i].get_name()}].")
+
+            # check integrity of the record to be inserted
+            # self.__validate_primary_key()
+            # self.__validate_unique_keys()
+            # self.__validate_foreign_keys()
+
+    def __validate_primary_key(self):
+        """
+        Validate primary key integrity, i.e. the record to be inserted is unique to the primary key.
+        Uses indexes to search through rows.
+        """
+        pass
+
+    def __validate_unique_keys(self):
+        """
+        Calls '__validate_unique_key' for each unique key.
+        """
+        pass
+
+    def __validate_unique_key(self):
+        """
+        Validate unique key integrity, i.e. the value to be inserted is unique to the unique key.
+        Uses indexes to search through rows.
+        """
+        pass
+
+    def __validate_foreign_keys(self):
+        """
+        Calls '__validate_foreign_key' for each foreign key.
+        """
+        pass
+
+    def __validate_foreign_key(self):
+        """
+        Validate foreign key integrity, i.e. the value to be inserted appears in the parent table.
+
+        !TODO: implement what happens when either one of SET NULL, SET DEFAULT or CASCADE is set.
+
+        Uses indexes to search through rows.
+        """
+        pass
+
+    def __matches_type(self, val, column) -> bool:
+        # TODO: extract this function into a class dedicated to datatypes
+        """
+        Check if the value matches the type of the column.
+        """
+        col_type = column.get_type()
+        match col_type:
+            case "int":
+                return val.isdigit()
+            case "float":
+                return isinstance(val, float)
+            case "varchar":
+                return isinstance(val, str)
+            case _:
+                raise ValueError(f"Unknown datatype '{col_type}'.")
 
     def __make_records(self) -> list[dict]:
         """

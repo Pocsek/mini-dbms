@@ -105,6 +105,12 @@ class Table(Dbo):
     def has_primary_key(self) -> bool:
         return self.__primary_key is not None
 
+    def get_identity_column(self) -> Column | None:
+        for col in self.__columns:
+            if col.has_identity():
+                return col
+        return None
+
     def add_key(self, key):
         """
         Adds a key to the table.
