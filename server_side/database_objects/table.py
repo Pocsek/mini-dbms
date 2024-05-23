@@ -111,6 +111,18 @@ class Table(Dbo):
                 return col
         return None
 
+    def has_identity(self) -> bool:
+        for col in self.__columns:
+            if col.has_identity():
+                return True
+        return False
+
+    def get_unique_keys(self) -> list:
+        return self.__unique_keys
+
+    def get_foreign_keys(self) -> list:
+        return self.__foreign_keys
+
     def add_key(self, key):
         """
         Adds a key to the table.

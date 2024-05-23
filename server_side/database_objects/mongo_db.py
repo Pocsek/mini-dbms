@@ -126,3 +126,12 @@ def get_collection_names(db_name: str) -> list[str]:
         db = client[db_name]
         return db.list_collection_names()
 
+
+def get_primary_key_indexes(db_name, table_name):
+    """
+    Get default primary key indexes of a collection.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        db = client[db_name]
+        collection = db[table_name]
+        return collection.list_indexes()

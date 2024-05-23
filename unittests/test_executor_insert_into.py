@@ -35,5 +35,5 @@ class TestExecutorInsertInto(TestCase):
 
         self.parser.parse("drop database test_db")
         cleanup = self.parser.get_ast_list()
-        self.executor.execute(cleanup)
+        # self.executor.execute(cleanup)
 

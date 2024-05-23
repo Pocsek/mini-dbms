@@ -54,7 +54,7 @@ class InsertInto(ExecutableTree):
         # if identity_col:
         #     self.__column_names.remove(identity_col.get_name())
 
-        self.__validate_values(table)  # validate the values
+        self.__validate_values(dbm, db, table)  # validate the values
 
     def connect_nodes_to_root(self):
         pass
@@ -90,7 +90,7 @@ class InsertInto(ExecutableTree):
             if self.__column_names.count(col_name) > 1:
                 raise ValueError(f"Column [{col_name}] is repeated.")
 
-    def __validate_values(self, table):
+    def __validate_values(self, dbm, db, table):
         """
         Check if all values are valid and the number of values is equal to the number of column names.
         """
@@ -107,37 +107,47 @@ class InsertInto(ExecutableTree):
                     raise ValueError(f"Value [{to_insert}] does not match the type of column [{columns[i].get_name()}].")
 
             # check integrity of the record to be inserted
-            # self.__validate_primary_key()
+            self.__validate_primary_key(dbm, db, table)
             # self.__validate_unique_keys()
             # self.__validate_foreign_keys()
 
-    def __validate_primary_key(self):
+    def __validate_primary_key(self, dbm, db, table):
         """
         Validate primary key integrity, i.e. the record to be inserted is unique to the primary key.
         Uses indexes to search through rows.
         """
-        pass
+        # if the primary key is not compound and has identity, then it is valid for sure. We can simply return
+        if table.has_identity():
+            return
 
-    def __validate_unique_keys(self):
+        # TODO: search for the primary key among the primary key indexes
+        # pk_to_insert = dbm.build_key(table.get_primary_key().get_column_names())
+        # indexes = dbm.get_primary_key_indexes(db, table)
+        # if any(index["key"] == {"_id": pk_to_insert} for index in indexes):
+        #     raise ValueError(f"Primary key [{pk_to_insert}] already exists in the table.")
+
+    def __validate_unique_keys(self, dbm, db, table):
         """
         Calls '__validate_unique_key' for each unique key.
         """
-        pass
+        for uq in table.get_unique_keys():
+            self.__validate_unique_key(uq, dbm, db, table)  # TODO: implement this
 
-    def __validate_unique_key(self):
+    def __validate_unique_key(self, uq, dbm, db, table):
         """
         Validate unique key integrity, i.e. the value to be inserted is unique to the unique key.
         Uses indexes to search through rows.
         """
         pass
 
-    def __validate_foreign_keys(self):
+    def __validate_foreign_keys(self, dbm, db, table):
         """
         Calls '__validate_foreign_key' for each foreign key.
         """
-        pass
+        for fk in table.get_foreign_keys():
+            self.__validate_foreign_key(fk, dbm, db, table)  # TODO: implement this
 
-    def __validate_foreign_key(self):
+    def __validate_foreign_key(self, fk, dbm, db, table):
         """
         Validate foreign key integrity, i.e. the value to be inserted appears in the parent table.
 

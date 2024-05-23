@@ -240,3 +240,26 @@ def build_key_value_pair(record: dict, column_names: list[str], primary_key_name
         else:
             value += part
     return key[:-1], value[:-1]  # don't add the separator character at the end
+
+
+# TODO
+# def build_key(column_names: list[str]):
+#     """
+#     Build a key, from a record's specific columns in a table.
+#     Concatenates the values of the columns into the key.
+#     Separator character is "#".
+#     """
+#     key: str = str()
+#     separator_char = "#"
+#     ...
+#     ...
+#     return key[:-1]  # don't add the separator character at the end
+
+
+def get_primary_key_indexes(db: Database, table: Table):
+    """
+    Retrieves the automatically created primary key indexes for the given table.
+    :return: a cursor (generator) over the index documents of the collection (table), more efficient than retrieving all
+            indexes and then iterating through them
+    """
+    return mongo_db.get_primary_key_indexes(db, table)
