@@ -32,29 +32,6 @@ def insert_one(db_name: str, collection_name: str, key_value_pair: tuple[str, st
         return key
 
 
-# def insert_many(db_name: str, collection_name: str, key_value_pairs: list[tuple[str, str]]) -> list[str]:
-#     """
-#     Insert multiple documents into a collection without any validation.
-#     Ordering is not guaranteed.
-#     Returns a list of keys of the inserted documents on success.
-#     """
-#     with pymongo.MongoClient(str(_MongoHost())) as client:
-#         db = client[db_name]
-#         collection = db[collection_name]
-#         documents = [{"_id": key, "value": value} for key, value in key_value_pairs]
-#         # noinspection PyUnresolvedReferences
-#         try:
-#             # insert the documents into mongoDB collection
-#             # set ordered=False to continue inserting even if there are duplicate keys
-#             result = collection.insert_many(documents, ordered=False)
-#         except pymongo.errors.BulkWriteError as e:
-#             # catch the error if there are duplicate keys
-#             # get the duplicate keys from the error message
-#
-#             pass
-#         return True, []
-
-
 def create_collection(db_name: str, collection_name: str):
     """
     Create new collection in a database.
@@ -94,22 +71,6 @@ def delete(db_name: str, collection_name: str, query: dict) -> int:
         return result.deleted_count
 
 
-# # not very useful cause mongoDB doesn't create the database until a collection is created
-# def create_database(name: str) -> bool:
-#     """
-#     Create a new database.
-#     Returns True if the database is created successfully.
-#     Returns False if the database already exists.
-#     """
-#     with pymongo.MongoClient(str(_MongoHost())) as client:
-#         db_list = client.list_database_names()
-#         if name in db_list:
-#             print(name)
-#             return False
-#         _ = client[name]
-#         return True
-
-
 def get_database_names() -> list[str]:
     """
     Get a list of database names.
@@ -125,4 +86,18 @@ def get_collection_names(db_name: str) -> list[str]:
     with pymongo.MongoClient(str(_MongoHost())) as client:
         db = client[db_name]
         return db.list_collection_names()
+
+
+def select(db_name: str, collection_name: str, selection: dict = None) -> list[dict]:
+    """
+    Sends the query to the database and returns the key-value pairs.
+    :param db_name: name of the database
+    :param collection_name: name of the collection
+    :param selection: query to filter the documents
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        db = client[db_name]
+        collection: pymongo.collection.Collection = db[collection_name]
+        result = collection.find(selection if not None else {}, {"_id": 1, "value": 1})
+        return list(result)
 

@@ -82,6 +82,12 @@ class Table(Dbo):
     def set_indexes(self, indexes: list[Index]):
         self.__indexes = indexes
 
+    def get_index(self, index_name: str) -> Index:
+        for index in self.__indexes:
+            if index.get_name() == index_name:
+                return index
+        raise ValueError(f"Index {index_name} not found")
+
     def add_column(self, column: Column):
         # TO-DO: check if the column already exists
         self.__columns.append(column)
@@ -131,3 +137,9 @@ class Table(Dbo):
             self.__checks.append(Check(constraint))
         else:
             raise ValueError(f"Invalid constraint type: {type(constraint)}")
+
+    def is_unique(self, col_names: list[str]) -> bool:
+        for uk in self.__unique_keys:
+            if col_names == uk.get_column_names():
+                return True
+        return False

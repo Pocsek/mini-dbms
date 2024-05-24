@@ -115,7 +115,20 @@ class Parser:
         return tree
 
     def __parse_create_index(self, token_list: TokenList):
-        pass
+        "CREATE INDEX index_name ON table_name (column1, column2, ...);"
+        index_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+        token_list.consume_concrete('ON')
+        table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
+        tok_idents: TIdentifiers = token_list.consume_group(TIdentifiers())
+        column_names: list = tok_idents.get_identifiers()
+
+        tree = CreateIndex()
+        tree.set_index_name(index_name)
+        tree.set_table_name(table_name)
+        tree.set_column_names(column_names)
+        tree.finalize()
+        return tree
+
 
     def __parse_drop(self, token_list: TokenList):
         token = token_list.consume_of_type(TokenType.KEYWORD)
