@@ -1,8 +1,24 @@
 from server_side.interpreter.tokenizer import Tokenizer
 from server_side.interpreter.token_list import TokenList
 
-from server_side.interpreter.tree_objects import *
-from server_side.interpreter.token_objects import *
+from server_side.interpreter.tree_objects import (
+    Use,
+    CreateDatabase,
+    CreateTable,
+    CreateIndex,
+    DropDatabase,
+    DropTable,
+    InsertInto,
+    DeleteFrom,
+    ColumnDefinition
+)
+from server_side.interpreter.token_objects import (
+    TOptionalCommandEnd,
+    TColumnDefinition,
+    TTableConstraintDefinition,
+    TIdentifiers,
+    TValues
+)
 from server_side.interpreter.token_classification import TokenType
 
 
@@ -117,7 +133,7 @@ class Parser:
     def __parse_create_index(self, token_list: TokenList):
         "CREATE INDEX index_name ON table_name (column1, column2, ...);"
         index_name = token_list.consume_of_type(TokenType.IDENTIFIER)
-        token_list.consume_concrete('ON')
+        token_list.consume_concrete('on')
         table_name = token_list.consume_of_type(TokenType.IDENTIFIER)
         tok_idents: TIdentifiers = token_list.consume_group(TIdentifiers())
         column_names: list = tok_idents.get_identifiers()

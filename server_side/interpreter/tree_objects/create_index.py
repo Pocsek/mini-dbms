@@ -1,5 +1,4 @@
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
-from server_side.database_objects import Index
 
 
 class CreateIndex(ExecutableTree):
@@ -10,6 +9,7 @@ class CreateIndex(ExecutableTree):
         self.__column_names = []
 
     def _execute(self, dbm):
+        from server_side.database_objects.index import Index
         table = dbm.get_table(dbm.get_working_db_index(), self.__table_name)
         index = Index(self.__index_name, self.__column_names)
         dbm.create_index(index, table.get_name())
@@ -32,11 +32,10 @@ class CreateIndex(ExecutableTree):
             if column_name not in existing_column_names:
                 raise ValueError(f"Column [{column_name}] does not exist in table [{self.__table_name}]")
         # check if index name is unique
-        try:
-            table = dbm.get_table(db_idx, self.__table_name)
-            table.get_index(self.__index_name)
-        except ValueError:
+        table = dbm.get_table(db_idx, self.__table_name)
+        if table.get_index(self.__index_name) is not None:
             raise ValueError(f"Index [{self.__index_name}] already exists in table [{self.__table_name}]")
+
 
     def connect_nodes_to_root(self):
         pass

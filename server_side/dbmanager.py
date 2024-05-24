@@ -44,7 +44,6 @@ class DbManager:
 
     def create_index(self, index: Index, table_name: str):
         table: Table = self.get_table(self.get_working_db_index(), table_name)
-        table.add_index(index)
         pr_key_names: list[str] = table.get_primary_key().get_column_names()
         column_names: list[str] = table.get_column_names()
 
@@ -54,7 +53,8 @@ class DbManager:
         selection: dict = {}
         # projection: dict = {name: 1 for name in index.get_column_names()}
         # projection.update({"_id": 1})
-        kv_pairs: list[dict] = mongo_db.select(self.get_working_db().get_name(), coll_name, selection)
+        kv_pairs: list[dict] = mongo_db.select(self.get_working_db().get_name(), table_name, selection)
+
         records: list[dict] = []
         for kv_pair in kv_pairs:  # rebuild records from key-value pairs
             records.append(split_key_value_pair(kv_pair, column_names, pr_key_names))
@@ -76,6 +76,10 @@ class DbManager:
                 mongo_db.insert_one(self.get_working_db().get_name(), coll_name, key_value_pair)
             except ValueError:
                 raise
+
+        # update structure file
+        table.add_index(index)
+        self.update_db_structure_file()
 
     def drop_database(self, db_name):
         # delete db in MongoDB
