@@ -91,6 +91,12 @@ class Table(Dbo):
                 return index
         return None
 
+    def get_index_by_column_names(self, column_names) -> Index | None:
+        for index in self.get_indexes():
+            if index.get_column_names() == column_names:
+                return index
+        return None
+
     def add_column(self, column: Column):
         # TO-DO: check if the column already exists
         self.__columns.append(column)

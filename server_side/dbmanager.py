@@ -212,6 +212,36 @@ class DbManager:
             raise ValueError(f"Table [{tb.get_name()}] has no primary key")
         return mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
 
+    def find_value(self, db: Database, table: Table, column_names: list[str], value: str) -> str | None:
+        """
+        Find a value in a table.
+        The value parameter is a string created by the concatenation of attribute values. The attribute values
+        correspond to the given column names.
+        Separator character between (attribute) values inside of a record is '#'.
+        Separator character between values is '$'. TODO: discuss this
+
+        :return: a string: the primary key corresponding to the value if the given value exists, else None
+        """
+        index = table.get_index_by_column_names(column_names)
+        if index:
+            # for both single and compound values only if there is an index created on all columns, use those to search
+            for kv in mongo_db.select(db.get_name(), index.get_name()):
+                key_part, value_part = kv.get("_id"), kv.get("value")
+                if key_part == value:
+                    # non-unique column(s) -> return string containing concatenated primary keys for this value
+                    return value_part
+                else:
+                    # unique column(s) -> look for the given value in the value part of the key-value pair
+                    for v in value_part.split("$"):
+                        if v == value:
+                            return key_part
+        else:
+            # else iterate through the collection (table)
+            for kv in mongo_db.select(db.get_name(), table.get_name()):
+                if kv.get("value") == value:
+                    return kv.get("_id")
+        return None
+
 
 def create_default_databases() -> list[Database]:
     return [Database(name="master")]
@@ -304,3 +334,18 @@ def concatenate_repeating(kv_pairs: list[tuple[str, str]]) -> list[tuple[str, st
     return new_pairs
 
 
+def string_from_values(values: list) -> str:
+    """
+    Converts a list of values of any type to strings and concatenates them separated by '#'.
+
+    Example:
+        - input: [2, "horse", 10]
+        - output: "2#horse#10"
+
+    :return: the concatenated string
+    """
+    concatenated = str()
+    for v in values:
+        v_str = str(v)
+        concatenated += f"{v_str}#"
+    return concatenated[-1]
