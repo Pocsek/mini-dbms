@@ -1,9 +1,8 @@
 import json
 import os
 
-from server_side.database_objects import Database, Table, Column, Index, PrimaryKey, mongo_db
+from server_side.database_objects import Database, Table, Column, Index, PrimaryKey, ForeignKey, mongo_db
 from server_side import __working_dir__
-
 
 
 class DbManager:
@@ -35,30 +34,51 @@ class DbManager:
         with open(self.__db_file, "w") as f:
             json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
-    # cannot really sync databases with mongoDB, because mongoDB doesn't create the database until a collection is created
-    # def sync_databases_with_mongo(self):
-    #     mongo_dbs = mongo_db.get_database_names()
-    #     for db in self.get_databases():
-    #         if db.get_name() not in mongo_dbs:
-    #             mongo_db.create_database(db.get_name())
-    #         else:
-    #             # TO-DO: sync tables
-    #             pass
-    #
-    # # TO-DO: implement sync_tables_with_mongo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # def sync_tables_with_mongo(self, db_idx):
-    #     db: Database = self.get_databases()[db_idx]
-    #     mongo_tables = mongo_db.get_collection_names(db.get_name())
-    #     for tb in db.get_tables():
-    #         if tb.get_name() not in mongo_tables:
-    #             pass
-
     def create_table(self, table: Table):
         # create collection in MongoDB
         mongo_db.create_collection(self.get_working_db().get_name(), table.get_name())
 
         # update structure file
         self.get_working_db().add_table(table)
+        self.update_db_structure_file()
+
+    def create_index(self, index: Index, table_name: str):
+        table: Table = self.get_table(self.get_working_db_index(), table_name)
+        pr_key_names: list[str] = table.get_primary_key().get_column_names()
+        column_names: list[str] = table.get_column_names()
+
+        # create a collection with concatenated table name and index name that starts with an '__'
+        coll_name: str = "__" + table_name + '#' + index.get_name()  # collection name
+        mongo_db.create_collection(self.get_working_db().get_name(), coll_name)
+        selection: dict = {}
+        # projection: dict = {name: 1 for name in index.get_column_names()}
+        # projection.update({"_id": 1})
+        kv_pairs: list[dict] = mongo_db.select(self.get_working_db().get_name(), table_name, selection)
+
+        records: list[dict] = []
+        for kv_pair in kv_pairs:  # rebuild records from key-value pairs
+            records.append(split_key_value_pair(kv_pair, column_names, pr_key_names))
+
+        index_column_names: list[str] = index.get_column_names()
+        used_column_names = index_column_names + pr_key_names  # columns that are used in the index
+
+        idx_kv_pairs: list[tuple[str, str]] = []
+        for record in records:
+            key, value = build_key_value_pair(record, used_column_names, index_column_names)
+            idx_kv_pairs.append((key, value))
+
+        if not table.is_unique(index_column_names):  # if the column names are not unique concatenate repeating values
+            idx_kv_pairs = concatenate_repeating(idx_kv_pairs)
+
+        # insert the key-value pairs into the index collection
+        for key_value_pair in idx_kv_pairs:
+            try:
+                mongo_db.insert_one(self.get_working_db().get_name(), coll_name, key_value_pair)
+            except ValueError:
+                raise
+
+        # update structure file
+        table.add_index(index)
         self.update_db_structure_file()
 
     def drop_database(self, db_name):
@@ -109,6 +129,12 @@ class DbManager:
             if tb.get_name() == table_name:
                 return idx
         return -1
+
+    def get_table(self, db_idx: int, table_name: str) -> Table | None:
+        for tb in self.get_databases()[db_idx].get_tables():
+            if tb.get_name() == table_name:
+                return tb
+        return None
 
     def get_database_names(self) -> list[str]:
         return [db.get_name() for db in self.get_databases()]
@@ -195,14 +221,8 @@ def create_empty_database() -> Database:
     return Database()
 
 
-# def create_empty_foreign_key() -> dict:
-#     return {
-#         "attributes": [],
-#         "references": {
-#             "table": "",
-#             "attributes": []
-#         }
-#     }
+def create_empty_foreign_key() -> ForeignKey:
+    return ForeignKey()
 
 
 def create_empty_table() -> Table:
@@ -221,7 +241,7 @@ def create_empty_primary_key() -> PrimaryKey:
     return PrimaryKey()
 
 
-def build_key_value_pair(record: dict, column_names: list[str], primary_key_names: list[str]) -> tuple[str, str]:
+def build_key_value_pair(record: dict, all_names: list[str], key_names: list[str]) -> tuple[str, str]:
     """
     Build a key-value pair, from a record in a table.
     Concatenates the values of the primary key columns into the key.
@@ -233,33 +253,54 @@ def build_key_value_pair(record: dict, column_names: list[str], primary_key_name
     key: str = str()
     value: str = str()
     separator_char = "#"
-    for col in column_names:
-        part: str = f'{record.get(col, "")}{separator_char}'
-        if col in primary_key_names:
+    for name in all_names:
+        part: str = f'{record.get(name, "")}{separator_char}'
+        if name in key_names:
             key += part
         else:
             value += part
     return key[:-1], value[:-1]  # don't add the separator character at the end
 
 
-# TODO
-# def build_key(column_names: list[str]):
-#     """
-#     Build a key, from a record's specific columns in a table.
-#     Concatenates the values of the columns into the key.
-#     Separator character is "#".
-#     """
-#     key: str = str()
-#     separator_char = "#"
-#     ...
-#     ...
-#     return key[:-1]  # don't add the separator character at the end
+def split_key_value_pair(key_value_pair: dict, all_names: list[str], key_names: list[str]) -> dict:
+    """
+    Split a key-value pair into a record.
+    Splits by the separator character "#".
+    """
+    record: dict = {}
+    separator_char = "#"
+    key: str = key_value_pair.get("_id", "")
+    value: str = key_value_pair.get("value", "")
+    key_parts: list[str] = key.split(separator_char)
+    value_parts: list[str] = value.split(separator_char)
+    for col in all_names:
+        if col in key_names:
+            record[col] = key_parts.pop(0)
+        else:
+            record[col] = value_parts.pop(0)
+    return record
 
 
-def get_primary_key_indexes(db: Database, table: Table):
+def concatenate_repeating(kv_pairs: list[tuple[str, str]]) -> list[tuple[str, str]]:
     """
-    Retrieves the automatically created primary key indexes for the given table.
-    :return: a cursor (generator) over the index documents of the collection (table), more efficient than retrieving all
-            indexes and then iterating through them
+    Concatenate values of repeating keys.
     """
-    return mongo_db.get_primary_key_indexes(db, table)
+    kv_pairs.sort()
+    new_pairs: list[tuple[str, str]] = []
+    i = 0
+    length = len(kv_pairs)
+    while i < length:
+        key, value = kv_pairs[i]
+        i += 1
+        same_key_values: list[str] = [value]
+        while i < length:
+            n_key, n_value = kv_pairs[i]
+            if key == n_key:  # if the keys match
+                same_key_values.append(n_value)
+                i += 1
+            else:
+                break
+        new_pairs.append((key, '#'.join(same_key_values)))
+    return new_pairs
+
+

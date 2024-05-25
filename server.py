@@ -2,9 +2,11 @@ from socket import *
 from threading import Thread
 from datetime import datetime
 import traceback
+import os
+import json
 
-from server_side.dbmanager import *
-from server_side.interpreter import *
+from server_side.dbmanager import DbManager
+from server_side.interpreter import Parser, Executor
 from server_side import __working_dir__
 
 
