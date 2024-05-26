@@ -38,6 +38,15 @@ class DbManager:
         # create collection in MongoDB
         mongo_db.create_collection(self.get_working_db().get_name(), table.get_name())
 
+        # create document in '__next_identity' collection, storing the next identity value of this table
+        # (only if it has an identity column)
+        identity_col = table.get_identity_column()
+        if identity_col:
+            seed = identity_col.get_identity_seed()
+            mongo_db.insert_one_int(self.get_working_db().get_name(),
+                                    "__next_identity",
+                                    (table.get_name(), seed))
+
         # update structure file
         self.get_working_db().add_table(table)
         self.update_db_structure_file()
@@ -145,9 +154,30 @@ class DbManager:
     def get_column_names(self, db_idx, table_idx) -> list[str]:
         return [col.get_name() for col in self.get_databases()[db_idx].get_tables()[table_idx].get_columns()]
 
+    def get_next_identity_value(self, db_name: str, table_name: str) -> int:
+        """
+        Retrieves the next identity value of a table and increments that value inside the __next_identity collection.
+        :return: the next identity value of the given table
+        """
+        document = mongo_db.select(db_name, "__next_identity", {"_id": table_name})[0]
+        next_identity = document.get("value")
+        identity_increment = self.get_table(
+            self.find_database(db_name),
+            table_name
+        ).get_identity_column().get_identity_increment()
+        mongo_db.increment_identity(db_name, table_name, identity_increment)
+        return next_identity
+
     def add_database(self, db: Database):
-        # TO-DO: check if the database already exists
+        """
+        Add new database to the list of databases.
+
+        Create a default collection in the database (this information is only visible inside MongoDB) which stores the
+        last identity value of every table with an identity column.
+        Each document in the collection contains the table name and its last identity value.
+        """
         self.__dbs.append(db)
+        mongo_db.create_collection(db.get_name(), "__last_identity")
 
     def insert(self, db: Database, tb: Table, records: list[dict]) -> list[str]:
         """

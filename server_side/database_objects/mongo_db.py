@@ -32,6 +32,17 @@ def insert_one(db_name: str, collection_name: str, key_value_pair: tuple[str, st
         return key
 
 
+def insert_one_int(db_name: str, collection_name: str, key_value_pair: tuple[str, int]) -> str:
+    """
+    Insert a document into a collection with the value part as an integer.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        db = client[db_name]
+        collection = db[collection_name]
+        key, value = key_value_pair
+        collection.insert_one({"_id": key, "value": value})  # insert a key-value pair into mongoDB collection
+
+
 def create_collection(db_name: str, collection_name: str):
     """
     Create new collection in a database.
@@ -101,3 +112,19 @@ def select(db_name: str, collection_name: str, selection: dict = None) -> list[d
         result = collection.find(selection if not None else {}, {"_id": 1, "value": 1})
         return list(result)
 
+
+def increment_identity(db_name: str,  table_name: str, increment_by: int):
+    """
+    Increment the next identity value of a table in the __next_identity collection of the given dabatabse.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        db = client[db_name]
+        collection_name = "__next_identity"
+        collection: pymongo.collection.Collection = db[collection_name]
+        filter_criteria = {"_id": table_name}
+        update_operation = {"$inc": {"value": increment_by}}
+        result = collection.update_one(filter_criteria, update_operation)
+        if result.matched_count == 0:
+            raise ValueError(
+                f"Failed to increment next identity value in collection [{collection_name}] for table [{table_name}]."
+            )
