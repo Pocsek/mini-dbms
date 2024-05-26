@@ -114,20 +114,17 @@ class InsertInto(ExecutableTree):
     def __validate_primary_key(self, dbm, db, table, record):
         """
         Validate primary key integrity, i.e. the record to be inserted is unique to the primary key.
-        Uses indexes to search through rows.
         """
-
         # if the primary key is not compound and has identity, then it is valid for sure and we can simply return
         identity_col = table.get_identity_column()
-        pk_col_names = table.get_primary_key.get_columns_names()
+        pk_col_names = table.get_primary_key().get_column_names()
         if identity_col and len(pk_col_names) == 1:
             if identity_col.get_name() == pk_col_names[0]:
                 return
-
         # if an entry with the same primary key exists in the database, raise an error
-        value = dbm.string_from_values(self.__get_column_values(pk_col_names, record))
-        if dbm.find_value(db, table, pk_col_names, value):
-            raise ValueError(f"Primary key [{value}] already exists in the table.")
+        key = self.__string_from_values(self.__get_column_values(pk_col_names, record))
+        if dbm.find_by_primary_key(db.get_name(), table.get_name(), key):
+            raise ValueError(f"Primary key [{key}] already exists in the table.")
 
     def __validate_unique_keys(self, dbm, db, table, record):
         """
@@ -139,7 +136,6 @@ class InsertInto(ExecutableTree):
     def __validate_unique_key(self, uq, dbm, db, table, record):
         """
         Validate unique key integrity, i.e. the value to be inserted is unique to the unique key.
-        Uses indexes to search through rows.
         """
         pass
 
@@ -155,8 +151,6 @@ class InsertInto(ExecutableTree):
         Validate foreign key integrity, i.e. the value to be inserted appears in the parent table.
 
         !TODO: implement what happens when either one of SET NULL, SET DEFAULT or CASCADE is set.
-
-        Uses indexes to search through rows.
         """
         pass
 
@@ -196,3 +190,19 @@ class InsertInto(ExecutableTree):
                 record[col_name] = val
             records.append(record)
         return records
+
+    def __string_from_values(self, values: list) -> str:
+        """
+        Converts a list of values of any type to strings and concatenates them separated by '#'.
+
+        Example:
+            - input: [2, "horse", 10]
+            - output: "2#horse#10"
+
+        :return: the concatenated string
+        """
+        concatenated = str()
+        for v in values:
+            v_str = str(v)
+            concatenated += f"{v_str}#"
+        return concatenated[:-1]
