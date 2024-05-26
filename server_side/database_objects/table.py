@@ -114,6 +114,13 @@ class Table(Dbo):
     def get_column_names(self) -> list[str]:
         return [col.get_name() for col in self.__columns]
 
+    def get_column_positions(self, column_names: list[str]) -> list[int]:
+        positions = []
+        for i, col_name in enumerate(self.get_column_names()):
+            if col_name in column_names:
+                positions.append(i)
+        return positions
+
     def has_primary_key(self) -> bool:
         return self.__primary_key is not None
 

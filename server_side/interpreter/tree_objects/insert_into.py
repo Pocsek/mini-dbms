@@ -108,7 +108,7 @@ class InsertInto(ExecutableTree):
 
             # check integrity of the record to be inserted
             self.__validate_primary_key(dbm, db, table, record)
-            # self.__validate_unique_keys()
+            self.__validate_unique_keys(dbm, db, table, record)
             # self.__validate_foreign_keys()
 
     def __validate_primary_key(self, dbm, db, table, record):
@@ -121,23 +121,21 @@ class InsertInto(ExecutableTree):
         if identity_col and len(pk_col_names) == 1:
             if identity_col.get_name() == pk_col_names[0]:
                 return
-        # if an entry with the same primary key exists in the database, raise an error
-        key = self.__string_from_values(self.__get_column_values(pk_col_names, record))
-        if dbm.find_by_primary_key(db.get_name(), table.get_name(), key):
-            raise ValueError(f"Primary key [{key}] already exists in the table.")
+        # if an entry with the same primary key exists in the table, raise an error
+        pk_col_values = self.__get_column_values(pk_col_names, record)
+        if dbm.find_by_primary_key(db.get_name(), table.get_name(), pk_col_values):
+            raise ValueError(f"Primary key [{pk_col_values}] already exists in the table.")
 
     def __validate_unique_keys(self, dbm, db, table, record):
         """
-        Calls '__validate_unique_key' for each unique key.
+        For each unique key, validate unique key integrity, i.e. the value to be inserted is unique to the unique key.
         """
+        # if an entry with the same unique key exists in the table, raise an error
         for uq in table.get_unique_keys():
-            self.__validate_unique_key(uq, dbm, db, table, record)  # TODO: implement this
-
-    def __validate_unique_key(self, uq, dbm, db, table, record):
-        """
-        Validate unique key integrity, i.e. the value to be inserted is unique to the unique key.
-        """
-        pass
+            col_names = uq.get_column_names()
+            col_values = self.__get_column_values(col_names, record)
+            if dbm.find_by_unique_value(db.get_name(), table.get_name(), col_names, col_values):
+                raise ValueError(f"Unique key [{col_names}] with value [{col_values}] already exists in the table.")
 
     def __validate_foreign_keys(self, dbm, db, table, record):
         """
@@ -190,19 +188,3 @@ class InsertInto(ExecutableTree):
                 record[col_name] = val
             records.append(record)
         return records
-
-    def __string_from_values(self, values: list) -> str:
-        """
-        Converts a list of values of any type to strings and concatenates them separated by '#'.
-
-        Example:
-            - input: [2, "horse", 10]
-            - output: "2#horse#10"
-
-        :return: the concatenated string
-        """
-        concatenated = str()
-        for v in values:
-            v_str = str(v)
-            concatenated += f"{v_str}#"
-        return concatenated[:-1]

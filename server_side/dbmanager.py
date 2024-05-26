@@ -212,89 +212,88 @@ class DbManager:
             raise ValueError(f"Table [{tb.get_name()}] has no primary key")
         return mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
 
-    def find_by_primary_key(self, db_name: str, table_name: str, key: str) -> str | None:
+    def find_by_primary_key(self, db_name: str, table_name: str, pk_column_values: list) -> str | None:
         """
-        Find a value in a table by its primary key.
+        Find a record in a table by its primary key.
         The columns need to be part of the primary key.
 
-        Separator character between (attribute) values inside of a record is '#'.
-        Separator character between values is '$'. TODO: discuss this
+        Separator character between (attribute) values inside a record is '#'.
 
         Parameters are not validated here.
 
-        :param key: a string created by the concatenation of column values
         :return: a string consisting of the values corresponding to the primary key if the given key exists, else None
         """
+        key = string_from_values(pk_column_values)  # concatenate the column values
         values = mongo_db.select(db_name, table_name, {"_id": key})
         return values[0] if values else None
 
-    def find_unique_value(self, db: Database, table: Table, column_names: list[str], value: str) -> str | None:
+    def find_by_unique_value(self,
+                             db_name: str,
+                             table_name: str,
+                             column_names: list[str],
+                             column_values: list) -> str | None:
         """
-        Find a value in a table. The columns need to be (composite if there are more columns) unique / primary keys.
+        Find the primary key that the given value belongs to in a table.
+        The columns need to be part of the same unique key.
 
-        Separator character between (attribute) values inside of a record is '#'.
-        Separator character between values is '$'. TODO: discuss this
+        Separator character between column values inside a primary key is '#'.
 
-        :param value: a string created by the concatenation of attribute values. The attribute values
-        correspond to the given column names.
         :return: a string: the primary key corresponding to the value if the given value exists, else None
         """
-        # index = table.get_index_by_column_names(column_names)
-        # if index:
-        #     # for both single and compound values only if there is an index created on all columns, use those to search
-        #     for kv in mongo_db.select(db.get_name(), index.get_name()):
-        #         key_part, value_part = kv.get("_id"), kv.get("value")
-        #         if key_part == value:
-        #             # non-unique column(s) -> return string containing concatenated primary keys for this value
-        #             return value_part
-        #         else:
-        #             # unique column(s) -> look for the given value in the value part of the key-value pair
-        #             for v in value_part.split("$"):
-        #                 if v == value:
-        #                     return key_part
-        # else:
-        #     # else iterate through the collection (table)
-        #     for kv in mongo_db.select(db.get_name(), table.get_name()):
-        #         key_part, value_part = kv.get("_id"), kv.get("value")
-        #         if key_part == value:
-        #             pass
-        #         else value_part == value:
-        #             return key_part
+        value = string_from_values(column_values)  # column values concatenated into a '#' separated string
+        table = self.get_table(self.find_database(db_name), table_name)
+        index = table.get_index_by_column_names(column_names)
+        if index:
+            # for both single and compound values only if there is an index created on all columns, use those to search
+            for kv in mongo_db.select(db_name, index.get_name()):
+                if kv.get("_id") == value:
+                    return kv.get("value")
+        else:
+            # get the column positions (a.k.a. indexes) in the table's column list
+            col_pos = table.get_column_positions(column_names)
 
+            # iterate through the collection (table)
+            for kv in mongo_db.select(db_name, table_name):
+                value_part = kv.get("value").split("#")
+
+                # the corresponding column position of the value part can vary depending on the number of concatenated
+                # values in the value part
+                col_pos_offset = len(table.get_columns()) - len(value_part)
+
+                found = True
+                for i in range(len(column_values)):
+                    if column_values[i] != value_part[col_pos[i] - col_pos_offset]:
+                        found = False
+                        break
+                if found:
+                    return kv.get("_id")
         return None
 
-    def find_non_unique_value(self, db: Database, table: Table, column_names: list[str], value: str) -> str | None:
+    def find_by_non_unique_value(self, db_name: str, table_name: str, column_names: list[str], value: str) -> str | None:
         """
-        Find a value in a table.
-        The value parameter is a string created by the concatenation of attribute values. The attribute values
-        correspond to the given column names.
-        Separator character between (attribute) values inside of a record is '#'.
-        Separator character between values is '$'. TODO: discuss this
+        Find all primary keys that the given values belongs to in a table.
+        The columns need to be part of the same unique key.
 
+        Separator character between column values inside a primary key is '#'.
+        Separator character between primary keys is '$'. TODO: discuss this
+
+        :param value: all primary keys the the given values belong to: a string created by the concatenation of the
+        column values
         :return: a string: the primary key corresponding to the value if the given value exists, else None
         """
+        # table = self.get_table(self.find_database(db_name), table_name)
         # index = table.get_index_by_column_names(column_names)
         # if index:
         #     # for both single and compound values only if there is an index created on all columns, use those to search
-        #     for kv in mongo_db.select(db.get_name(), index.get_name()):
-        #         key_part, value_part = kv.get("_id"), kv.get("value")
-        #         if key_part == value:
-        #             # non-unique column(s) -> return string containing concatenated primary keys for this value
-        #             return value_part
-        #         else:
-        #             # unique column(s) -> look for the given value in the value part of the key-value pair
-        #             for v in value_part.split("$"):
-        #                 if v == value:
-        #                     return key_part
+        #     for kv in mongo_db.select(db_name, index.get_name()):
+        #         if kv.get("_id") == value:
+        #             return kv.get("value")
         # else:
         #     # else iterate through the collection (table)
-        #     for kv in mongo_db.select(db.get_name(), table.get_name()):
-        #         key_part, value_part = kv.get("_id"), kv.get("value")
-        #         if key_part == value:
-        #             pass
-        #         else value_part == value:
-        #             return key_part
-
+        #     for kv in mongo_db.select(db_name, table_name):
+        #         for v in kv.get("value").split("$"):
+        #             if v == value:
+        #                 return kv.get("_id")
         return None
 
 
@@ -387,3 +386,20 @@ def concatenate_repeating(kv_pairs: list[tuple[str, str]]) -> list[tuple[str, st
                 break
         new_pairs.append((key, '#'.join(same_key_values)))
     return new_pairs
+
+
+def string_from_values(values: list) -> str:
+    """
+    Converts a list of values of any type to strings and concatenates them separated by '#'.
+
+    Example:
+        - input: [2, "horse", 10]
+        - output: "2#horse#10"
+
+    :return: the concatenated string
+    """
+    concatenated = str()
+    for v in values:
+        v_str = str(v)
+        concatenated += f"{v_str}#"
+    return concatenated[:-1]
