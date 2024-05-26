@@ -227,18 +227,20 @@ class DbManager:
         values = mongo_db.select(db_name, table_name, {"_id": key})
         return values[0] if values else None
 
-    def find_by_unique_value(self,
-                             db_name: str,
-                             table_name: str,
-                             column_names: list[str],
-                             column_values: list) -> str | None:
+    def find_by_value(self,
+                      db_name: str,
+                      table_name: str,
+                      column_names: list[str],
+                      column_values: list) -> str | None:
         """
-        Find the primary key that the given value belongs to in a table.
+        Find the primary key that the given value belong to in a table.
+        If the given value is a non-unique value, then find all primary keys that belong to the given value.
         The columns need to be part of the same unique key.
 
         Separator character between column values inside a primary key is '#'.
+        Separator character between primary keys is '$'. TODO: discuss this
 
-        :return: a string: the primary key corresponding to the value if the given value exists, else None
+        :return: a string: the primary key corresponding to the given value(s) if they exist, else None
         """
         value = string_from_values(column_values)  # column values concatenated into a '#' separated string
         table = self.get_table(self.find_database(db_name), table_name)
@@ -254,46 +256,14 @@ class DbManager:
 
             # iterate through the collection (table)
             for kv in mongo_db.select(db_name, table_name):
-                value_part = kv.get("value").split("#")
-
-                # the corresponding column position of the value part can vary depending on the number of concatenated
-                # values in the value part
-                col_pos_offset = len(table.get_columns()) - len(value_part)
-
+                kv_list = kv.get("_id").split("#") + kv.get("value").split("#")
                 found = True
                 for i in range(len(column_values)):
-                    if column_values[i] != value_part[col_pos[i] - col_pos_offset]:
+                    if column_values[i] != kv_list[col_pos[i]]:
                         found = False
                         break
                 if found:
                     return kv.get("_id")
-        return None
-
-    def find_by_non_unique_value(self, db_name: str, table_name: str, column_names: list[str], value: str) -> str | None:
-        """
-        Find all primary keys that the given values belongs to in a table.
-        The columns need to be part of the same unique key.
-
-        Separator character between column values inside a primary key is '#'.
-        Separator character between primary keys is '$'. TODO: discuss this
-
-        :param value: all primary keys the the given values belong to: a string created by the concatenation of the
-        column values
-        :return: a string: the primary key corresponding to the value if the given value exists, else None
-        """
-        # table = self.get_table(self.find_database(db_name), table_name)
-        # index = table.get_index_by_column_names(column_names)
-        # if index:
-        #     # for both single and compound values only if there is an index created on all columns, use those to search
-        #     for kv in mongo_db.select(db_name, index.get_name()):
-        #         if kv.get("_id") == value:
-        #             return kv.get("value")
-        # else:
-        #     # else iterate through the collection (table)
-        #     for kv in mongo_db.select(db_name, table_name):
-        #         for v in kv.get("value").split("$"):
-        #             if v == value:
-        #                 return kv.get("_id")
         return None
 
 

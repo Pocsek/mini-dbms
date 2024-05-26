@@ -48,3 +48,17 @@ class ForeignKey(Dbo):
     def set_name(self, name: str):
         self.__constraint_name = name
 
+    def get_source_column_names(self) -> list[str]:
+        return self.__src_col_names
+
+    def get_referenced_table_name(self) -> str:
+        return self.__ref_table_name
+
+    def get_referenced_column_names(self) -> list[str]:
+        return self.__ref_col_names
+
+    def get_on_delete(self) -> str:
+        return self.__on_delete
+
+    def get_on_update(self) -> str:
+        return self.__on_update

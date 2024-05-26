@@ -109,7 +109,7 @@ class InsertInto(ExecutableTree):
             # check integrity of the record to be inserted
             self.__validate_primary_key(dbm, db, table, record)
             self.__validate_unique_keys(dbm, db, table, record)
-            # self.__validate_foreign_keys()
+            self.__validate_foreign_keys(dbm, db, table, record)
 
     def __validate_primary_key(self, dbm, db, table, record):
         """
@@ -134,23 +134,35 @@ class InsertInto(ExecutableTree):
         for uq in table.get_unique_keys():
             col_names = uq.get_column_names()
             col_values = self.__get_column_values(col_names, record)
-            if dbm.find_by_unique_value(db.get_name(), table.get_name(), col_names, col_values):
+            if dbm.find_by_value(db.get_name(), table.get_name(), col_names, col_values):
                 raise ValueError(f"Unique key [{col_names}] with value [{col_values}] already exists in the table.")
 
     def __validate_foreign_keys(self, dbm, db, table, record):
         """
-        Calls '__validate_foreign_key' for each foreign key.
+        For each foreign key, validate foreign key integrity, i.e. the value to be inserted appears in the parent table.
         """
+        # upon inserting into a child table, if the inserted key does not exist in the parent table, raise an error
         for fk in table.get_foreign_keys():
-            self.__validate_foreign_key(fk, dbm, db, table, record)  # TODO: implement this
+            to_insert_col_names = fk.get_source_column_names()
+            to_insert_col_values = self.__get_column_values(to_insert_col_names, record)
+            ref_table_name = fk.get_referenced_table_name()
+            ref_col_names = fk.get_referenced_column_names()
 
-    def __validate_foreign_key(self, fk, dbm, db, table, record):
-        """
-        Validate foreign key integrity, i.e. the value to be inserted appears in the parent table.
-
-        !TODO: implement what happens when either one of SET NULL, SET DEFAULT or CASCADE is set.
-        """
-        pass
+            ok = True
+            ref_table = dbm.get_table(dbm.get_working_db_index(), ref_table_name)
+            if ref_table.is_primary_key(ref_col_names):
+                # the referenced key is a primary key: find by primary key
+                if not dbm.find_by_primary_key(db.get_name(), ref_table_name, to_insert_col_values):
+                    ok = False
+            else:
+                # the referenced key is a unique key: find by unique key
+                if not dbm.find_by_value(db.get_name(), ref_table_name, to_insert_col_names, to_insert_col_values):
+                    ok = False
+            if not ok:
+                raise ValueError(
+                    (f"Foreign key [{to_insert_col_names}] with value [{to_insert_col_values}] does not exist in the "
+                     f"referenced table [{ref_table_name}].")
+                )
 
     def __get_column_values(self, column_names, record) -> list:
         col_values = []

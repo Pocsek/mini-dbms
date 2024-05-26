@@ -188,3 +188,6 @@ class Table(Dbo):
             if col_names == uk.get_column_names():
                 return True
         return False
+
+    def is_primary_key(self, col_names: list[str]) -> bool:
+        return col_names == self.get_primary_key().get_column_names()
