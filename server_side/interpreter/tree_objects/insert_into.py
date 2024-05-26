@@ -22,6 +22,8 @@ class InsertInto(ExecutableTree):
         # - this can result in gaps between successfully inserted values (e.g.: 1, 2, 4, 5, ...)
         self.__identity_values: list[int] = []
 
+        self.__identity_column_name = None
+
     def _execute(self, dbm):
         db_idx = dbm.get_working_db_index()
         table_idx = dbm.find_table(db_idx, self.__table_name)
@@ -42,22 +44,21 @@ class InsertInto(ExecutableTree):
             raise ValueError(f"Table [{self.__table_name}] does not exist in the database.")
 
         identity_col = table.get_identity_column()
-        identity_col_name = ""
         if identity_col:
-            identity_col_name = identity_col.get_name()
+            self.__identity_column_name = identity_col.get_name()
             self.__identity_values.append(dbm.get_next_identity_value(db.get_name(), table.get_name()))
 
         existing_column_names = table.get_column_names()
         if len(self.__column_names) != 0:
             # if column names are specified, validate them
-            self.__validate_column_names(existing_column_names, identity_col_name)
+            self.__validate_column_names(existing_column_names, self.__identity_column_name)
         else:
             # if column names are not specified, use the existing column names
             self.__column_names = existing_column_names
 
         # remove identity column name from the column names that will be inserted into
-        if identity_col_name in self.__column_names:
-            self.__column_names.remove(identity_col_name)
+        if self.__identity_column_name in self.__column_names:
+            self.__column_names.remove(self.__identity_column_name)
 
         self.__validate_values(dbm, db, table, identity_col)
 
@@ -208,9 +209,12 @@ class InsertInto(ExecutableTree):
         No validation is done here.
         """
         records = []
-        for value in self.__values:
+        for i, value in enumerate(self.__values):
             record = {}
             for col_name, val in zip(self.__column_names, value):
                 record[col_name] = val
+            # if table has identity, insert identity column name and value into the record
+            if self.__identity_values:
+                record[self.__identity_column_name] = self.__identity_values[i]
             records.append(record)
         return records
