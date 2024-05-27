@@ -180,6 +180,7 @@ class DbManager:
     def insert(self, db: Database, tb: Table, records: list[dict]) -> list[str]:
         """
         Inserts records into a table creating key-value pairs.
+        Inserts records into the index collections if they exist.
         Checks if the database and table exist.
         !Right now it inserts only one record at a time and if it fails it raises an exception,
         but keeps the ones inserted before and ignores the rest.!
@@ -242,6 +243,7 @@ class DbManager:
 
     def delete(self, db: Database, tb: Table, key: str) -> int:
         """
+        Deletes records from index collections if they exist.
         Deletes records from a table.
         Checks if the database and table exist.
         Returns the number of deleted records.
@@ -259,7 +261,33 @@ class DbManager:
         tb = self.get_databases()[db_idx].get_tables()[tb_idx]
         if not tb.has_primary_key():  # check if the table has a primary key because we can only delete by primary key
             raise ValueError(f"Table [{tb.get_name()}] has no primary key")
-        return mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
+        result = mongo_db.select(db.get_name(), tb.get_name(), {"_id": key})[0]
+        record: dict = split_key_value_pair(result, tb.get_column_names(), tb.get_primary_key().get_column_names())
+        indexes = tb.get_indexes()
+        for index in indexes:
+            i_col_names: list[str] = index.get_column_names()
+            coll_name = _build_collection_name_for_index(tb.get_name(), index.get_name())
+            if tb.is_unique(i_col_names):
+                coll_key = string_from_values([record.get(n) for n in i_col_names])
+                mongo_db.delete(db.get_name(), coll_name, {"_id": coll_key})
+            else:
+                coll_key = string_from_values([record.get(n) for n in i_col_names])
+                index_result = mongo_db.select(db.get_name(), coll_name, {"_id": coll_key})
+                if index_result[0].get("value") == key:
+                    mongo_db.delete(db.get_name(), coll_name, {"_id": coll_key})
+                else:
+                    values = values_from_string(index_result[0].get("value"))
+                    values.remove(key)
+                    new_value = string_from_values(values)
+                    mongo_db.update_one(db.get_name(), coll_name, {"_id": coll_key}, {"$set": {"value": new_value}})
+
+
+
+
+
+
+        del_count = mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
+        return del_count
 
     def find_by_primary_key(self, db_name: str, table_name: str, pk_column_values: list) -> str | None:
         """
@@ -418,11 +446,19 @@ def string_from_values(values: list) -> str:
 
     :return: the concatenated string
     """
-    concatenated = str()
-    for v in values:
-        v_str = str(v)
-        concatenated += f"{v_str}#"
-    return concatenated[:-1]
+    return '#'.join([str(v) for v in values])
+
+def values_from_string(concatenated: str) -> list:
+    """
+    Converts a concatenated string of values separated by '#' to a list of values.
+
+        Example:
+        - input: "2#horse#10"
+        - output: [2, "horse", 10]
+
+    :return: the list of values
+    """
+    return concatenated.split("#")
 
 
 def _build_collection_name_for_index(table_name: str, index_name: str):

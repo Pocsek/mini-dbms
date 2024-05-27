@@ -101,7 +101,7 @@ def get_collection_names(db_name: str) -> list[str]:
 
 def select(db_name: str, collection_name: str, selection: dict = None) -> list[dict]:
     """
-    Sends the query to the database and returns the key-value pairs.
+    Sends the query to the database and returns a key-value based dictionary.
     :param db_name: name of the database
     :param collection_name: name of the collection
     :param selection: query to filter the documents
