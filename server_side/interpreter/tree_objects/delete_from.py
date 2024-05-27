@@ -48,8 +48,8 @@ class DeleteFrom(ExecutableTree):
         for col in self.__condition.keys():
             if col not in pr_column_names:
                 raise ValueError(f"Column [{col}] is not part of the primary key of the table [{self.__table_name}].")
-
-
+        # validate deletion from parent table
+        self.__validate_foreign_keys(dbm)
 
     def connect_nodes_to_root(self):
         pass
@@ -79,3 +79,34 @@ class DeleteFrom(ExecutableTree):
             key += condition[col] + "#"
         return key[:-1]  # leave out the last separator character
 
+    def __validate_foreign_keys(self, dbm):
+        """
+        Find all child tables and check if the value being deleted exists in any of the child tables.
+        """
+        db = dbm.get_working_db()
+        for table in db.get_tables():
+            for fk in table.get_foreign_keys():
+                if fk.get_referenced_table_name() == self.__table_name:
+                    self.__validate_foreign_key(dbm, db, db.get_table(self.__table_name), table, fk)
+
+    def __validate_foreign_key(self, dbm, db, parent_table, child_table, foreign_key):
+        """
+        Check if the value being deleted exists in the child table
+        """
+        db_name = db.get_name()
+        chlid_table_name = child_table.get_name()
+        child_col_names = foreign_key.get_source_column_names()
+        values_to_delete = list(self.__condition.values())
+
+        ok = True
+        # if the foreign key being deleted is a primary key, then search by primary key
+        if child_table.is_primary_key(child_col_names):
+            if dbm.find_by_primary_key(db_name, chlid_table_name, values_to_delete):
+                ok = False
+        # else search by value
+        else:
+            if dbm.find_by_value(db_name, chlid_table_name, child_col_names, values_to_delete):
+                ok = False
+        if not ok:
+            raise ValueError(f"Cannot delete value from parent table [{parent_table.get_name()}] because it exists "
+                             f"in child table [{chlid_table_name}].")

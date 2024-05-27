@@ -38,6 +38,15 @@ class DbManager:
         # create collection in MongoDB
         mongo_db.create_collection(self.get_working_db().get_name(), table.get_name())
 
+        # create document in '__next_identity' collection, storing the next identity value of this table
+        # (only if it has an identity column)
+        identity_col = table.get_identity_column()
+        if identity_col:
+            seed = identity_col.get_identity_seed()
+            mongo_db.insert_one_int(self.get_working_db().get_name(),
+                                    "__next_identity",
+                                    (table.get_name(), seed))
+
         # update structure file
         self.get_working_db().add_table(table)
         self.update_db_structure_file()
@@ -145,9 +154,30 @@ class DbManager:
     def get_column_names(self, db_idx, table_idx) -> list[str]:
         return [col.get_name() for col in self.get_databases()[db_idx].get_tables()[table_idx].get_columns()]
 
+    def get_next_identity_value(self, db_name: str, table_name: str) -> int:
+        """
+        Retrieves the next identity value of a table and increments that value inside the __next_identity collection.
+        :return: the next identity value of the given table
+        """
+        document = mongo_db.select(db_name, "__next_identity", {"_id": table_name})[0]
+        next_identity = document.get("value")
+        identity_increment = self.get_table(
+            self.find_database(db_name),
+            table_name
+        ).get_identity_column().get_identity_increment()
+        mongo_db.increment_identity(db_name, table_name, identity_increment)
+        return next_identity
+
     def add_database(self, db: Database):
-        # TO-DO: check if the database already exists
+        """
+        Add new database to the list of databases.
+
+        Create a default collection in the database (this information is only visible inside MongoDB) which stores the
+        last identity value of every table with an identity column.
+        Each document in the collection contains the table name and its last identity value.
+        """
         self.__dbs.append(db)
+        mongo_db.create_collection(db.get_name(), "__last_identity")
 
     def insert(self, db: Database, tb: Table, records: list[dict]) -> list[str]:
         """
@@ -211,6 +241,60 @@ class DbManager:
         if not tb.has_primary_key():  # check if the table has a primary key because we can only delete by primary key
             raise ValueError(f"Table [{tb.get_name()}] has no primary key")
         return mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
+
+    def find_by_primary_key(self, db_name: str, table_name: str, pk_column_values: list) -> str | None:
+        """
+        Find a record in a table by its primary key.
+        The columns need to be part of the primary key.
+
+        Separator character between (attribute) values inside a record is '#'.
+
+        Parameters are not validated here.
+
+        :return: a string consisting of the values corresponding to the primary key if the given key exists, else None
+        """
+        key = string_from_values(pk_column_values)  # concatenate the column values
+        values = mongo_db.select(db_name, table_name, {"_id": key})
+        return values[0] if values else None
+
+    def find_by_value(self,
+                      db_name: str,
+                      table_name: str,
+                      column_names: list[str],
+                      column_values: list) -> str | None:
+        """
+        Find the primary key that the given value belong to in a table.
+        If the given value is a non-unique value, then find all primary keys that belong to the given value.
+        The columns need to be part of the same unique key.
+
+        Separator character between column values inside a primary key is '#'.
+        Separator character between primary keys is '$'. TODO: discuss this
+
+        :return: a string: the primary key corresponding to the given value(s) if they exist, else None
+        """
+        value = string_from_values(column_values)  # column values concatenated into a '#' separated string
+        table = self.get_table(self.find_database(db_name), table_name)
+        index = table.get_index_by_column_names(column_names)
+        if index:
+            # for both single and compound values only if there is an index created on all columns, use those to search
+            for kv in mongo_db.select(db_name, index.get_name()):
+                if kv.get("_id") == value:
+                    return kv.get("value")
+        else:
+            # get the column positions (a.k.a. indexes) in the table's column list
+            col_pos = table.get_column_positions(column_names)
+
+            # iterate through the collection (table)
+            for kv in mongo_db.select(db_name, table_name):
+                kv_list = kv.get("_id").split("#") + kv.get("value").split("#")
+                found = True
+                for i in range(len(column_values)):
+                    if column_values[i] != kv_list[col_pos[i]]:
+                        found = False
+                        break
+                if found:
+                    return kv.get("_id")
+        return None
 
 
 def create_default_databases() -> list[Database]:
@@ -304,3 +388,18 @@ def concatenate_repeating(kv_pairs: list[tuple[str, str]]) -> list[tuple[str, st
     return new_pairs
 
 
+def string_from_values(values: list) -> str:
+    """
+    Converts a list of values of any type to strings and concatenates them separated by '#'.
+
+    Example:
+        - input: [2, "horse", 10]
+        - output: "2#horse#10"
+
+    :return: the concatenated string
+    """
+    concatenated = str()
+    for v in values:
+        v_str = str(v)
+        concatenated += f"{v_str}#"
+    return concatenated[:-1]

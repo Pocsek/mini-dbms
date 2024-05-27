@@ -91,6 +91,12 @@ class Table(Dbo):
                 return index
         return None
 
+    def get_index_by_column_names(self, column_names) -> Index | None:
+        for index in self.get_indexes():
+            if index.get_column_names() == column_names:
+                return index
+        return None
+
     def add_column(self, column: Column):
         # TO-DO: check if the column already exists
         self.__columns.append(column)
@@ -108,8 +114,33 @@ class Table(Dbo):
     def get_column_names(self) -> list[str]:
         return [col.get_name() for col in self.__columns]
 
+    def get_column_positions(self, column_names: list[str]) -> list[int]:
+        positions = []
+        for i, col_name in enumerate(self.get_column_names()):
+            if col_name in column_names:
+                positions.append(i)
+        return positions
+
     def has_primary_key(self) -> bool:
         return self.__primary_key is not None
+
+    def get_identity_column(self) -> Column | None:
+        for col in self.__columns:
+            if col.has_identity():
+                return col
+        return None
+
+    def has_identity(self) -> bool:
+        for col in self.__columns:
+            if col.has_identity():
+                return True
+        return False
+
+    def get_unique_keys(self) -> list:
+        return self.__unique_keys
+
+    def get_foreign_keys(self) -> list:
+        return self.__foreign_keys
 
     def add_key(self, key):
         """
@@ -157,3 +188,6 @@ class Table(Dbo):
             if col_names == uk.get_column_names():
                 return True
         return False
+
+    def is_primary_key(self, col_names: list[str]) -> bool:
+        return col_names == self.get_primary_key().get_column_names()

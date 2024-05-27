@@ -48,7 +48,7 @@ class Column(Dbo):
     def get_allow_nulls(self) -> bool:
         return self.__allow_nulls
 
-    def get_identity(self) -> bool:
+    def has_identity(self) -> bool:
         return self.__identity
 
     def get_identity_seed(self) -> int:
