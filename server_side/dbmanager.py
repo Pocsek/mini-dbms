@@ -97,7 +97,13 @@ class DbManager:
         self.update_db_structure_file()
 
     def drop_table(self, table_name):
-        # delete collection in MongoDB
+        """
+        Delete index collections if they exist.
+        Delete collection in MongoDB.
+        """
+        for index in self.get_working_db().get_table(table_name).get_indexes():
+            coll_name = _build_collection_name_for_index(table_name, index.get_name())
+            mongo_db.drop_collection(self.get_working_db().get_name(), coll_name)
         mongo_db.drop_collection(self.get_working_db().get_name(), table_name)
 
         # update json structure
