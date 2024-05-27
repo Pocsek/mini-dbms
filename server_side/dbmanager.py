@@ -175,7 +175,7 @@ class DbManager:
         Each document in the collection contains the table name and its last identity value.
         """
         self.__dbs.append(db)
-        mongo_db.create_collection(db.get_name(), "__last_identity")
+        mongo_db.create_collection(db.get_name(), "__next_identity")
 
     def insert(self, db: Database, tb: Table, records: list[dict]) -> list[str]:
         """
