@@ -46,7 +46,6 @@ class InsertInto(ExecutableTree):
         identity_col = table.get_identity_column()
         if identity_col:
             self.__identity_column_name = identity_col.get_name()
-            self.__identity_values.append(dbm.get_next_identity_value(db.get_name(), table.get_name()))
 
         existing_column_names = table.get_column_names()
         if len(self.__column_names) != 0:
@@ -115,6 +114,8 @@ class InsertInto(ExecutableTree):
                     raise ValueError(
                         f"Value [{to_insert}] does not match the type of column [{columns[i].get_name()}].")
 
+            # get identity value, and append to list
+            self.__identity_values.append(dbm.get_next_identity_value(db.get_name(), table.get_name()))
             # check integrity of the record to be inserted
             self.__validate_primary_key(dbm, db, table, record, identity_column)
             self.__validate_unique_keys(dbm, db, table, record, identity_column)
