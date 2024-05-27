@@ -57,11 +57,9 @@ class DbManager:
         column_names: list[str] = table.get_column_names()
 
         # create a collection with concatenated table name and index name that starts with an '__'
-        coll_name: str = "__" + table_name + '#' + index.get_name()  # collection name
+        coll_name: str = _build_collection_name_for_index(table_name, index.get_name())  # collection name
         mongo_db.create_collection(self.get_working_db().get_name(), coll_name)
         selection: dict = {}
-        # projection: dict = {name: 1 for name in index.get_column_names()}
-        # projection.update({"_id": 1})
         kv_pairs: list[dict] = mongo_db.select(self.get_working_db().get_name(), table_name, selection)
 
         records: list[dict] = []
@@ -203,23 +201,46 @@ class DbManager:
         if len(records) == 0:
             # cannot insert an empty record
             raise ValueError("Record is empty")
-        key_value_pairs = []
+        key_value_pairs: list[tuple[str, str]] = []
         for record in records:
             key, value = build_key_value_pair(record, column_names, primary_key_names)
             key_value_pairs.append((key, value))
         inserted_keys = []
-        for key_value_pair in key_value_pairs:
+        indexes: list[Index] = tb.get_indexes()
+        for key_value_pair, record in zip(key_value_pairs, records):
             try:
                 inserted_keys.append(mongo_db.insert_one(db.get_name(), tb.get_name(), key_value_pair))
+                for index in indexes:
+                    i_col_names: list[str] = index.get_column_names()
+                    # get the values for the index columns and concatenate them
+                    coll_keys: list[str] = [record[n] for n in i_col_names]
+                    coll_key = string_from_values(coll_keys)  # collection key
+                    coll_name = _build_collection_name_for_index(tb.get_name(), index.get_name())
+                    if tb.is_unique(i_col_names):
+                        # if the column names for the index are unique insert the record into the index collection
+                        # for insertion use the key part of the inserted record as value
+                        # and the collection key generated for the index as key
+                        mongo_db.insert_one(db.get_name(), coll_name, (coll_key, key_value_pair[0]))
+                    else:
+                        # if the column names for the index are not unique update the index collection if the key exists
+                        result = mongo_db.select(db.get_name(), coll_name, {"_id": coll_key})
+                        if len(result) > 1:
+                            # if multiple keys exist in the index collection raise an error
+                            raise ValueError(f"Duplicate key [{coll_key}] in collection [{coll_name}]")
+                        if result:
+                            # if the key exists in the index collection update the value
+                            new_value: str = string_from_values([result[0].get("value"), key_value_pair[0]])
+                            mongo_db.update_one(db.get_name(),
+                                                coll_name,
+                                                {"_id": coll_key},
+                                                {"$set": {"value": new_value}})
+                        else:
+                            # if the key does not exist in the index collection insert the record
+                            mongo_db.insert_one(db.get_name(), coll_name, (coll_key, key_value_pair[0]))
+
             except ValueError:
                 raise
         return inserted_keys
-        # TO-DO: implement insert_many
-        # else:
-        #     try:
-        #         return mongo_db.insert_many(db.get_name(), tb.get_name(), key_value_pairs)
-        #     except ValueError:
-        #         raise
 
     def delete(self, db: Database, tb: Table, key: str) -> int:
         """
@@ -403,3 +424,7 @@ def string_from_values(values: list) -> str:
         v_str = str(v)
         concatenated += f"{v_str}#"
     return concatenated[:-1]
+
+
+def _build_collection_name_for_index(table_name: str, index_name: str):
+    return "__" + table_name + '#' + index_name
