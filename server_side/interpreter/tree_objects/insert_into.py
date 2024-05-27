@@ -38,6 +38,7 @@ class InsertInto(ExecutableTree):
         Check if the given values match the datatype of columns.
         Check if any integrity violations occur.
         """
+        # TODO: On key integrity check factor in the values to be inserted too, not just the existing ones
         db = dbm.get_working_db()
         table = db.get_table(self.__table_name)
         if table is None:
@@ -115,7 +116,8 @@ class InsertInto(ExecutableTree):
                         f"Value [{to_insert}] does not match the type of column [{columns[i].get_name()}].")
 
             # get identity value, and append to list
-            self.__identity_values.append(dbm.get_next_identity_value(db.get_name(), table.get_name()))
+            if identity_column:
+                self.__identity_values.append(dbm.get_next_identity_value(db.get_name(), table.get_name()))
             # check integrity of the record to be inserted
             self.__validate_primary_key(dbm, db, table, record, identity_column)
             self.__validate_unique_keys(dbm, db, table, record, identity_column)

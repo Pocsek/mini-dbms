@@ -37,3 +37,28 @@ class TestExecutorInsertInto(TestCase):
         cleanup = self.parser.get_ast_list()
         # self.executor.execute(cleanup)
 
+    def test_with_indexes(self):
+        self.parser.parse(
+            ("drop database if exists test_db;"
+             "create database test_db;"
+             "use test_db;"
+             "create table test_t1 ("
+             "  col1 int primary key,"
+             "  col2 int unique ,"
+             "  col3 varchar"
+             ");"
+             "create index idx1 on test_t1(col2);")
+        )
+        setup = self.parser.get_ast_list()
+        self.executor.execute(setup)
+
+        self.parser.parse(
+            "insert into test_t1 values (1, 2, 'Pistabacsi'), (2, 4, 'Marikaneni'), (3, 3, 'Kiskutya')"
+        )
+        insert = self.parser.get_ast_list()
+        self.executor.execute(insert)
+
+        self.parser.parse("drop database test_db")
+        cleanup = self.parser.get_ast_list()
+        # self.executor.execute(cleanup)
+

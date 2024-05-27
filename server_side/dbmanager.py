@@ -216,6 +216,8 @@ class DbManager:
                     coll_keys: list[str] = [record[n] for n in i_col_names]
                     coll_key = string_from_values(coll_keys)  # collection key
                     coll_name = _build_collection_name_for_index(tb.get_name(), index.get_name())
+                    # get the record from the index collection if it exists
+                    result = mongo_db.select(db.get_name(), coll_name, {"_id": coll_key})
                     if tb.is_unique(i_col_names):
                         # if the column names for the index are unique insert the record into the index collection
                         # for insertion use the key part of the inserted record as value
@@ -223,10 +225,6 @@ class DbManager:
                         mongo_db.insert_one(db.get_name(), coll_name, (coll_key, key_value_pair[0]))
                     else:
                         # if the column names for the index are not unique update the index collection if the key exists
-                        result = mongo_db.select(db.get_name(), coll_name, {"_id": coll_key})
-                        if len(result) > 1:
-                            # if multiple keys exist in the index collection raise an error
-                            raise ValueError(f"Duplicate key [{coll_key}] in collection [{coll_name}]")
                         if result:
                             # if the key exists in the index collection update the value
                             new_value: str = string_from_values([result[0].get("value"), key_value_pair[0]])
@@ -298,7 +296,8 @@ class DbManager:
         index = table.get_index_by_column_names(column_names)
         if index:
             # for both single and compound values only if there is an index created on all columns, use those to search
-            for kv in mongo_db.select(db_name, index.get_name()):
+            index_collection_name = _build_collection_name_for_index(table_name, index.get_name())
+            for kv in mongo_db.select(db_name, index_collection_name):
                 if kv.get("_id") == value:
                     return kv.get("value")
         else:
@@ -428,3 +427,5 @@ def string_from_values(values: list) -> str:
 
 def _build_collection_name_for_index(table_name: str, index_name: str):
     return "__" + table_name + '#' + index_name
+
+
