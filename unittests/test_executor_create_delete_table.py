@@ -6,7 +6,7 @@ from server_side.interpreter.token_classification import TokenType
 from server_side.interpreter.token_objects import *
 
 
-class TestExecutorInsertInto(TestCase):
+class TestExecutorCreateDeleteTable(TestCase):
 
     def setUp(self):
         self.parser = Parser()
@@ -22,19 +22,24 @@ class TestExecutorInsertInto(TestCase):
              "  col1 int primary key,"
              "  col2 int,"
              "  col3 varchar"
-             ");")
+             ");"
+             "create table test_t2 ("
+             "  col1 int primary key,"
+             "  col2 int,"
+             "  col3 varchar"
+             ")")
         )
         setup = self.parser.get_ast_list()
         self.executor.execute(setup)
 
         self.parser.parse(
-            "insert into test_t1 values (1, 2, 'Pistabacsi'), (2, 2, 'Marikaneni')"
+            "drop table test_t1"
         )
-        insert = self.parser.get_ast_list()
-        self.executor.execute(insert)
+        drop = self.parser.get_ast_list()
+        self.executor.execute(drop)
 
-        self.parser.parse("drop database test_db")
-        cleanup = self.parser.get_ast_list()
+        # self.parser.parse("drop database test_db")
+        # cleanup = self.parser.get_ast_list()
         # self.executor.execute(cleanup)
 
     def test_with_indexes(self):
@@ -44,21 +49,36 @@ class TestExecutorInsertInto(TestCase):
              "use test_db;"
              "create table test_t1 ("
              "  col1 int primary key,"
-             "  col2 int unique ,"
+             "  col2 int,"
              "  col3 varchar"
              ");"
-             "create index idx1 on test_t1(col2);")
+             "create table test_t2 ("
+             "  col1 int primary key,"
+             "  col2 int,"
+             "  col3 varchar"
+             ")")
         )
         setup = self.parser.get_ast_list()
         self.executor.execute(setup)
 
         self.parser.parse(
-            "insert into test_t1 values (1, 2, 'Pistabacsi'), (2, 4, 'Marikaneni'), (3, 3, 'Kiskutya')"
+            ("create index idx1 on test_t1 (col2);"
+             "create index idx2 on test_t1 (col3);"
+             "create index idx3 on test_t2 (col2);"
+             "create index idx4 on test_t2 (col3)"
+             )
         )
-        insert = self.parser.get_ast_list()
-        self.executor.execute(insert)
+        indexes = self.parser.get_ast_list()
+        self.executor.execute(indexes)
 
-        self.parser.parse("drop database test_db")
-        cleanup = self.parser.get_ast_list()
+        self.parser.parse(
+            "drop table test_t1"
+        )
+        drop = self.parser.get_ast_list()
+        self.executor.execute(drop)
+
+        # self.parser.parse("drop database test_db")
+        # cleanup = self.parser.get_ast_list()
         # self.executor.execute(cleanup)
+
 
