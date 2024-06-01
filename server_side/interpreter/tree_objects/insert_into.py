@@ -12,8 +12,12 @@ class InsertInto(ExecutableTree):
     def __init__(self):
         super().__init__()
         self.__table_name: str = ""
-        self.__column_names: list[str] = []  # name of the columns that will be inserted into
-        self.__values: list[list[str]] = []  # a list where a value is a record to be inserted, a record is a list
+        # names of columns that will be inserted into
+        self.__column_names: list[str] = []
+        # a list where a value is a record to be inserted, a record is a list
+        self.__values: list[list[str]] = []
+        # names of columns that are not specified (excluding column with identity)
+        self.__rest_of_column_names: list[str] = []
 
         # - a list of identity values that are to be inserted
         # - the list is built up during validation and utilized in execution
@@ -29,7 +33,7 @@ class InsertInto(ExecutableTree):
         table_idx = dbm.find_table(db_idx, self.__table_name)
         db = dbm.get_working_db()
         table = db.get_tables()[table_idx]
-        records = self.__make_records()
+        records = self.__make_records(table)
         dbm.insert(db, table, records)
 
     def validate(self, dbm, **kwargs):
@@ -50,11 +54,16 @@ class InsertInto(ExecutableTree):
 
         existing_column_names = table.get_column_names()
         if len(self.__column_names) != 0:
-            # if column names are specified, validate them
+            # column names are specified, validate them
             self.__validate_column_names(existing_column_names, self.__identity_column_name)
         else:
-            # if column names are not specified, use the existing column names
+            # column names are not specified, use the existing column names
             self.__column_names = existing_column_names
+
+        # column names that are not specified
+        self.__rest_of_column_names = [
+            col_name for col_name in table.get_column_names() if col_name not in self.__column_names
+        ]
 
         # remove identity column name from the column names that will be inserted into
         if self.__identity_column_name in self.__column_names:
@@ -102,28 +111,78 @@ class InsertInto(ExecutableTree):
     def __validate_values(self, dbm, db, table, identity_column=None):
         """
         Check if all values are valid and the number of values is equal to the number of column names.
+        Validate constraints: CHECK, NOT NULL.
         """
         columns = [table.get_column(col_name) for col_name in self.__column_names]
+        rest_of_columns = [table.get_column(col_name) for col_name in self.__rest_of_column_names]
+
+        check_column_names = [chk.get_column_name() for chk in table.get_checks()]
+
+        for rest_col in rest_of_columns:
+            if not rest_col.get_allow_nulls():
+                raise ValueError(f"Column [{rest_col.get_name()}] does not allow NULL values, it must be specified.")
+
         required_nr_values = len(self.__column_names)
-        for record in self.__values:
+        for record_idx, record in enumerate(self.__values):
             if len(record) != required_nr_values:
                 raise ValueError(f"Expected {required_nr_values} values, found {len(record)}.")
 
-            # check if the types are correct
             for i, to_insert in enumerate(record):
+                col_name = columns[i].get_name()
+                # check if the types are correct
                 if not self.__matches_type(to_insert, columns[i]):
                     raise ValueError(
-                        f"Value [{to_insert}] does not match the type of column [{columns[i].get_name()}].")
+                        f"Value [{to_insert}] does not match the type of column [{col_name}].")
+                # if column has check constraint, validate it
+                chk_index = None
+                try:
+                    chk_index = check_column_names.index(col_name)
+                except ValueError:
+                    pass
+                if chk_index is not None:
+                    self.__validate_check_constraint(table, col_name, chk_index, self.__cast_value(to_insert, columns[i]))
 
             # get identity value, and append to list
             if identity_column:
                 self.__identity_values.append(dbm.get_next_identity_value(db.get_name(), table.get_name()))
-            # check integrity of the record to be inserted
-            self.__validate_primary_key(dbm, db, table, record, identity_column)
-            self.__validate_unique_keys(dbm, db, table, record, identity_column)
-            self.__validate_foreign_keys(dbm, db, table, record, identity_column)
 
-    def __validate_primary_key(self, dbm, db, table, record, identity_column=None):
+            self.__validate_integrity(dbm, db, table, record, record_idx, identity_column)
+
+    def __validate_check_constraint(self, table, col_name: str, check_index: int, to_insert):
+        """
+        !Does not support all operators, e.g.: '>=', '<=' etc.
+        """
+        chk = table.get_checks()[check_index]
+        chk_op = chk.get_op()
+        chk_value = chk.get_value()
+        ok = True
+        match chk_op:
+            case "=":
+                if to_insert != chk_value:
+                    ok = False
+            case "!=":
+                if to_insert == chk_value:
+                    ok = False
+            case ">":
+                if to_insert <= chk_value:
+                    ok = False
+            case "<":
+                if to_insert >= chk_value:
+                    ok = False
+            case _:
+                raise NotImplementedError(f"Operator '{chk.get_op()}' is not supported.")
+        if not ok:
+            raise ValueError(
+                f"Value [{to_insert}] does not satisfy the check constraint '{col_name} {chk_op} {chk_value}'."
+            )
+
+    def __validate_integrity(self, dbm, db, table, record, record_idx, identity_column=None):
+        """Check the integrity of the record."""
+        self.__validate_primary_key(dbm, db, table, record, record_idx, identity_column)
+        self.__validate_unique_keys(dbm, db, table, record, record_idx, identity_column)
+        self.__validate_foreign_keys(dbm, db, table, record, record_idx, identity_column)
+
+    def __validate_primary_key(self, dbm, db, table, record, record_idx, identity_column=None):
         """
         Validate primary key integrity, i.e. the record to be inserted is unique to the primary key.
         """
@@ -132,12 +191,15 @@ class InsertInto(ExecutableTree):
         if identity_column and len(pk_col_names) == 1:
             if identity_column.get_name() == pk_col_names[0]:
                 return
+
         # if an entry with the same primary key exists in the table, raise an error
         pk_col_values = self.__get_column_values(pk_col_names, record, identity_column)
+        if self.__exists_key(table, pk_col_names, pk_col_values, record, record_idx):
+            raise ValueError(f"Primary key [{pk_col_values}] already exists in the records being inserted.")
         if dbm.find_by_primary_key(db.get_name(), table.get_name(), pk_col_values):
             raise ValueError(f"Primary key [{pk_col_values}] already exists in the table.")
 
-    def __validate_unique_keys(self, dbm, db, table, record, identity_column=None):
+    def __validate_unique_keys(self, dbm, db, table, record, record_idx, identity_column=None):
         """
         For each unique key, validate unique key integrity, i.e. the value to be inserted is unique to the unique key.
         """
@@ -148,7 +210,7 @@ class InsertInto(ExecutableTree):
             if dbm.find_by_value(db.get_name(), table.get_name(), col_names, col_values):
                 raise ValueError(f"Unique key [{col_names}] with value [{col_values}] already exists in the table.")
 
-    def __validate_foreign_keys(self, dbm, db, table, record, identity_column=None):
+    def __validate_foreign_keys(self, dbm, db, table, record, record_idx, identity_column=None):
         """
         For each foreign key, validate foreign key integrity, i.e. the value to be inserted appears in the parent table.
         """
@@ -174,6 +236,11 @@ class InsertInto(ExecutableTree):
                     (f"Foreign key [{to_insert_col_names}] with value [{to_insert_col_values}] does not exist in the "
                      f"referenced table [{ref_table_name}].")
                 )
+
+    # def __get_column_positions(self, column_names, identity_column) -> list[int]:
+    #     """
+    #     Get the position of the columns specified in the column_names list from the record.
+    #     """
 
     def __get_column_values(self, column_names, record, identity_column=None) -> list:
         """
@@ -205,12 +272,34 @@ class InsertInto(ExecutableTree):
             case _:
                 raise ValueError(f"Unknown datatype '{col_type}'.")
 
-    def __make_records(self) -> list[dict]:
+    def __cast_value(self, val, column):
+        # TODO: extract this function into a class dedicated to datatypes
+        """Convert a column value to its corresponding type and return it."""
+        col_type = column.get_type()
+        match col_type:
+            case "int":
+                return int(val)
+            case "float":
+                return float(val)
+            case "varchar":
+                return val
+            case _:
+                raise ValueError(f"Unknown datatype '{col_type}'.")
+
+    def __make_records(self, table) -> list[dict]:
         """
         Pair the column names with the values to create records.
 
         No validation is done here.
         """
+        # include default values for columns that are not specified but have default constraint
+        remaining_columns = [col for col in table.get_columns() if col.get_name() in self.__rest_of_column_names]
+        defaults: list[tuple] = []  # a list of (column_name, default_value) pairs
+        for col in remaining_columns:
+            default_value = col.get_default_value()
+            if default_value is not None:
+                defaults.append((col.get_name(), default_value))
+
         records = []
         for i, value in enumerate(self.__values):
             record = {}
@@ -219,5 +308,18 @@ class InsertInto(ExecutableTree):
             # if table has identity, insert identity column name and value into the record
             if self.__identity_values:
                 record[self.__identity_column_name] = self.__identity_values[i]
+            # insert any unspecified column names if they have default values
+            for d in defaults:
+                record[d[0]] = d[1]
             records.append(record)
         return records
+
+    def __exists_key(self, table, column_names: list[str], column_values: list, record, record_idx) -> bool:
+        """
+        Check if a key already exists in the records that are being inserted and were already validated.
+        I.e. only compare this record to records with indexes in the range [0, record_idx).
+        """
+        for i in range(0, record_idx):
+            other_record = self.__values[i]
+
+        return False
