@@ -41,6 +41,16 @@ def encode_results(results: list[Result]) -> str:
     return json.dumps({"results": [r.__dict__() for r in results]})
 
 
+def encode_error(error_message: str) -> str:
+    """
+    {
+        "message": str
+    }
+    """
+    return json.dumps({
+        "message": error_message
+    })
+
 
 def respond_to_client(client_socket: socket, commands: str):
     """
@@ -59,7 +69,7 @@ def respond_to_client(client_socket: socket, commands: str):
         response = encode_results(results)
 
     except Exception as e:
-        response = f"Error: {e.__str__()}"
+        response = encode_error(f"Error: {e.__str__()}")
         traceback.print_exc()  # only for debugging, if error traceback is needed
         print("Error: " + e.__str__())  # this should be logged in a file in the future
         log("Error: " + e.__str__())

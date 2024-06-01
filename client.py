@@ -3,6 +3,8 @@ import json
 from client_side.server_connection import ServerConnection
 from client_side.database_structure import DatabaseStructure
 from client_side.tab_completer import TabCompleter
+from client_side.result import Result
+
 
 CLI_COMMANDS = ["show databases", "show tables"]  # client-side commands
 FORBIDDEN_COMMANDS = ["~show structure~"]  # commands that are not allowed to be sent by the client
@@ -52,6 +54,20 @@ def execute_cli_command(command: str, ds: DatabaseStructure):
             print("Tables: ", " ".join(ds.get_table_names(ds.get_working_db_index())))
 
 
+def interpret_response(response: str):
+    decoded: dict = json.loads(response)
+    message = decoded.get("message", None)
+    results: list[dict] | None = decoded.get("results", None)
+    if message:
+        print(message)
+    elif results:
+        for r in results:
+            result = Result().from_dict(r)
+            if result.get_nr_rows_affected():
+                print(f"{result.get_nr_rows_affected()} rows affected")
+            # TODO: show result table
+
+
 def main():
     host = 'localhost'
     port = 12345
@@ -76,8 +92,7 @@ def main():
                     continue
                 s.send(commands)
                 if keep_running:
-                    response = s.receive()
-                    print(response)
+                    interpret_response(s.receive())
                 else:
                     s.close()
                     break

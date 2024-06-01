@@ -28,3 +28,7 @@ class ExecutableTree(CustomTree, ABC):
         # method of ExecutableTree which calls the execute method of all its ExecutableTree children
         self._execute(dbm)
 
+    @abstractmethod
+    def get_result(self) -> dict:
+        return self.__result
+
