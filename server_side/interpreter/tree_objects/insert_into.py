@@ -193,9 +193,11 @@ class InsertInto(ExecutableTree):
                 return
 
         # if an entry with the same primary key exists in the table, raise an error
-        pk_col_values = self.__get_column_values(pk_col_names, record, identity_column)
-        if self.__exists_key(table, pk_col_names, pk_col_values, record, record_idx):
-            raise ValueError(f"Primary key [{pk_col_values}] already exists in the records being inserted.")
+        pk_col_values, pk_col_positions = self.__get_column_values(pk_col_names, record, identity_column)
+        if self.__exists_key(pk_col_values, pk_col_positions, record_idx):
+            raise ValueError(
+                f"Primary key [{pk_col_values}] already exists in one of the previous values being inserted."
+            )
         if dbm.find_by_primary_key(db.get_name(), table.get_name(), pk_col_values):
             raise ValueError(f"Primary key [{pk_col_values}] already exists in the table.")
 
@@ -206,7 +208,11 @@ class InsertInto(ExecutableTree):
         # if an entry with the same unique key exists in the table, raise an error
         for uq in table.get_unique_keys():
             col_names = uq.get_column_names()
-            col_values = self.__get_column_values(col_names, record, identity_column)
+            col_values, col_positions = self.__get_column_values(col_names, record, identity_column)
+            if self.__exists_key(col_values, col_positions, record_idx):
+                raise ValueError(
+                    f"Unique key [{col_values}] already exists in one of the previous values being inserted."
+                )
             if dbm.find_by_value(db.get_name(), table.get_name(), col_names, col_values):
                 raise ValueError(f"Unique key [{col_names}] with value [{col_values}] already exists in the table.")
 
@@ -217,7 +223,7 @@ class InsertInto(ExecutableTree):
         # upon inserting into a child table, if the inserted key does not exist in the parent table, raise an error
         for fk in table.get_foreign_keys():
             to_insert_col_names = fk.get_source_column_names()
-            to_insert_col_values = self.__get_column_values(to_insert_col_names, record, identity_column)
+            to_insert_col_values, _ = self.__get_column_values(to_insert_col_names, record, identity_column)
             ref_table_name = fk.get_referenced_table_name()
             ref_col_names = fk.get_referenced_column_names()
 
@@ -237,24 +243,22 @@ class InsertInto(ExecutableTree):
                      f"referenced table [{ref_table_name}].")
                 )
 
-    # def __get_column_positions(self, column_names, identity_column) -> list[int]:
-    #     """
-    #     Get the position of the columns specified in the column_names list from the record.
-    #     """
-
-    def __get_column_values(self, column_names, record, identity_column=None) -> list:
+    def __get_column_values(self, column_names, record, identity_column=None) -> tuple:
         """
-        Get the values of the columns specified in the column_names list from the record.
+        Get the positions and values of the columns specified in the column_names list from the record.
         """
         col_values = []
+        col_positions = []
         for i in range(len(self.__column_names)):
             if self.__column_names[i] in column_names:
                 col_values.append(record[i])
+                col_positions.append(i)
             elif identity_column:
                 if self.__column_names[i] == identity_column.get_name():
                     # the identity value corresponding to this record was queried and saved in the main validate method
                     col_values.append(self.__identity_values[-1])
-        return col_values
+                    col_positions.append(i)
+        return col_values, col_positions
 
     def __matches_type(self, val, column) -> bool:
         # TODO: extract this function into a class dedicated to datatypes
@@ -314,12 +318,19 @@ class InsertInto(ExecutableTree):
             records.append(record)
         return records
 
-    def __exists_key(self, table, column_names: list[str], column_values: list, record, record_idx) -> bool:
+    def __exists_key(self, key_column_values: list, key_column_positions: list[int],
+                     record_idx) -> bool:
         """
         Check if a key already exists in the records that are being inserted and were already validated.
         I.e. only compare this record to records with indexes in the range [0, record_idx).
         """
         for i in range(0, record_idx):
             other_record = self.__values[i]
-
+            matching = True
+            for j in range(len(key_column_values)):
+                if key_column_values[i] != other_record[key_column_positions[i]]:
+                    matching = False
+                    break
+            if matching:
+                return True
         return False
