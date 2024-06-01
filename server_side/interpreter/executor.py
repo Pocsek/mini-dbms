@@ -8,8 +8,9 @@ class Executor:
     """
     def __init__(self, dbm):
         self.__dbm = dbm  # DbManager instance
-        self.__modified = None
-        self.__nr_rows_affected = None
+        self.__modified: bool = False
+        # self.__nr_rows_affected = None
+        self.__results: list = []  # list of Result objects
 
     def reset_state(self):
         self.__modified = False
@@ -23,7 +24,12 @@ class Executor:
         Execute a list of ASTs (a.k.a. a list of commands).
         """
         for ast in ast_list:
+            # TODO
+            # if isinstance(ast, SelectTree):
+            #   self.__modified = True
             self.__execute_tree(ast)
+            ast_result = ast.get_result()
+            self.__results.append(ast_result)
 
     def __execute_tree(self, tree: ExecutableTree):
         """
@@ -31,3 +37,6 @@ class Executor:
         """
         self.reset_state()
         tree.execute(self.__dbm)
+
+    def get_results(self) -> list:
+        return self.__results

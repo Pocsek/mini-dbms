@@ -7,6 +7,8 @@ class ExecutableTree(CustomTree, ABC):
     A type of CustomTree where an execution chain can be started from the root.
     """
     def __init__(self):
+
+        self.__result = None  # the result of the execution, an instance of the Result class
         super().__init__()
 
     @abstractmethod

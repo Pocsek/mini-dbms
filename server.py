@@ -6,12 +6,10 @@ import os
 import json
 
 from server_side.dbmanager import DbManager
-from server_side.interpreter import Parser, Executor
+from server_side.interpreter import Parser, Executor, Result
 from server_side import __working_dir__
 
-
 stop_threads = False
-
 
 dbm = DbManager()  # create an instance of the DbManager class, loads the databases from the file too
 ps = Parser()
@@ -34,6 +32,16 @@ def create_socket(host, port) -> socket:
     return sock
 
 
+def encode_results(results: list[Result]) -> str:
+    """
+    {
+        "results": list
+    }
+    """
+    return json.dumps({"results": [r.__dict__() for r in results]})
+
+
+
 def respond_to_client(client_socket: socket, commands: str):
     """
     Responds to the client with the result of the commands received.
@@ -46,6 +54,9 @@ def respond_to_client(client_socket: socket, commands: str):
     try:
         ps.parse(commands)
         ex.execute(ps.get_ast_list())
+        results: list[Result] = ex.get_results()
+        print("Results: ", results)
+        response = encode_results(results)
 
     except Exception as e:
         response = f"Error: {e.__str__()}"

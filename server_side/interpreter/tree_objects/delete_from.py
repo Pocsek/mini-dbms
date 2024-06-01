@@ -1,4 +1,5 @@
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
+from server_side.interpreter.result import Result
 
 
 class DeleteFrom(ExecutableTree):
@@ -8,10 +9,12 @@ class DeleteFrom(ExecutableTree):
     Examples:
         DELETE FROM table_name WHERE primary_key = value
     """
+
     def __init__(self):
         super().__init__()
         self.__table_name: str = ""
         self.__condition: dict = {}  # the condition given in the where clause interpreted as a dictionary
+        self.__result: Result = Result()
 
     def _execute(self, dbm):
         db_idx = dbm.get_working_db_index()
@@ -21,6 +24,8 @@ class DeleteFrom(ExecutableTree):
         pr = table.get_primary_key()
         key = self.__make_key(pr.get_column_names(), self.__condition)
         del_count = dbm.delete(db, table, key)
+
+        self.__result.set_nr_rows_affected(del_count)
 
     def validate(self, dbm, **kwargs):
         """
@@ -56,6 +61,9 @@ class DeleteFrom(ExecutableTree):
 
     def connect_subtrees_to_root(self):
         pass
+
+    def get_result(self) -> Result:
+        return self.__result
 
     def set_table_name(self, table_name: str):
         self.__table_name = table_name
