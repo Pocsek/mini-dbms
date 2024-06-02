@@ -14,7 +14,7 @@ class TabCompleter:
 
     def __init__(self):
         readline.parse_and_bind("tab: complete")
-        readline.set_completer(self.complete_database)
+        readline.set_completer(self.complete_all)
 
     def set_database_names(self, database_names: list[str]):
         self.__database_names = database_names
@@ -42,6 +42,17 @@ class TabCompleter:
         else:
             # readline.set_completer(self.complete_column)
             readline.set_completer(self.complete_database)
+
+    def complete_all(self, text, state):
+        options = [db for db in self.__database_names if db.startswith(text)]
+        if state < len(options):  # complete database names
+            return options[state]
+        else:  # complete table names
+            state = state - len(options)
+            options = [tb for tb in self.__table_names if tb.startswith(text)]
+            if state < len(options):
+                return options[state]
+
 
     # def complete_column(self, text, state):
     #     options = [col for col in self.__column_names if col.startswith(text)]
