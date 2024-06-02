@@ -8,6 +8,7 @@ class DeleteFrom(ExecutableTree):
     Examples:
         DELETE FROM table_name WHERE primary_key = value
     """
+
     def __init__(self):
         super().__init__()
         self.__table_name: str = ""
@@ -21,6 +22,7 @@ class DeleteFrom(ExecutableTree):
         pr = table.get_primary_key()
         key = self.__make_key(pr.get_column_names(), self.__condition)
         del_count = dbm.delete(db, table, key)
+        self.get_result().set_nr_rows_affected(del_count)
 
     def validate(self, dbm, **kwargs):
         """

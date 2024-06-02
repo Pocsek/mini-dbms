@@ -22,7 +22,9 @@ class CreateDatabase(ExecutableTree):
         new_db = Database(self.__db_name.get_value())
         dbm.add_database(new_db)
         dbm.update_db_structure_file()
-        print(f"Database '{self.__db_name.get_value()}' created successfully.")
+        resp_message = f"Database '{new_db.get_name()}' created successfully."
+        self.get_result().set_response_message(resp_message)
+        print(resp_message)
 
     def connect_nodes_to_root(self):
         self.add_node(self.__db_name, self.root)

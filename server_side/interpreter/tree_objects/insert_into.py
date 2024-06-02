@@ -33,8 +33,10 @@ class InsertInto(ExecutableTree):
         table_idx = dbm.find_table(db_idx, self.__table_name)
         db = dbm.get_working_db()
         table = db.get_tables()[table_idx]
-        records = self.__make_records(table)
-        dbm.insert(db, table, records)
+
+        records = self.__make_records()
+        inserted_keys: list[str] = dbm.insert(db, table, records)
+        self.get_result().set_nr_rows_affected(len(inserted_keys))
 
     def validate(self, dbm, **kwargs):
         """

@@ -19,11 +19,15 @@ class DropTable(ExecutableTree):
         If the "if_exists" attribute is true, only try to delete the tables that exist.
         """
         db = dbm.get_working_db()
+        dropped_table_names: list[str] = []
         for table_name in self.__table_names:
             if table_name not in [tb.get_name() for tb in db.get_tables()] and self.__if_exists:
                 continue
             dbm.drop_table(table_name)
-            print(f"Table '{table_name}' dropped successfully.")
+            dropped_table_names.append(table_name)
+        resp_message = f"Table(s) [{' ,'.join(dropped_table_names)}] dropped successfully."
+        self.get_result().set_response_message(resp_message)
+        print(resp_message)
 
     def validate(self, dbm, **kwargs):
         """
