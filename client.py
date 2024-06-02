@@ -63,7 +63,7 @@ def interpret_response(response: str):
     elif results:
         for r in results:
             if r is None:
-                print("Command executed successfully")
+                print("No response from server on this command.")
                 continue
             result = Result().from_dict(r)
             # print only one of the following field values of a response, because they should be mutually exclusive

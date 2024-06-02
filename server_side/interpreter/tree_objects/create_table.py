@@ -122,7 +122,9 @@ class CreateTable(ExecutableTree):
                 table.add_constraint(constr)
 
         dbm.create_table(table)
-        print(f"Table '{table.get_name()}' created successfully.")
+        resp_message = f"Table '{table.get_name()}' created successfully."
+        self.get_result().set_response_message(resp_message)
+        print(resp_message)
 
     def connect_nodes_to_root(self):
         pass

@@ -19,7 +19,9 @@ class Use(ExecutableTree):
         Change the working DB.
         """
         dbm.set_working_db_index(dbm.find_database(self.__db_name.get_value()))
-        print(f"Changed database context to '{dbm.get_working_db().get_name()}'.")
+        resp_message = f"Changed database context to '{self.__db_name.get_value()}'."
+        self.get_result().set_response_message(resp_message)
+        print(resp_message)
 
     def connect_nodes_to_root(self):
         self.add_node(self.__db_name, self.root)

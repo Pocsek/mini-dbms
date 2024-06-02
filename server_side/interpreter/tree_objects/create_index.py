@@ -13,6 +13,9 @@ class CreateIndex(ExecutableTree):
         table = dbm.get_table(dbm.get_working_db_index(), self.__table_name)
         index = Index(self.__index_name, self.__column_names)
         dbm.create_index(index, table.get_name())
+        resp_message = f"Index '{self.__index_name}' created successfully."
+        self.get_result().set_response_message(resp_message)
+        print(resp_message)
 
     def validate(self, dbm, **kwargs):
         if not self.__index_name:
