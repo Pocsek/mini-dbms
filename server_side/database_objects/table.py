@@ -12,7 +12,8 @@ from server_side.interpreter.constraint_objects import (
     Check as CheckCObj,
     Identity as IdentityCObj,
     Default as DefaultCObj,
-    NotNull as NotNullCObj
+    NotNull as NotNullCObj,
+    Null as NullCObj
 )
 
 
@@ -142,6 +143,9 @@ class Table(Dbo):
     def get_foreign_keys(self) -> list:
         return self.__foreign_keys
 
+    def get_checks(self) -> list:
+        return self.__checks
+
     def add_key(self, key):
         """
         Adds a key to the table.
@@ -170,6 +174,9 @@ class Table(Dbo):
         if isinstance(constraint, NotNullCObj):
             col_name = constraint.get_column_name()
             self.get_column(col_name).set_allow_nulls(False)
+        elif isinstance(constraint, NullCObj):
+            col_name = constraint.get_column_name()
+            self.get_column(col_name).set_allow_nulls(True)
         elif isinstance(constraint, DefaultCObj):
             col_name = constraint.get_column_name()
             self.get_column(col_name).set_default_value(constraint.get_default_value())
