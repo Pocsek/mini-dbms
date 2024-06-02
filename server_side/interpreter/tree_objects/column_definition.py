@@ -32,12 +32,6 @@ class ColumnDefinition(CustomTree):
                                     column_definitions=col_defs,
                                     table_constraints=table_constraints)
 
-    def connect_nodes_to_root(self) -> None:
-        pass
-
-    def connect_subtrees_to_root(self):
-        pass
-
     def get_name(self):
         return self.__name
 

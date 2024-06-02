@@ -83,7 +83,6 @@ class Parser:
         db_name = token_list.consume_of_type(TokenType.IDENTIFIER)
         tree = Use(db_name)
         token_list.consume_group(TOptionalCommandEnd())
-        tree.finalize()
         return tree
 
     def __parse_create(self, token_list: TokenList):
@@ -102,7 +101,6 @@ class Parser:
         db_name = token_list.consume_of_type(TokenType.IDENTIFIER)
         tree = CreateDatabase(db_name)
         token_list.consume_group(TOptionalCommandEnd())
-        tree.finalize()
         return tree
 
     def __parse_create_table(self, token_list: TokenList):
@@ -129,7 +127,6 @@ class Parser:
                     if t == ")":
                         token_list.consume_group(TOptionalCommandEnd())
 
-        tree.finalize()
         return tree
 
     def __parse_create_index(self, token_list: TokenList):
@@ -144,7 +141,6 @@ class Parser:
         tree.set_index_name(index_name)
         tree.set_table_name(table_name)
         tree.set_column_names(column_names)
-        tree.finalize()
         return tree
 
 
@@ -175,7 +171,6 @@ class Parser:
                 token_list.consume_group(TOptionalCommandEnd())
 
         tree = DropDatabase(db_names, if_exists)
-        tree.finalize()
         return tree
 
     def __parse_drop_table(self, token_list: TokenList):
@@ -195,7 +190,6 @@ class Parser:
                 token_list.consume_group(TOptionalCommandEnd())
 
         tree = DropTable(table_names, if_exists)
-        tree.finalize()
         return tree
 
     def __parse_alter(self, token_list: TokenList):
@@ -234,12 +228,10 @@ class Parser:
 
         else:
             raise SyntaxError("Unexpected end of command. Expected '(' or 'values'.")
-        tree.finalize()
         return tree
 
     def __parse_select(self, token_list: TokenList):
         tree = Select(token_list.consume_group(TSelect()))
-        tree.finalize()
         return tree
 
     def __parse_update(self, token_list: TokenList):
@@ -264,7 +256,6 @@ class Parser:
         tree = DeleteFrom()
         tree.set_table_name(str(table_name))
         tree.set_condition({str(column_name): value})
-        tree.finalize()
         return tree
 
 

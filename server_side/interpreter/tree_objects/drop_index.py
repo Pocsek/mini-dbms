@@ -10,10 +10,3 @@ class DropIndex(ExecutableTree):
 
     def validate(self, dbm, **kwargs):
         pass
-
-    def connect_nodes_to_root(self):
-        pass
-
-    def connect_subtrees_to_root(self):
-        pass
-

@@ -14,4 +14,4 @@ class TestParseUse(TestCase):
         ast_list = self.parser.get_ast_list()
         self.assertEqual(len(ast_list), 1)
         self.assertIsInstance(ast_list[0], Use)
-        self.assertEqual(ast_list[0].get_name().get_value(), "test_db")
+        self.assertEqual(ast_list[0].get_name(), "test_db")
