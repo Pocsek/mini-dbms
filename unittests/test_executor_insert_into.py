@@ -92,9 +92,10 @@ class TestExecutorInsertInto(TestCase):
             self.executor.execute(insert)
 
         finally:
-            self.parser.parse("drop database if exists test_insert_consecutive")
-            cleanup = self.parser.get_ast_list()
-            self.executor.execute(cleanup)
+            pass
+            # self.parser.parse("drop database if exists test_insert_consecutive")
+            # cleanup = self.parser.get_ast_list()
+            # self.executor.execute(cleanup)
 
     def test_1(self):
         self.parser.parse(
