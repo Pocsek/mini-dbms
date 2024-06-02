@@ -101,7 +101,7 @@ def get_collection_names(db_name: str) -> list[str]:
 
 def select(db_name: str, collection_name: str, selection: dict = None) -> list[dict]:
     """
-    Sends the query to the database and returns the key-value pairs.
+    Sends the query to the database and returns a key-value based dictionary.
     :param db_name: name of the database
     :param collection_name: name of the collection
     :param selection: query to filter the documents
@@ -113,9 +113,9 @@ def select(db_name: str, collection_name: str, selection: dict = None) -> list[d
         return list(result)
 
 
-def increment_identity(db_name: str,  table_name: str, increment_by: int):
+def increment_identity(db_name: str, table_name: str, increment_by: int):
     """
-    Increment the next identity value of a table in the __next_identity collection of the given dabatabse.
+    Increment the next identity value of a table in the __next_identity collection of the given database.
     """
     with pymongo.MongoClient(str(_MongoHost())) as client:
         db = client[db_name]
@@ -128,3 +128,14 @@ def increment_identity(db_name: str,  table_name: str, increment_by: int):
             raise ValueError(
                 f"Failed to increment next identity value in collection [{collection_name}] for table [{table_name}]."
             )
+
+
+def update_one(db_name: str, collection_name: str, query: dict, update: dict):
+    """
+    Update a document in a collection.
+    No validation is performed.
+    """
+    with pymongo.MongoClient(str(_MongoHost())) as client:
+        db = client[db_name]
+        collection = db[collection_name]
+        collection.update_one(query, update)

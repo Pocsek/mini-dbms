@@ -33,6 +33,8 @@ class DropDatabase(ExecutableTree):
         If the "if_exists" attribute is false, only then check if the databases exist in the json structure.
         """
         for db_name in self.__db_names:
+            if db_name == dbm.get_working_db().get_name():
+                raise ValueError(f"Cannot drop '{db_name}' because it is the working database")
             if db_name in dbm.get_default_database_names():
                 raise ValueError(f"Database '{db_name}' is a default database and cannot be dropped")
             if not self.__if_exists:

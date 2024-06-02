@@ -57,11 +57,9 @@ class DbManager:
         column_names: list[str] = table.get_column_names()
 
         # create a collection with concatenated table name and index name that starts with an '__'
-        coll_name: str = "__" + table_name + '#' + index.get_name()  # collection name
+        coll_name: str = _build_collection_name_for_index(table_name, index.get_name())  # collection name
         mongo_db.create_collection(self.get_working_db().get_name(), coll_name)
         selection: dict = {}
-        # projection: dict = {name: 1 for name in index.get_column_names()}
-        # projection.update({"_id": 1})
         kv_pairs: list[dict] = mongo_db.select(self.get_working_db().get_name(), table_name, selection)
 
         records: list[dict] = []
@@ -99,7 +97,13 @@ class DbManager:
         self.update_db_structure_file()
 
     def drop_table(self, table_name):
-        # delete collection in MongoDB
+        """
+        Delete index collections if they exist.
+        Delete collection in MongoDB.
+        """
+        for index in self.get_working_db().get_table(table_name).get_indexes():
+            coll_name = _build_collection_name_for_index(table_name, index.get_name())
+            mongo_db.drop_collection(self.get_working_db().get_name(), coll_name)
         mongo_db.drop_collection(self.get_working_db().get_name(), table_name)
 
         # update json structure
@@ -177,11 +181,12 @@ class DbManager:
         Each document in the collection contains the table name and its last identity value.
         """
         self.__dbs.append(db)
-        mongo_db.create_collection(db.get_name(), "__last_identity")
+        mongo_db.create_collection(db.get_name(), "__next_identity")
 
     def insert(self, db: Database, tb: Table, records: list[dict]) -> list[str]:
         """
         Inserts records into a table creating key-value pairs.
+        Inserts records into the index collections if they exist.
         Checks if the database and table exist.
         !Right now it inserts only one record at a time and if it fails it raises an exception,
         but keeps the ones inserted before and ignores the rest.!
@@ -203,26 +208,48 @@ class DbManager:
         if len(records) == 0:
             # cannot insert an empty record
             raise ValueError("Record is empty")
-        key_value_pairs = []
+        key_value_pairs: list[tuple[str, str]] = []
         for record in records:
             key, value = build_key_value_pair(record, column_names, primary_key_names)
             key_value_pairs.append((key, value))
         inserted_keys = []
-        for key_value_pair in key_value_pairs:
+        indexes: list[Index] = tb.get_indexes()
+        for key_value_pair, record in zip(key_value_pairs, records):
             try:
                 inserted_keys.append(mongo_db.insert_one(db.get_name(), tb.get_name(), key_value_pair))
+                for index in indexes:
+                    i_col_names: list[str] = index.get_column_names()
+                    # get the values for the index columns and concatenate them
+                    coll_keys: list[str] = [record[n] for n in i_col_names]
+                    coll_key = string_from_values(coll_keys)  # collection key
+                    coll_name = _build_collection_name_for_index(tb.get_name(), index.get_name())
+                    # get the record from the index collection if it exists
+                    result = mongo_db.select(db.get_name(), coll_name, {"_id": coll_key})
+                    if tb.is_unique(i_col_names):
+                        # if the column names for the index are unique insert the record into the index collection
+                        # for insertion use the key part of the inserted record as value
+                        # and the collection key generated for the index as key
+                        mongo_db.insert_one(db.get_name(), coll_name, (coll_key, key_value_pair[0]))
+                    else:
+                        # if the column names for the index are not unique update the index collection if the key exists
+                        if result:
+                            # if the key exists in the index collection update the value
+                            new_value: str = string_from_values([result[0].get("value"), key_value_pair[0]])
+                            mongo_db.update_one(db.get_name(),
+                                                coll_name,
+                                                {"_id": coll_key},
+                                                {"$set": {"value": new_value}})
+                        else:
+                            # if the key does not exist in the index collection insert the record
+                            mongo_db.insert_one(db.get_name(), coll_name, (coll_key, key_value_pair[0]))
+
             except ValueError:
                 raise
         return inserted_keys
-        # TO-DO: implement insert_many
-        # else:
-        #     try:
-        #         return mongo_db.insert_many(db.get_name(), tb.get_name(), key_value_pairs)
-        #     except ValueError:
-        #         raise
 
     def delete(self, db: Database, tb: Table, key: str) -> int:
         """
+        Deletes records from index collections if they exist.
         Deletes records from a table.
         Checks if the database and table exist.
         Returns the number of deleted records.
@@ -240,7 +267,33 @@ class DbManager:
         tb = self.get_databases()[db_idx].get_tables()[tb_idx]
         if not tb.has_primary_key():  # check if the table has a primary key because we can only delete by primary key
             raise ValueError(f"Table [{tb.get_name()}] has no primary key")
-        return mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
+        result = mongo_db.select(db.get_name(), tb.get_name(), {"_id": key})[0]
+        record: dict = split_key_value_pair(result, tb.get_column_names(), tb.get_primary_key().get_column_names())
+        indexes = tb.get_indexes()
+        for index in indexes:
+            i_col_names: list[str] = index.get_column_names()
+            coll_name = _build_collection_name_for_index(tb.get_name(), index.get_name())
+            if tb.is_unique(i_col_names):
+                coll_key = string_from_values([record.get(n) for n in i_col_names])
+                mongo_db.delete(db.get_name(), coll_name, {"_id": coll_key})
+            else:
+                coll_key = string_from_values([record.get(n) for n in i_col_names])
+                index_result = mongo_db.select(db.get_name(), coll_name, {"_id": coll_key})
+                if index_result[0].get("value") == key:
+                    mongo_db.delete(db.get_name(), coll_name, {"_id": coll_key})
+                else:
+                    values = values_from_string(index_result[0].get("value"))
+                    values.remove(key)
+                    new_value = string_from_values(values)
+                    mongo_db.update_one(db.get_name(), coll_name, {"_id": coll_key}, {"$set": {"value": new_value}})
+
+
+
+
+
+
+        del_count = mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
+        return del_count
 
     def find_by_primary_key(self, db_name: str, table_name: str, pk_column_values: list) -> str | None:
         """
@@ -277,7 +330,8 @@ class DbManager:
         index = table.get_index_by_column_names(column_names)
         if index:
             # for both single and compound values only if there is an index created on all columns, use those to search
-            for kv in mongo_db.select(db_name, index.get_name()):
+            index_collection_name = _build_collection_name_for_index(table_name, index.get_name())
+            for kv in mongo_db.select(db_name, index_collection_name):
                 if kv.get("_id") == value:
                     return kv.get("value")
         else:
@@ -398,8 +452,22 @@ def string_from_values(values: list) -> str:
 
     :return: the concatenated string
     """
-    concatenated = str()
-    for v in values:
-        v_str = str(v)
-        concatenated += f"{v_str}#"
-    return concatenated[:-1]
+    return '#'.join([str(v) for v in values])
+
+def values_from_string(concatenated: str) -> list:
+    """
+    Converts a concatenated string of values separated by '#' to a list of values.
+
+        Example:
+        - input: "2#horse#10"
+        - output: [2, "horse", 10]
+
+    :return: the list of values
+    """
+    return concatenated.split("#")
+
+
+def _build_collection_name_for_index(table_name: str, index_name: str):
+    return "__" + table_name + '#' + index_name
+
+
