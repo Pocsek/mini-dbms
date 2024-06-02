@@ -13,6 +13,8 @@ class DbManager:
 
     def __init__(self):
         self.load_databases()
+        mongo_db.close_mongo_client()  # close the MongoDB client if it's open
+        mongo_db.set_mongo_host()  # start the new MongoDB client
 
     def __dict__(self) -> dict:
         return {

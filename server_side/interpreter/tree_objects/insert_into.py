@@ -34,7 +34,7 @@ class InsertInto(ExecutableTree):
         db = dbm.get_working_db()
         table = db.get_tables()[table_idx]
 
-        records = self.__make_records()
+        records = self.__make_records(table)
         inserted_keys: list[str] = dbm.insert(db, table, records)
         self.get_result().set_nr_rows_affected(len(inserted_keys))
 
