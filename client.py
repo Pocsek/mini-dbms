@@ -62,9 +62,17 @@ def interpret_response(response: str):
         print(message)
     elif results:
         for r in results:
+            if r is None:
+                print("Command executed successfully")
+                continue
             result = Result().from_dict(r)
+            # print only one of the following field values of a response, because they should be mutually exclusive
+            if result.get_response_message() is not None:
+                print(result.get_response_message())
+                continue
             if result.get_nr_rows_affected() is not None:
                 print(f"{result.get_nr_rows_affected()} rows affected")
+                continue
             # TODO: show result table
 
 

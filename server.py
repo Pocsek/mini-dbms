@@ -38,7 +38,7 @@ def encode_results(results: list[Result]) -> str:
         "results": list
     }
     """
-    return json.dumps({"results": [r.__dict__() for r in results]})
+    return json.dumps({"results": [r.__dict__() if r else None for r in results]})
 
 
 def encode_error(error_message: str) -> str:
