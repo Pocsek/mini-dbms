@@ -26,7 +26,7 @@ class Executor:
         self.reset_state()
         for ast in ast_list:
             # TODO
-            # if isinstance(ast, SelectTree):
+            # if not isinstance(ast, SelectTree):  # if the AST is not a SELECT statement
             #   self.__modified = True
             self.__execute_tree(ast)
             ast_result = ast.get_result()

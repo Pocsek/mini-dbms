@@ -66,16 +66,21 @@ def respond_to_client(client_socket: socket, commands: str):
         ex.execute(ps.get_ast_list())
         results: list[Result] = ex.get_results()
         response = encode_results(results)
+        dbm.save_changes()
+        log("Commands executed successfully")
 
     except Exception as e:
         response = encode_error(f"Error: {e.__str__()}")
+        ##########
         traceback.print_exc()  # only for debugging, if error traceback is needed
+        ##########
         print("Error: " + e.__str__())  # this should be logged in a file in the future
         log("Error: " + e.__str__())
         # if the database was modified, load the last stable state
         if ex.modified():
             # load last stable state of the working DB
-            pass
+            dbm.revert_changes()
+            log("Database reverted to last stable state")
 
     client_socket.send(len(response).to_bytes(4, byteorder='big'))
     client_socket.sendall(str.encode(response))

@@ -34,6 +34,16 @@ class DbManager:
         with open(self.__db_file, "w") as f:
             json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
+    def revert_changes(self):
+        self.load_databases()
+        # mongo_db.rollback()
+        print("Changes reverted.")
+
+    def save_changes(self):
+        self.update_db_structure_file()
+        # mongo_db.commit()
+        print("Changes saved.")
+
     def create_table(self, table: Table):
         # create collection in MongoDB
         mongo_db.create_collection(self.get_working_db().get_name(), table.get_name())
@@ -49,7 +59,7 @@ class DbManager:
 
         # update structure file
         self.get_working_db().add_table(table)
-        self.update_db_structure_file()
+        # self.update_db_structure_file()
 
     def create_index(self, index: Index, table_name: str):
         table: Table = self.get_table(self.get_working_db_index(), table_name)
@@ -86,7 +96,7 @@ class DbManager:
 
         # update structure file
         table.add_index(index)
-        self.update_db_structure_file()
+        # self.update_db_structure_file()
 
     def drop_database(self, db_name):
         # delete db in MongoDB
@@ -94,7 +104,7 @@ class DbManager:
 
         # update json structure
         self.__dbs.pop(self.get_db_index(db_name))
-        self.update_db_structure_file()
+        # self.update_db_structure_file()
 
     def drop_table(self, table_name):
         """
@@ -109,7 +119,7 @@ class DbManager:
         # update json structure
         db = self.get_working_db()
         db.remove_table(table_name)
-        self.update_db_structure_file()
+        # self.update_db_structure_file()
 
     def get_default_database_names(self) -> list[str]:
         return [db.get_name() for db in create_default_databases()]

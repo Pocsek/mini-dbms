@@ -21,7 +21,7 @@ class CreateDatabase(ExecutableTree):
         from server_side.database_objects import Database
         new_db = Database(self.__db_name.get_value())
         dbm.add_database(new_db)
-        dbm.update_db_structure_file()
+        # dbm.update_db_structure_file()
         resp_message = f"Database '{new_db.get_name()}' created successfully."
         self.get_result().set_response_message(resp_message)
         print(resp_message)
