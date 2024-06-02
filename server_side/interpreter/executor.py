@@ -14,6 +14,7 @@ class Executor:
 
     def reset_state(self):
         self.__modified = False
+        self.__results = []
 
     def modified(self):
         return self.__modified

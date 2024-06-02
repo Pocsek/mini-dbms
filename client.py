@@ -63,7 +63,7 @@ def interpret_response(response: str):
     elif results:
         for r in results:
             result = Result().from_dict(r)
-            if result.get_nr_rows_affected():
+            if result.get_nr_rows_affected() is not None:
                 print(f"{result.get_nr_rows_affected()} rows affected")
             # TODO: show result table
 

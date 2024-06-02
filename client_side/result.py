@@ -12,9 +12,10 @@ class Result:
         self.__nr_rows_affected: int | None = None
         self.__result_set: tuple[list[str], list[list]] | None = None  # (<col_names>, <rows>)
 
-    def from_dict(self, result_dict: dict):
+    def from_dict(self, result_dict: dict) -> 'Result':
         self.set_nr_rows_affected(result_dict.get("nr_rows_affected"))
         self.set_result_set(result_dict.get("result_set"))
+        return self
 
     def set_nr_rows_affected(self, nr_rows_affected: int):
         self.__nr_rows_affected = nr_rows_affected

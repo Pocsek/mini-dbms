@@ -65,7 +65,6 @@ def respond_to_client(client_socket: socket, commands: str):
         ps.parse(commands)
         ex.execute(ps.get_ast_list())
         results: list[Result] = ex.get_results()
-        print("Results: ", results)
         response = encode_results(results)
 
     except Exception as e:

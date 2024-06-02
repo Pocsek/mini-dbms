@@ -24,7 +24,6 @@ class DeleteFrom(ExecutableTree):
         pr = table.get_primary_key()
         key = self.__make_key(pr.get_column_names(), self.__condition)
         del_count = dbm.delete(db, table, key)
-
         self.__result.set_nr_rows_affected(del_count)
 
     def validate(self, dbm, **kwargs):
