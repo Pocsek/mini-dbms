@@ -10,3 +10,4 @@ from .create_index import CreateIndex
 from .drop_index import DropIndex
 from .insert_into import InsertInto
 from .delete_from import DeleteFrom
+from .select import Select

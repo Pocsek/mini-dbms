@@ -10,14 +10,16 @@ from server_side.interpreter.tree_objects import (
     DropTable,
     InsertInto,
     DeleteFrom,
-    ColumnDefinition
+    ColumnDefinition,
+    Select
 )
 from server_side.interpreter.token_objects import (
     TOptionalCommandEnd,
     TColumnDefinition,
     TTableConstraintDefinition,
     TIdentifiers,
-    TValues
+    TValues,
+    TSelect
 )
 from server_side.interpreter.token_classification import TokenType
 
@@ -235,9 +237,10 @@ class Parser:
         tree.finalize()
         return tree
 
-
     def __parse_select(self, token_list: TokenList):
-        pass
+        tree = Select(token_list.consume_group(TSelect()))
+        tree.finalize()
+        return tree
 
     def __parse_update(self, token_list: TokenList):
         pass
