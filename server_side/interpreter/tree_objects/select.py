@@ -27,7 +27,7 @@ class Select(ExecutableTree):
             select list as SalesOrderDetail.ModifiedDate.
         expression
             Is a constant, any combination of column names, constants, or a subquery.
-        column_alias
+        column_alias (context: select_list)
             Is an alternative name to replace the column name in the query result set. For example, an alias such as
             Quantity, or Quantity to Date, or Qty can be specified for a column named quantity.
 
@@ -52,7 +52,7 @@ class Select(ExecutableTree):
             for all columns, including grouping columns, returned.
         derived_table
             A subquery that retrieves rows from the database. derived_table is used as input to the outer query.
-        column_alias
+        column_alias (context: derived_table)
             An optional alias to replace a column name in the result set of the derived table. Include one column alias
             for each column in the select list, and enclose the complete list of column aliases in parentheses.
         <joined table>

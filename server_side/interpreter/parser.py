@@ -231,7 +231,7 @@ class Parser:
         return tree
 
     def __parse_select(self, token_list: TokenList):
-        tree = Select(token_list.consume_group(TSelect()))
+        tree = Select(token_list.consume_group(TSelect(consume_select_keyword=False)))
         return tree
 
     def __parse_update(self, token_list: TokenList):

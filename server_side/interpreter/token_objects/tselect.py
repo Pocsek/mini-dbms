@@ -10,26 +10,34 @@ from server_side.interpreter.token_objects import (
 
 class TSelect(TObj):
     """
-    Consumes: SELECT ...
+    Consumes:
+        <query>
 
     Syntax:
-        (SELECT) [DISTINCT] <select_list>
-        [FROM <table_source>]
-        [WHERE <search_condition>]
-        [GROUP BY <group_by_expression>]
+        <query> ::=
+            SELECT [DISTINCT] <select_list>
+            [FROM <table_source>]
+            [WHERE <search_condition>]
+            [GROUP BY <group_by_expression>]
+
+    :param consume_select_keyword: Whether to consume the "SELECT" keyword or not.
     """
-    def __init__(self):
-        self.__isDistinct = False
+    def __init__(self, consume_select_keyword: bool):
+        self.__consume_select_keyword = consume_select_keyword
+
+        self.__is_distinct = False
         self.__select_list = None
         self.__table_source = None
         self.__search_condition = None
         self.__group_by_expression = None
 
     def consume(self, token_list: TokenList):
-        # token_list.consume_concrete("select")  # its already consumed in Parser.__parse_token_list()
+        if self.__consume_select_keyword:
+            token_list.consume_concrete("select")
+
         if token_list.check_token("distinct"):
             token_list.consume()
-            self.__isDistinct = True
+            self.__is_distinct = True
         self.__select_list = token_list.consume_group(TSelectList())
 
         if token_list.check_token("from"):
@@ -48,7 +56,7 @@ class TSelect(TObj):
     def __dict__(self):
         # default arguments that must be available
         d = {
-            "isDistinct": self.__isDistinct,
+            "is_distinct": self.__is_distinct,
             "select_list": self.__select_list.__dict__()
         }
 

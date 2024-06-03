@@ -14,3 +14,5 @@ from .ttable_source import TTableSource
 from .tsearch_condition import TSearchCondition
 from .tgroup_by_expression import TGroupByExpression
 from .tselect import TSelect
+from .tcolumn_reference import TColumnReference
+from .talias import TAlias

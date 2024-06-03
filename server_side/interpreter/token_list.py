@@ -32,6 +32,12 @@ class TokenList:
             return False
         return self.peek() == target_token
 
+    def check_type(self, target_token_type: TokenType):
+        """Returns True if the type of the token at the cursor matches the target type, else False."""
+        if not self.has_next():
+            return False
+        return self.peek_type() == target_token_type
+
     def expect_type(self, target_token_type: TokenType):
         """Same as 'consume_of_type' but without incrementing the cursor."""
         if not self.has_next():

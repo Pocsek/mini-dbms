@@ -34,11 +34,14 @@ class TestTokenizer(TestCase):
         )
         tokens_all = Tokenizer.tokenize(raw_commands)
         self.assertEqual(
-            tokens_all,
             ["create", "table", "t", "(",
                 "col1", "check", "(", "1", "<", "(","2","+","1",")",")",
              ")",";",
-             "drop", "table", "t",";"]
+             "drop", "table", "t",";"],
+            tokens_all
         )
 
-
+    def test_column_reference(self):
+        raw = "t1.col1, t2.col1, col2"
+        tokens = Tokenizer.tokenize(raw)
+        self.assertEqual(["t1", ".", "col1", ",", "t2", ".", "col1", ",", "col2"], tokens)
