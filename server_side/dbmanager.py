@@ -49,6 +49,7 @@ class DbManager:
         # resetting mongo can cause problems that the structure sync can fix, so we do it first
         self.reset_mongo_modifications()
         self.sync_structure_with_mongo(prev_dbs, self.get_databases())
+        self.__dbs = prev_dbs
         print("Changes reverted.")
 
     def save_changes(self):
@@ -70,9 +71,9 @@ class DbManager:
         temp_db_name: str = "_temp"
         temp_coll_names: list[str] = mongo_db.get_collection_names(temp_db_name)
         # each collection in the temporary database has a name like: __dbname#tablename
-        for coll_name in temp_coll_names:
-            db_name, table_name = coll_name[2:].split("#")  # remove the first two characters and split by '#'
-            mongo_db.overwrite_collection(db_name, table_name, temp_db_name, coll_name)
+        for temp_coll_name in temp_coll_names:
+            db_name, table_name = temp_coll_name[2:].split("#")  # remove the first two characters and split by '#'
+            mongo_db.overwrite_collection(temp_db_name, temp_coll_name, db_name, table_name)
         mongo_db.drop_database(temp_db_name)  # drop the temporary database
         print("MongoDB modifications reset.")
 
