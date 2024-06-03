@@ -12,14 +12,19 @@ class TSelectList(TObj):
             {
               *
               | {
-                  [ { table_name | table_alias }. ] column_name
-                  | expression
-                }
-                [ [ AS ] column_alias ]
-            } [ ,...n ]
+                  {
+                    [ { table_name | table_alias }. ] column_name
+                    | expression
+                  }
+                  [ [ AS ] column_alias ]
+                } [ ,...n ]
+            }
     """
     def __init__(self):
         pass
 
     def consume(self, token_list: TokenList):
         pass
+
+    def __dict__(self):
+        return []

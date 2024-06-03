@@ -82,9 +82,13 @@ class Select(ExecutableTree):
         :param select_token: instance of TSelect that has already consumed a SELECT clause
         """
         super().__init__()
+        self.__select_token = select_token.__dict__()
 
     def _execute(self, dbm):
         pass
 
     def validate(self, dbm, **kwargs):
         pass
+
+    def __repr__(self):
+        return self.__select_token
