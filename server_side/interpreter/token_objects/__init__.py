@@ -11,7 +11,6 @@ from .tidentifiers import TIdentifiers
 from .tvalues import TValues
 from .tselect_list import TSelectList
 from .ttable_source import TTableSource
-from .tsearch_condition import TSearchCondition
 from .tgroup_by_expression import TGroupByExpression
 from .tselect import TSelect
 from .tcolumn_reference import TColumnReference

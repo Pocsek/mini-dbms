@@ -89,3 +89,12 @@ class TestParseSelect(TestCase):
         expected = {'is_distinct': False, 'select_list': [{'type': 'column', 'selection': {'column_reference': {'table': 'o', 'column': 'order_id'}}}, {'type': 'column', 'selection': {'column_reference': {'column': 'product_name'}}}], 'table_source': {'table_type': 'joined', 'join_type': 'inner', 'left_table': {'table_type': 'derived', 'subquery': {'is_distinct': False, 'select_list': [{'type': '*'}], 'table_source': {'table_type': 'joined', 'join_type': 'inner', 'left_table': {'table_type': 'joined', 'join_type': 'inner', 'left_table': {'table_type': 'database', 'table_name': 'products', 'table_alias': 'p'}, 'right_table': {'table_type': 'database', 'table_name': 'categories', 'table_alias': 'c'}, 'join_condition': [{'left': {'table': 'c', 'column': 'category_id'}, 'op': '=', 'right': {'table': 'p', 'column': 'category_id'}}]}, 'right_table': {'table_type': 'database', 'table_name': 'brands', 'table_alias': 'b'}, 'join_condition': [{'left': {'table': 'b', 'column': 'brand_id'}, 'op': '=', 'right': {'table': 'p', 'column': 'brand_id'}}]}}, 'table_alias': 'dt'}, 'right_table': {'table_type': 'database', 'table_name': 'orders', 'table_alias': 'o'}, 'join_condition': [{'left': {'table': 'o', 'column': 'order_id'}, 'op': '=', 'right': {'table': 'dt', 'column': 'order_id'}}]}}
         print(json.dumps(result, indent=4))
         self.assertEqual(result, expected)
+
+    def test_select_4(self):
+        raw_command = ("SELECT DISTINCT * FROM Citizens C "
+                       "WHERE C.Height < C.Weight AND C.Weight > 99 AND C.Age = 30")
+        token_list = self.__to_token_list(raw_command)
+        result = token_list.consume_group(TSelect(True)).__dict__()
+        expected = {'is_distinct': True, 'select_list': [{'type': '*'}], 'table_source': {'table_type': 'database', 'table_name': 'Citizens', 'table_alias': 'C'}, 'search_condition': [{'left': {'table': 'C', 'column': 'Height'}, 'op': '<', 'right': {'table': 'C', 'column': 'Weight'}}, {'left': {'table': 'C', 'column': 'Weight'}, 'op': '>', 'right': 99}, {'left': {'table': 'C', 'column': 'Age'}, 'op': '=', 'right': 30}]}
+        print(json.dumps(result, indent=4))
+        self.assertEqual(result, expected)

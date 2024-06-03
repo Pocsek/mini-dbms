@@ -27,9 +27,9 @@ class TSelect(TObj):
 
     def consume(self, token_list: TokenList):
         from .tselect_list import TSelectList
-        from .tsearch_condition import TSearchCondition
-        from .tgroup_by_expression import TGroupByExpression
         from .ttable_source import TTableSource
+        from .tlogical_expression import TLogicalExpression
+        from .tgroup_by_expression import TGroupByExpression
 
         if self.__consume_select_keyword:
             token_list.consume_concrete("select")
@@ -45,7 +45,7 @@ class TSelect(TObj):
 
         if token_list.check_token("where"):
             token_list.consume()
-            self.__search_condition = token_list.consume_group(TSearchCondition())
+            self.__search_condition = token_list.consume_group(TLogicalExpression())
 
         if token_list.check_token("group"):
             token_list.consume_concrete("group")
