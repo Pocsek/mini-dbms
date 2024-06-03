@@ -119,8 +119,8 @@ def run_server(s: socket):
         ps = Parser()
         ex = Executor(dbm)
     except Exception as e:
-        log("Error: " + e.__str__())
-        print("Error: " + e.__str__())
+        log("Error starting the server: " + e.__str__())
+        print("Error starting the server: " + e.__str__())
         return
 
     log("Server started")

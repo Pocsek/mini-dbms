@@ -12,9 +12,9 @@ class DbManager:
     __db_file: str = os.path.join(__working_dir__, "databases.json")
 
     def __init__(self):
-        self.load_databases()
         mongo_db.close_down()  # close the MongoDB client if it's open
         mongo_db.set_up()  # start the new MongoDB client
+        self.load_databases()
 
     def __dict__(self) -> dict:
         return {
@@ -86,12 +86,12 @@ class DbManager:
         """
         for db in next_dbs:
             self.sync_database_with_mongo(db)
-
+        prev_db_names: list[str] = [db.get_name() for db in prev_dbs]
+        next_db_names: list[str] = [db.get_name() for db in next_dbs]
         # drop databases that we don't want in the next state of our database structure
-        old_dbs: list[Database] = [prev_db for prev_db in prev_dbs if prev_db not in next_dbs]
-        print(old_dbs)
-        for db in old_dbs:
-            mongo_db.drop_database(db.get_name())
+        old_db_names: list[str] = [prev_db for prev_db in prev_db_names if prev_db not in next_db_names]
+        for db in old_db_names:
+            mongo_db.drop_database(db)
 
     def sync_database_with_mongo(self, db: Database):
         """
@@ -442,7 +442,9 @@ class DbManager:
 
 
 def create_default_databases() -> list[Database]:
-    return [Database(name="master")]
+    db = Database(name="master")
+    mongo_db.create_collection(db.get_name(), "__next_identity")
+    return [db]
 
 
 def create_empty_database() -> Database:
