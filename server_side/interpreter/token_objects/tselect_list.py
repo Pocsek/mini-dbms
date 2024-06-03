@@ -46,7 +46,7 @@ class TSelectList(TObj):
                 selection_type = "expression"
                 # TODO token_list.consume_group()
                 raise NotImplementedError("Expressions in a select list are not supported yet")
-            if token_list.check_type(TokenType.KEYWORD):
+            if token_list.check_token("as"):
                 # [ [ AS ] column_alias ]
                 alias = token_list.consume_group(TAlias()).get_alias()
                 selection["alias"] = alias

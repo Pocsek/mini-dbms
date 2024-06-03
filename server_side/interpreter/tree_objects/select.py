@@ -40,7 +40,6 @@ class Select(ExecutableTree):
             column_alias cannot be used in a WHERE, GROUP BY, or HAVING clause.
         <table_source>
             Specifies a table, or derived table source, with or without an alias, to use in the statement.
-            The order of table sources after the FROM keyword doesn't affect the result set that is returned.
         [AS] table_alias
             An alias for table_source that can be used either for convenience or to distinguish a table or view in a
             self-join or subquery. An alias is frequently a shortened table name used to refer to specific columns of
@@ -54,7 +53,7 @@ class Select(ExecutableTree):
             A subquery that retrieves rows from the database. derived_table is used as input to the outer query.
         column_alias (context: derived_table)
             An optional alias to replace a column name in the result set of the derived table. Include one column alias
-            for each column in the select list, and enclose the complete list of column aliases in parentheses.
+            for each column in the select list.
         <joined table>
             A joined table is a result set that is the product of two or more tables.
         <join type>
@@ -67,9 +66,7 @@ class Select(ExecutableTree):
             Specifies the condition on which the join is based. The condition can specify any predicate, although
             columns and comparison operators are frequently used.
 
-            When the condition specifies columns, the columns don't have to have the same name or same data type;
-            however, if the data types aren't the same, they must be either compatible or types that SQL Server can
-            implicitly convert.
+            When the condition specifies columns, the columns don't have to have the same name.
 
     References:
         https://learn.microsoft.com/en-us/sql/t-sql/queries/select-transact-sql?view=sql-server-ver16

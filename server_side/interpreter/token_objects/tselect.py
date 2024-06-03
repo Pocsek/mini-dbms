@@ -1,11 +1,5 @@
 from server_side.interpreter.token_list import TokenList
-from server_side.interpreter.token_objects import (
-    TObj,
-    TSelectList,
-    TTableSource,
-    TSearchCondition,
-    TGroupByExpression
-)
+from .tobj import TObj
 
 
 class TSelect(TObj):
@@ -32,6 +26,11 @@ class TSelect(TObj):
         self.__group_by_expression = None
 
     def consume(self, token_list: TokenList):
+        from .tselect_list import TSelectList
+        from .tsearch_condition import TSearchCondition
+        from .tgroup_by_expression import TGroupByExpression
+        from .ttable_source import TTableSource
+
         if self.__consume_select_keyword:
             token_list.consume_concrete("select")
 
