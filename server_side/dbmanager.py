@@ -8,6 +8,7 @@ from server_side import __working_dir__
 class DbManager:
     __dbs: list[Database] = []
     __working_db = 0  # the index of the database we're currently using
+    __prev_working_db = 0  # the index of the database we were using on the last stable state
     # the file where the database sceleton is stored:
     __db_file: str = os.path.join(__working_dir__, "databases.json")
 
@@ -50,6 +51,7 @@ class DbManager:
         self.reset_mongo_modifications()
         self.sync_structure_with_mongo(prev_dbs, self.get_databases())
         self.__dbs = prev_dbs
+        self.__working_db = self.__prev_working_db
         print("Changes reverted.")
 
     def save_changes(self):
@@ -62,6 +64,7 @@ class DbManager:
         self.sync_structure_with_mongo(self.get_databases(), prev_dbs)  # sync the structure file with the database
         mongo_db.drop_database("_temp")  # drop the temporary database used for the transaction
         self.update_db_structure_file()  # update the structure file
+        self.__prev_working_db = self.__working_db
         print("Changes saved.")
 
     def reset_mongo_modifications(self):
