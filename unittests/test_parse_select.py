@@ -74,3 +74,18 @@ class TestParseSelect(TestCase):
         expected = {'is_distinct': False, 'select_list': [{'type': 'column', 'selection': {'column_reference': {'table': 'p', 'column': 'product_name'}}}, {'type': 'column', 'selection': {'column_reference': {'table': 'c', 'column': 'category_name'}}}, {'type': 'column', 'selection': {'column_reference': {'table': 'b', 'column': 'brand_name'}}}, {'type': 'column', 'selection': {'column_reference': {'table': 'p', 'column': 'price'}}}], 'table_source': {'table_type': 'joined', 'join_type': 'inner', 'left_table': {'table_type': 'joined', 'join_type': 'inner', 'left_table': {'table_type': 'database', 'table_name': 'products', 'table_alias': 'p'}, 'right_table': {'table_type': 'database', 'table_name': 'categories', 'table_alias': 'c'}, 'join_condition': [{'left': {'table': 'c', 'column': 'category_id'}, 'op': '=', 'right': {'table': 'p', 'column': 'category_id'}}]}, 'right_table': {'table_type': 'database', 'table_name': 'brands', 'table_alias': 'b'}, 'join_condition': [{'left': {'table': 'b', 'column': 'brand_id'}, 'op': '=', 'right': {'table': 'p', 'column': 'brand_id'}}]}}
         print(json.dumps(result, indent=4))
         self.assertEqual(result, expected)
+
+    def test_select_3(self):
+        raw_command = ("SELECT o.order_id, product_name "
+                       "FROM (SELECT * "
+                       "    FROM products p "
+                       "    INNER JOIN categories c ON c.category_id = p.category_id "
+                       "    INNER JOIN brands b ON b.brand_id = p.brand_id "
+                       ") as dt "
+                       "    JOIN orders o ON o.order_id = dt.order_id"
+                       )
+        token_list = self.__to_token_list(raw_command)
+        result = token_list.consume_group(TSelect(True)).__dict__()
+        expected = {'is_distinct': False, 'select_list': [{'type': 'column', 'selection': {'column_reference': {'table': 'o', 'column': 'order_id'}}}, {'type': 'column', 'selection': {'column_reference': {'column': 'product_name'}}}], 'table_source': {'table_type': 'joined', 'join_type': 'inner', 'left_table': {'table_type': 'derived', 'subquery': {'is_distinct': False, 'select_list': [{'type': '*'}], 'table_source': {'table_type': 'joined', 'join_type': 'inner', 'left_table': {'table_type': 'joined', 'join_type': 'inner', 'left_table': {'table_type': 'database', 'table_name': 'products', 'table_alias': 'p'}, 'right_table': {'table_type': 'database', 'table_name': 'categories', 'table_alias': 'c'}, 'join_condition': [{'left': {'table': 'c', 'column': 'category_id'}, 'op': '=', 'right': {'table': 'p', 'column': 'category_id'}}]}, 'right_table': {'table_type': 'database', 'table_name': 'brands', 'table_alias': 'b'}, 'join_condition': [{'left': {'table': 'b', 'column': 'brand_id'}, 'op': '=', 'right': {'table': 'p', 'column': 'brand_id'}}]}}, 'table_alias': 'dt'}, 'right_table': {'table_type': 'database', 'table_name': 'orders', 'table_alias': 'o'}, 'join_condition': [{'left': {'table': 'o', 'column': 'order_id'}, 'op': '=', 'right': {'table': 'dt', 'column': 'order_id'}}]}}
+        print(json.dumps(result, indent=4))
+        self.assertEqual(result, expected)
