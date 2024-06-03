@@ -8,12 +8,12 @@ class Executor:
     """
     def __init__(self, dbm):
         self.__dbm = dbm  # DbManager instance
-        self.__modified: bool = False
+        self.__modified: bool = True # TODO: change to False
         # self.__nr_rows_affected = None
         self.__results: list = []  # list of Result objects
 
     def reset_state(self):
-        self.__modified = False
+        self.__modified = True  # TODO: change to False
         self.__results = []
 
     def modified(self):
@@ -25,7 +25,7 @@ class Executor:
         """
         self.reset_state()
         for ast in ast_list:
-            # TODO
+            # TODO check if the AST is a SELECT statement
             # if not isinstance(ast, SelectTree):  # if the AST is not a SELECT statement
             #   self.__modified = True
             self.__execute_tree(ast)

@@ -13,8 +13,8 @@ class DbManager:
 
     def __init__(self):
         self.load_databases()
-        mongo_db.close_mongo_client()  # close the MongoDB client if it's open
-        mongo_db.set_mongo_host()  # start the new MongoDB client
+        mongo_db.close_down()  # close the MongoDB client if it's open
+        mongo_db.set_up()  # start the new MongoDB client
 
     def __dict__(self) -> dict:
         return {
@@ -24,9 +24,7 @@ class DbManager:
 
     def load_databases(self):
         if os.path.exists(self.__db_file):
-            with open(self.__db_file, "r") as f:
-                data: list[dict] = json.load(f)  # decode (JSON -> python dict)
-                self.__dbs = [Database().from_dict(db) for db in data]
+            self.__dbs = self.get_previous_state()
         else:
             with open(self.__db_file, "w") as f:
                 self.__dbs = create_default_databases()
@@ -36,15 +34,94 @@ class DbManager:
         with open(self.__db_file, "w") as f:
             json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
+    def get_previous_state(self) -> list[Database]:
+        """
+        Loads and returns the previous state of the database structure file.
+        """
+        if os.path.exists(self.__db_file):
+            with open(self.__db_file, "r") as f:
+                data: list[dict] = json.load(f)  # decode (JSON -> python dict)
+                return [Database().from_dict(db) for db in data]
+        raise FileNotFoundError("Database structure file not found.")
+
     def revert_changes(self):
-        self.load_databases()
-        # mongo_db.rollback()
+        prev_dbs: list[Database] = self.get_previous_state()
+        # resetting mongo can cause problems that the structure sync can fix, so we do it first
+        self.reset_mongo_modifications()
+        self.sync_structure_with_mongo(prev_dbs, self.get_databases())
         print("Changes reverted.")
 
     def save_changes(self):
-        self.update_db_structure_file()
-        # mongo_db.commit()
+        """
+        Compare the previous state of the structure file with the current state.
+        If anything has changed, save the changes to the database too.
+        Then update the structure file.
+        """
+        prev_dbs: list[Database] = self.get_previous_state()  # load the previous state of the structure file
+        self.sync_structure_with_mongo(self.get_databases(), prev_dbs)  # sync the structure file with the database
+        mongo_db.drop_database("_temp")  # drop the temporary database used for the transaction
+        self.update_db_structure_file()  # update the structure file
         print("Changes saved.")
+
+    def reset_mongo_modifications(self):
+        """
+        Load collections from the _temp database into their original, then drop the _temp database.
+        """
+        temp_db_name: str = "_temp"
+        temp_coll_names: list[str] = mongo_db.get_collection_names(temp_db_name)
+        # each collection in the temporary database has a name like: __dbname#tablename
+        for coll_name in temp_coll_names:
+            db_name, table_name = coll_name[2:].split("#")  # remove the first two characters and split by '#'
+            mongo_db.overwrite_collection(db_name, table_name, temp_db_name, coll_name)
+        mongo_db.drop_database(temp_db_name)  # drop the temporary database
+        print("MongoDB modifications reset.")
+
+    def sync_structure_with_mongo(self, next_dbs: list[Database], prev_dbs: list[Database]):
+        """
+        Sync two states of the structure file with the database.
+        Whatever is in the next state but not in the previous state nor in the database, will be created.
+        :param next_dbs: represents the next state of the structure file
+        :param prev_dbs: represents the previous state of the structure file
+        :return:
+        """
+        for db in next_dbs:
+            self.sync_database_with_mongo(db)
+
+        # drop databases that we don't want in the next state of our database structure
+        old_dbs: list[Database] = [prev_db for prev_db in prev_dbs if prev_db not in next_dbs]
+        print(old_dbs)
+        for db in old_dbs:
+            mongo_db.drop_database(db.get_name())
+
+    def sync_database_with_mongo(self, db: Database):
+        """
+        Create tables and indexes that are in the database object but not in MongoDB.
+        Drop tables and indexes that are in MongoDB but not in the database object.
+        """
+        curr_tables: list[Table] = db.get_tables()
+        # table and index collection names in MongoDB:
+        mongo_coll_names: list[str] = mongo_db.get_collection_names(db.get_name())
+        curr_index_coll_names: list[str] = []
+        for table in curr_tables:  # create tables, and it's index collections if they are not present
+            if table.get_name() not in mongo_coll_names:
+                mongo_db.create_collection(db.get_name(), table.get_name())
+            else:
+                mongo_coll_names.remove(table.get_name())
+            # index collections should be made by this stage, but if not, create them
+            for index in table.get_indexes():
+                coll_name = _build_collection_name_for_index(table.get_name(), index.get_name())
+                curr_index_coll_names.append(coll_name)  # store the index collection names
+                if coll_name not in mongo_coll_names:
+                    mongo_db.create_collection(db.get_name(), coll_name)
+                else:
+                    mongo_coll_names.remove(coll_name)
+
+        curr_table_names: list[str] = [table.get_name() for table in curr_tables]
+        mongo_coll_names.remove("__next_identity")
+        # drop tables and index collections that are in MongoDB but not in the database object
+        for coll_name in mongo_coll_names:
+            if coll_name not in curr_table_names or coll_name not in curr_index_coll_names:
+                mongo_db.drop_collection(db.get_name(), coll_name)
 
     def create_table(self, table: Table):
         # create collection in MongoDB
@@ -55,8 +132,10 @@ class DbManager:
         identity_col = table.get_identity_column()
         if identity_col:
             seed = identity_col.get_identity_seed()
+            identity_collection_name: str = "__next_identity"
+            mongo_db.save_collection(self.get_working_db().get_name(), identity_collection_name)
             mongo_db.insert_one_int(self.get_working_db().get_name(),
-                                    "__next_identity",
+                                    identity_collection_name,
                                     (table.get_name(), seed))
 
         # update structure file
@@ -90,6 +169,7 @@ class DbManager:
             idx_kv_pairs = concatenate_repeating(idx_kv_pairs)
 
         # insert the key-value pairs into the index collection
+        mongo_db.save_collection(self.get_working_db().get_name(), coll_name)
         for key_value_pair in idx_kv_pairs:
             try:
                 mongo_db.insert_one(self.get_working_db().get_name(), coll_name, key_value_pair)
@@ -226,6 +306,7 @@ class DbManager:
             key_value_pairs.append((key, value))
         inserted_keys = []
         indexes: list[Index] = tb.get_indexes()
+        mongo_db.save_collection(db.get_name(), tb.get_name())
         for key_value_pair, record in zip(key_value_pairs, records):
             try:
                 inserted_keys.append(mongo_db.insert_one(db.get_name(), tb.get_name(), key_value_pair))
@@ -235,6 +316,7 @@ class DbManager:
                     coll_keys: list[str] = [record[n] for n in i_col_names]
                     coll_key = string_from_values(coll_keys)  # collection key
                     coll_name = _build_collection_name_for_index(tb.get_name(), index.get_name())
+                    mongo_db.save_collection(db.get_name(), coll_name)
                     # get the record from the index collection if it exists
                     result = mongo_db.select(db.get_name(), coll_name, {"_id": coll_key})
                     if tb.is_unique(i_col_names):
@@ -285,6 +367,7 @@ class DbManager:
         for index in indexes:
             i_col_names: list[str] = index.get_column_names()
             coll_name = _build_collection_name_for_index(tb.get_name(), index.get_name())
+            mongo_db.save_collection(db.get_name(), coll_name)
             if tb.is_unique(i_col_names):
                 coll_key = string_from_values([record.get(n) for n in i_col_names])
                 mongo_db.delete(db.get_name(), coll_name, {"_id": coll_key})
@@ -298,12 +381,7 @@ class DbManager:
                     values.remove(key)
                     new_value = string_from_values(values)
                     mongo_db.update_one(db.get_name(), coll_name, {"_id": coll_key}, {"$set": {"value": new_value}})
-
-
-
-
-
-
+        mongo_db.save_collection(db.get_name(), tb.get_name())
         del_count = mongo_db.delete(db.get_name(), tb.get_name(), {"_id": key})
         return del_count
 
@@ -466,6 +544,7 @@ def string_from_values(values: list) -> str:
     """
     return '#'.join([str(v) for v in values])
 
+
 def values_from_string(concatenated: str) -> list:
     """
     Converts a concatenated string of values separated by '#' to a list of values.
@@ -480,6 +559,7 @@ def values_from_string(concatenated: str) -> list:
 
 
 def _build_collection_name_for_index(table_name: str, index_name: str):
+    """
+    Concatenate table name and index name with some special characters to create a collection name for the index.
+    """
     return "__" + table_name + '#' + index_name
-
-

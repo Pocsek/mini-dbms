@@ -11,9 +11,9 @@ from server_side import __working_dir__
 
 stop_threads = False
 
-dbm = DbManager()  # create an instance of the DbManager class, loads the databases from the file too
-ps = Parser()
-ex = Executor(dbm)
+dbm: DbManager | None = None
+ps: Parser | None = None
+ex: Executor | None = None
 
 
 def log(message: str):
@@ -101,21 +101,6 @@ def handle_client(client_socket, addr):
                 client_socket.close()
                 log("Socket closed" + str(addr))
                 return
-            # case "show databases":
-            #     # return the names of the databases separated by a space
-            #     databases: list[str] = dbm.get_database_names()
-            #     response: str = " ".join(databases)
-            #     client_socket.send(len(response).to_bytes(4, byteorder='big'))
-            #     client_socket.sendall(str.encode(response))
-            #     continue
-            # case "show tables":
-            #     # return the names of the tables in the working database separated by a space
-            #     tables: list[str] = dbm.get_table_names(dbm.get_working_db_index())
-            #     response: str = " ".join(tables)
-            #     print(response)
-            #     client_socket.send(len(response).to_bytes(4, byteorder='big'))
-            #     client_socket.sendall(str.encode(response))
-            #     continue
             case "~show structure~":
                 structure: dict = dbm.__dict__()
                 json_structure: str = json.dumps(structure, indent=4)
@@ -126,6 +111,18 @@ def handle_client(client_socket, addr):
 
 
 def run_server(s: socket):
+    try:
+        global dbm
+        global ps
+        global ex
+        dbm = DbManager()  # create an instance of the DbManager class, loads the databases from the file too
+        ps = Parser()
+        ex = Executor(dbm)
+    except Exception as e:
+        log("Error: " + e.__str__())
+        print("Error: " + e.__str__())
+        return
+
     log("Server started")
     print("Server running, press enter to stop!")
     global stop_threads

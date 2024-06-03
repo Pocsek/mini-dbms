@@ -12,8 +12,8 @@ class TestMongoDB(TestCase):
         """
         Set up the test.
         """
-        mongo_db.close_mongo_client()
-        mongo_db.set_mongo_host()
+        mongo_db.close_down()
+        mongo_db.set_up()
 
     def test_insert_one(self):
         """
