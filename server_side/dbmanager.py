@@ -28,7 +28,7 @@ class DbManager:
             self.__dbs = self.get_previous_state()
         else:
             with open(self.__db_file, "w") as f:
-                self.__dbs = create_default_databases()
+                self.__dbs = self.create_default_databases()
                 json.dump([db.__dict__() for db in self.__dbs], f, indent=4)
 
     def update_db_structure_file(self):
@@ -208,7 +208,7 @@ class DbManager:
         # self.update_db_structure_file()
 
     def get_default_database_names(self) -> list[str]:
-        return [db.get_name() for db in create_default_databases()]
+        return ["master"]
 
     def get_databases(self) -> list[Database]:
         return self.__dbs
@@ -444,11 +444,13 @@ class DbManager:
                     return kv.get("_id")
         return None
 
-
-def create_default_databases() -> list[Database]:
-    db = Database(name="master")
-    mongo_db.create_collection(db.get_name(), "__next_identity")
-    return [db]
+    def create_default_databases(self) -> list[Database]:
+        dbs: list[Database] = []
+        for name in self.get_default_database_names():
+            db = Database(name=name)
+            dbs.append(db)
+            mongo_db.create_collection(db.get_name(), "__next_identity")
+        return dbs
 
 
 def create_empty_database() -> Database:
