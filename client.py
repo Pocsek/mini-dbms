@@ -1,13 +1,23 @@
 import json
+import re
 
 from client_side.server_connection import ServerConnection
 from client_side.database_structure import DatabaseStructure
 from client_side.tab_completer import TabCompleter
 from client_side.result import Result
 
-
-CLI_COMMANDS = ["show databases", "show tables"]  # client-side commands
+CLI_COMMANDS = ["show databases", "show tables", r"file [\w/.]+"]  # client side commands
 FORBIDDEN_COMMANDS = ["~show structure~"]  # commands that are not allowed to be sent by the client
+
+
+def any_fullmatch(string: str, patterns: list[str]) -> bool:
+    """
+    Check if the string matches any of the patterns in the list.
+    """
+    for pattern in patterns:
+        if re.fullmatch(pattern, string):
+            return True
+    return False
 
 
 def get_user_input() -> (str, bool):
@@ -22,7 +32,7 @@ def get_user_input() -> (str, bool):
             case "exit":
                 return "exit", False
 
-        if command.lower() in CLI_COMMANDS + FORBIDDEN_COMMANDS:
+        if any_fullmatch(command.lower(), CLI_COMMANDS + FORBIDDEN_COMMANDS):
             # if the command is a CLI or a FORBIDDEN command, return it immediately
             return command, True
 
@@ -46,12 +56,48 @@ def set_tab_completer(tab_completer: TabCompleter, ds: DatabaseStructure) -> Tab
     return tab_completer
 
 
-def execute_cli_command(command: str, ds: DatabaseStructure):
-    match command.lower():
-        case "show databases":
-            print("Databases: ", " ".join(ds.get_database_names()))
-        case "show tables":
-            print("Tables: ", " ".join(ds.get_table_names(ds.get_working_db_index())))
+def read_file(path: str) -> str:
+    with open(path, "r") as f:
+        return f.read()
+
+
+def execute_cli_command(command: str, ds: DatabaseStructure, s: ServerConnection):
+    """
+    Execute a client side command.
+    A client side command is a command that doesn't need to be sent to the server,
+    but it's execution could include communication with the server.
+    """
+    match command.lower().split(" "):
+        case ["show", "databases"]:
+            db_names = ds.get_database_names()
+            if db_names:
+                print("Databases: ", " ".join(db_names))
+            else:
+                print("No databases found.")
+        case ["show", "tables"]:
+            tbl_names = ds.get_table_names(ds.get_working_db_index())
+            if tbl_names:
+                print("Tables: ", " ".join(tbl_names))
+            else:
+                db_name = ds.get_database_names()[ds.get_working_db_index()]
+                print(f"No tables found in database '{db_name}'")
+        case ["file", _]:
+            # it important to use the filename from the original command and not the lowercase one
+            path = command.split(" ")[1]
+            try:
+                commands = read_file(path)
+            except FileNotFoundError:
+                print(f"File '{path}' not found.")
+                return
+            if commands:
+                print("Executing commands from file...")
+                s.send(commands)
+                interpret_response(s.receive())
+            else:
+                print("No commands to execute in file.")
+
+        case _:
+            print("Not implemented yet.")
 
 
 def interpret_response(response: str):
@@ -92,10 +138,10 @@ def main():
             commands, keep_running = get_user_input()
             command_length: int = len(commands)
             if command_length != 0:
-                if commands in CLI_COMMANDS:
-                    execute_cli_command(commands, ds)
+                if any_fullmatch(commands, CLI_COMMANDS):
+                    execute_cli_command(commands, ds, s)
                     continue
-                if commands in FORBIDDEN_COMMANDS:
+                if any_fullmatch(commands, FORBIDDEN_COMMANDS):
                     print("This command is not allowed.")
                     continue
                 s.send(commands)
@@ -111,5 +157,3 @@ def main():
 
 
 main()
-
-# client should send the buffer size and the data after
