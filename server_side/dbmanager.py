@@ -196,16 +196,22 @@ class DbManager:
         """
         Delete index collections if they exist.
         Delete collection in MongoDB.
+        Delete identity value from the __next_identity collection if identity is set.
         """
         for index in self.get_working_db().get_table(table_name).get_indexes():
             coll_name = _build_collection_name_for_index(table_name, index.get_name())
             mongo_db.drop_collection(self.get_working_db().get_name(), coll_name)
         mongo_db.drop_collection(self.get_working_db().get_name(), table_name)
 
-        # update json structure
+        # delete identity value from the __next_identity collection if identity is set
+        identity_col = self.get_table(self.get_working_db_index(), table_name).get_identity_column()
+        if identity_col:
+            mongo_db.save_collection(self.get_working_db().get_name(), "__next_identity")
+            mongo_db.delete(self.get_working_db().get_name(), "__next_identity", {"_id": table_name})
+
+        # update structure, this should be done in the end because the table is needed for other operations
         db = self.get_working_db()
         db.remove_table(table_name)
-        # self.update_db_structure_file()
 
     def get_default_database_names(self) -> list[str]:
         return ["master"]
