@@ -4,7 +4,7 @@ import pymongo
 __client__: pymongo.MongoClient | None = None
 
 
-def set_mongo_host(host_str: str | None = None):
+def set_up(host_str: str | None = None):
     """
     Set the MongoDB host string.
     """
@@ -16,7 +16,7 @@ def set_mongo_host(host_str: str | None = None):
     __client__ = pymongo.MongoClient(host_str)
 
 
-def close_mongo_client():
+def close_down():
     """
     Close the MongoDB client.
     """
@@ -52,6 +52,7 @@ def insert_one_int(db_name: str, collection_name: str, key_value_pair: tuple[str
     db = __client__[db_name]
     collection = db[collection_name]
     key, value = key_value_pair
+
     collection.insert_one({"_id": key, "value": value})  # insert a key-value pair into mongoDB collection
     return key
 
@@ -152,3 +153,35 @@ def update_one(db_name: str, collection_name: str, query: dict, update: dict):
     db = __client__[db_name]
     collection = db[collection_name]
     collection.update_one(query, update)
+
+
+def overwrite_collection(db_from: str, collection_from: str, db_to: str, collection_to: str):
+    """
+    Overwrite the collection in db_to with the collection in db_from.
+    It works even if db_to and collection_to do not exist.
+    Can be used to force copy a collection from one database to another.
+    :param db_from: source database name
+    :param collection_from: source collection name
+    :param db_to: destination database name
+    :param collection_to: destination collection name
+    """
+    global __client__
+    __client__[db_from][collection_from].aggregate([{"$out": {"db": db_to, "coll": collection_to}}])
+
+
+def save_collection(db_name: str, collection_name: str):
+    """
+    Save the collection to a temporary database.
+    Only saves the collection if it isn't already in the temporary database.
+    The collection is saved in a temporary database with the name _temp.
+    The collection is saved with the name like: __dbname#collname.
+    """
+    global __client__
+    db = __client__[db_name]
+    collection = db[collection_name]
+    temp_db_name = "_temp"
+    temp_coll_name = f"__{db_name}#{collection_name}"
+    if temp_coll_name in __client__[temp_db_name].list_collection_names():
+        return
+    collection.aggregate([{"$out": {"db": temp_db_name, "coll": temp_coll_name}}])
+

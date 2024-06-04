@@ -189,7 +189,10 @@ class InsertInto(ExecutableTree):
         Validate primary key integrity, i.e. the record to be inserted is unique to the primary key.
         """
         # if the primary key is not compound and has identity, then it is valid for sure and we can simply return
-        pk_col_names = table.get_primary_key().get_column_names()
+        primary_key = table.get_primary_key()
+        if primary_key is None:
+            return
+        pk_col_names = primary_key.get_column_names()
         if identity_column and len(pk_col_names) == 1:
             if identity_column.get_name() == pk_col_names[0]:
                 return
