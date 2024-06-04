@@ -53,6 +53,17 @@ class TSelect(TObj):
             self.__group_by_expression = token_list.consume_group(TGroupByExpression())
 
     def __dict__(self):
+        """
+        Representation:
+            {
+                "is_distinct": True | False,
+                "select_list": <select_list> [,]
+                ["table_source": <table_source> [,] ]
+                ["search_condition": <search_condition> [,] ]
+                ["group_by_extension": <group_by_expression> [,] ]
+            }
+        """
+
         # default arguments that must be available
         d = {
             "is_distinct": self.__is_distinct,

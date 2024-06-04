@@ -18,3 +18,8 @@ class TAlias(TObj):
 
     def get_alias(self):
         return self.__alias
+
+    def __dict__(self):
+        return {
+            "alias": self.__alias
+        }

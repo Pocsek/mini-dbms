@@ -58,10 +58,13 @@ class Tokenizer:
                 tokenized[i:j + 1] = [" ".join(tokenized[i:j + 1])]
             i += 1
 
-        # cast datatypes to lowercase
         for i, val in enumerate(tokenized):
             val_lower = val.lower()
             if val_lower in Literal.DATATYPES:
+                # cast datatypes to lowercase
+                tokenized[i] = val_lower
+            elif val_lower in Literal.KEYWORDS:
+                # case any left out keywords to lowercase
                 tokenized[i] = val_lower
 
         return tokenized

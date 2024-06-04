@@ -35,6 +35,7 @@ class TSelectList(TObj):
 
         while True:
             selection_type = ""
+            value = None
             selection = {}
             if token_list.check_type(TokenType.IDENTIFIER):
                 # [ { table_name | table_alias }. ] column_name
@@ -44,13 +45,20 @@ class TSelectList(TObj):
             else:
                 # expression
                 selection_type = "expression"
-                # TODO token_list.consume_group()
-                raise NotImplementedError("Expressions in a select list are not supported yet")
+                from .tvalue_expression import TValueExpression
+                value = token_list.consume_group(TValueExpression()).__dict__()
             if token_list.check_token("as"):
                 # [ [ AS ] column_alias ]
                 alias = token_list.consume_group(TAlias()).get_alias()
                 selection["alias"] = alias
-            self.__selections.append({"type": selection_type, "selection": selection})
+
+            match selection_type:
+                case "column":
+                    self.__selections.append({"type": selection_type, "selection": selection})
+                case "expression":
+                    self.__selections.append({"type": selection_type, "value": value})
+                case _:
+                    raise ValueError("Selection type not set")
 
             if token_list.check_token(","):
                 token_list.consume()
@@ -61,13 +69,21 @@ class TSelectList(TObj):
         """
         Returns a list of dicts, each dict representing a column selection.
 
-        Column selection representation:
-            {
-                "type": ("*" | "column" | "expression")
+        Column selection representations:
+            1) {
+                "type": "*"
+                }
+            }
+            2) {
+                "type": "column"
                 "selection": {
                     "column_reference": <column_reference>
                     "alias": <column_alias> (don't include if not given)
                 }
+            }
+            3) {
+                "type": "expression"
+                "value": <value_expression>
             }
         """
         return self.__selections

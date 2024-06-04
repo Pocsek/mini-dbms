@@ -22,12 +22,21 @@ class TestParseSelect(TestCase):
         result = token_list.consume_group(TSelectList()).__dict__()
         print(json.dumps(result, indent=4))
 
-    def test_select_list_expressions(self):
+    def test_select_list_expressions_no_string(self):
+        raw_command = "GETDATE(), 123, MAX(P.Age)"
+        token_list = self.__to_token_list(raw_command)
+        result = token_list.consume_group(TSelectList()).__dict__()
+        expected = [{'type': 'expression', 'value': {'type': 'function', 'value': {'type': 'date_and_time', 'function': {'name': 'getdate'}}}}, {'type': 'expression', 'value': {'type': 'constant', 'value': '123'}}, {'type': 'expression', 'value': {'type': 'function', 'value': {'type': 'aggregate', 'function': {'is_distinct': False, 'name': 'max', 'column_reference': {'table': 'P', 'column': 'Age'}}}}}]
+        print(json.dumps(result, indent=4))
+        self.assertEqual(expected, result)
+
+    def test_select_list_expressions_string(self):
         raw_command = "col1, 42, 'hello'"
         token_list = self.__to_token_list(raw_command)
-        with self.assertRaises(NotImplementedError):
-            result = token_list.consume_group(TSelectList()).__dict__()
-        # print(json.dumps(result, indent=4))
+        result = token_list.consume_group(TSelectList()).__dict__()
+        expected = [{'type': 'column', 'selection': {'column_reference': {'column': 'col1'}}}, {'type': 'expression', 'value': {'type': 'constant', 'value': '42'}}, {'type': 'expression', 'value': {'type': 'constant', 'value': 'hello'}}]
+        print(json.dumps(result, indent=4))
+        self.assertEqual(expected, result)
 
     def test_table_source_derived_table(self):
         raw_command = ("(SELECT ID "

@@ -15,3 +15,5 @@ from .tgroup_by_expression import TGroupByExpression
 from .tselect import TSelect
 from .tcolumn_reference import TColumnReference
 from .talias import TAlias
+from .taggregate_function import TAggregateFunction
+from .tfunction import TFunction
