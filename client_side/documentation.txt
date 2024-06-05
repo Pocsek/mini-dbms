@@ -1,0 +1,33 @@
+-- Mini Database Management System for Command Line Interface --
+
+You can use most of the SQL commands to manage your database.
+
+Use 'go' to execute the commands you have written.
+
+Some SQL commands you can use:
+    >> CREATE DATABASE <database_name>;
+    >> DROP DATABASE <database_name>;
+    >> USE <database_name>;
+    >> CREATE TABLE <table_name> (<column_name> <data_type> <constraint>, ...);
+    >> DROP TABLE <table_name>;
+    >> INSERT INTO <table_name> VALUES (<value1>, <value2>, ...);
+    >> SELECT <column_name> FROM <table_name> WHERE <condition>;
+    >> DELETE FROM <table_name> WHERE <condition>;
+
+Here are a few commands to use for better workflow:
+    >> help - to access documentation
+    >> show databases - to show all databases in the system
+    >> show tables - to show all tables in the current database
+    >> show columns <table_name> - to show all columns in the table specified from the current database
+    >> file <path> - to execute commands from a file
+    >> exit - to exit the program
+    >> go - to execute the commands you have written
+    + use tab to autocomplete database and table names
+
+When a list of commands is executed you will see feedback on the screen, whether the command was successful or not.
+
+A list of commands are either executed or not executed at all. If a command produces an error, the program will stop executing the list of commands and revert to the last successful state.
+
+-- Enjoy using out Mini Database Management System! --
+
+
