@@ -10,6 +10,6 @@ create table child_table (
     parent_id int,
     foreign key (parent_id) references parent_table(id)
 );
-insert into parent_table values (1), (2), (3); --Error: list index out of range
+insert into parent_table values (1), (2), (3);
 insert into child_table values (1, 1), (2, 2), (3, 3);
 delete from parent_table where id = 1;
