@@ -39,13 +39,6 @@ class CreateIndex(ExecutableTree):
         if table.get_index(self.__index_name) is not None:
             raise ValueError(f"Index [{self.__index_name}] already exists in table [{self.__table_name}]")
 
-
-    def connect_nodes_to_root(self):
-        pass
-
-    def connect_subtrees_to_root(self):
-        pass
-
     def set_index_name(self, index_name: str):
         self.__index_name = index_name
 

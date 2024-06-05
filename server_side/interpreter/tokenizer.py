@@ -22,6 +22,7 @@ class Tokenizer:
             strip_comments=True  # remove comments (both "--" and "/* */" variants)
         )
         tokenized = re.sub(r"([,;])", r" \1 ", tokenized)  # put space around separators (again)
+        tokenized = re.sub(r"([.])", r" \1 ", tokenized)  # put space around dots
         tokenized = re.sub(r"(>=|<=|<>|!=|\+=|-=|\*=|/=|%=)", r" \1 ", tokenized)  # put space around compound operators
         tokenized = re.sub(r"([^><+\-*/%=])(>|<|[+\-*/%@=])([^=])", r"\1 \2 \3", tokenized)  # put space around simple operators
         tokenized = tokenized.replace("\n", " ")  # concatenate all lines into one line
@@ -57,10 +58,13 @@ class Tokenizer:
                 tokenized[i:j + 1] = [" ".join(tokenized[i:j + 1])]
             i += 1
 
-        # cast datatypes to lowercase
         for i, val in enumerate(tokenized):
             val_lower = val.lower()
             if val_lower in Literal.DATATYPES:
+                # cast datatypes to lowercase
+                tokenized[i] = val_lower
+            elif val_lower in Literal.KEYWORDS:
+                # case any left out keywords to lowercase
                 tokenized[i] = val_lower
 
         return tokenized

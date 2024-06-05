@@ -26,6 +26,18 @@ class TokenList:
         """Returns the type of the token at the cursor"""
         return Tokenizer.get_token_type(self.peek())
 
+    def check_token(self, target_token):
+        """Returns True if the token at the cursor matches the target token, else False."""
+        if not self.has_next():
+            return False
+        return self.peek() == target_token
+
+    def check_type(self, target_token_type: TokenType):
+        """Returns True if the type of the token at the cursor matches the target type, else False."""
+        if not self.has_next():
+            return False
+        return self.peek_type() == target_token_type
+
     def expect_type(self, target_token_type: TokenType):
         """Same as 'consume_of_type' but without incrementing the cursor."""
         if not self.has_next():
@@ -59,6 +71,14 @@ class TokenList:
         token = self.peek()
         if token != target_token:
             raise SyntaxError(f"Expected token '{target_token}', found '{token}'")
+
+    def consume(self):
+        """Simply returns the token at the cursor from the token list and increments the cursor."""
+        if not self.has_next():
+            raise SyntaxError(f"Unexpected end of command")
+        token = self.peek()
+        self.increment_cursor()
+        return token
 
     def consume_concrete(self, target_token):
         """
@@ -94,4 +114,3 @@ class TokenList:
                 self.increment_cursor()
                 return cur_token
         raise SyntaxError(f"Expected one of {target_token_list}, found {cur_token}")
-

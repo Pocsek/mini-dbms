@@ -9,3 +9,11 @@ from .tvalue import TValue
 from .tvalue_expression import TValueExpression
 from .tidentifiers import TIdentifiers
 from .tvalues import TValues
+from .tselect_list import TSelectList
+from .ttable_source import TTableSource
+from .tgroup_by_expression import TGroupByExpression
+from .tselect import TSelect
+from .tcolumn_reference import TColumnReference
+from .talias import TAlias
+from .taggregate_function import TAggregateFunction
+from .tfunction import TFunction

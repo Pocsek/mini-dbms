@@ -40,10 +40,3 @@ class DropDatabase(ExecutableTree):
             if not self.__if_exists:
                 if dbm.find_database(db_name) == -1:
                     raise ValueError(f"Database '{db_name}' does not exist")
-
-    def connect_nodes_to_root(self):
-        pass
-
-    def connect_subtrees_to_root(self):
-        pass
-

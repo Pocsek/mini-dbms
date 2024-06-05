@@ -126,12 +126,6 @@ class CreateTable(ExecutableTree):
         self.get_result().set_response_message(resp_message)
         print(resp_message)
 
-    def connect_nodes_to_root(self):
-        pass
-
-    def connect_subtrees_to_root(self):
-        pass
-
     def get_name(self):
         return self.__name
 
