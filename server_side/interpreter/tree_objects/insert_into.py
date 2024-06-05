@@ -72,12 +72,6 @@ class InsertInto(ExecutableTree):
 
         self.__validate_values(dbm, db, table, identity_col)
 
-    def connect_nodes_to_root(self):
-        pass
-
-    def connect_subtrees_to_root(self):
-        pass
-
     def set_table_name(self, table_name: str):
         self.__table_name = table_name
 
