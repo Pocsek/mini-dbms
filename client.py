@@ -1,5 +1,6 @@
 import json
 import re
+import tabulate
 
 from client_side.server_connection import ServerConnection
 from client_side.database_structure import DatabaseStructure
@@ -119,7 +120,12 @@ def interpret_response(response: str):
             if result.get_nr_rows_affected() is not None:
                 print(f"{result.get_nr_rows_affected()} rows affected")
                 continue
-            # TODO: show result table
+            if result.get_result_set() is not None:
+                print(tabulate.tabulate(
+                    tabular_data=result.get_result_set()[1],
+                    headers=result.get_result_set()[0],
+                    tablefmt="simple_grid"
+                ))
 
 
 def main():
