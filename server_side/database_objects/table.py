@@ -77,6 +77,12 @@ class Table(Dbo):
     def get_indexes(self) -> list[Index]:
         return self.__indexes
 
+    def has_index_with(self, column_name: str) -> bool:
+        for index in self.get_indexes():
+            if column_name in index.get_column_names():
+                return True
+        return False
+
     def set_name(self, name: str):
         self.__name = name
 

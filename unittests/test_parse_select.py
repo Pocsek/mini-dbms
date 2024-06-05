@@ -107,3 +107,17 @@ class TestParseSelect(TestCase):
         expected = {'is_distinct': True, 'select_list': [{'type': '*'}], 'table_source': {'table_type': 'database', 'table_name': 'Citizens', 'table_alias': 'C'}, 'search_condition': [{'left': {'table': 'C', 'column': 'Height'}, 'op': '<', 'right': {'table': 'C', 'column': 'Weight'}}, {'left': {'table': 'C', 'column': 'Weight'}, 'op': '>', 'right': 99}, {'left': {'table': 'C', 'column': 'Age'}, 'op': '=', 'right': 30}]}
         print(json.dumps(result, indent=4))
         self.assertEqual(result, expected)
+
+    def test_select_5(self):
+        raw_command = ("SELECT * FROM Citizens "
+                       "WHERE Height < Weight AND Age = 30")
+        token_list = self.__to_token_list(raw_command)
+        result = token_list.consume_group(TSelect(True)).__dict__()
+        print(json.dumps(result, indent=4))
+
+    def test_select_6(self):
+        raw_command = ("SELECT * FROM Citizens "
+                       "WHERE Height <= Weight AND Age >= 30")
+        token_list = self.__to_token_list(raw_command)
+        result = token_list.consume_group(TSelect(True)).__dict__()
+        print(json.dumps(result, indent=4))

@@ -60,7 +60,7 @@ class TSelect(TObj):
                 "select_list": <select_list> [,]
                 ["table_source": <table_source> [,] ]
                 ["search_condition": <search_condition> [,] ]
-                ["group_by_extension": <group_by_expression> [,] ]
+                ["group_by_expression": <group_by_expression> [,] ]
             }
         """
 

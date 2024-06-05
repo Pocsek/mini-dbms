@@ -424,7 +424,7 @@ class DbManager:
         The columns need to be part of the same unique key.
 
         Separator character between column values inside a primary key is '#'.
-        Separator character between primary keys is '$'. TODO: discuss this
+        Separator character between primary keys is also '#' (no difference).
 
         :return: a string: the primary key corresponding to the given value(s) if they exist, else None
         """

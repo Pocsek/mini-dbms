@@ -74,18 +74,122 @@ class Select(ExecutableTree):
         https://learn.microsoft.com/en-us/sql/t-sql/queries/from-transact-sql?view=sql-server-ver16
     """
 
-    def __init__(self, select_token):
+    def __init__(self, select_parsed):
         """
-        :param select_token: instance of TSelect that has already consumed a SELECT clause
+        :param select_parsed: instance of TSelect that has already consumed a SELECT command
         """
         super().__init__()
-        self.__select_token = select_token.__dict__()
+        self.__select_parsed = select_parsed.__dict__()
+
+        # the result set's header and values: represents the current state of this command's result set
+        self.__result_header: list[str] = []
+        self.__result_values: list[list] = []
+
+        # hold all table aliases in one place [key=<alias>, value=<table_name>]
+        self.__table_aliases: dict = {}
+
+        # hold all table structures in one place [key=<table_name>, value=<table_dbo>]
+        self.__tables: dict = {}
 
     def _execute(self, dbm):
-        pass
+        self.__process_from(dbm)
+        self.__process_where(dbm)
+
+
+        # set the result set tuple for the client to receive
+        self.get_result().set_result_set((self.__result_header, self.__result_values))
 
     def validate(self, dbm, **kwargs):
         pass
 
     def __repr__(self):
-        return self.__select_token
+        return self.__select_parsed
+
+    def __process_from(self, dbm):
+        """
+        Sets the attributes '__table_aliases', '__tables'.
+        """
+        table_source: dict = self.__select_parsed.get("table_source")
+        if table_source is None:
+            return
+        table_type: str = table_source.get("table_type")  # cannot be None
+        match table_type:
+            case "database":
+                table_name: str = table_source.get("table_name")
+                table_alias: str = table_source.get("table_alias")  # can be None
+                if table_alias:
+                    self.__table_aliases[table_alias] = table_name
+                self.__tables[table_name] = dbm.get_table(dbm.get_working_db_index(), table_name)
+            case "joined":
+                raise NotImplementedError("Table joins not supported yet")
+            case "derived":
+                raise NotImplementedError("Derived tables inside FROM clause not supported yet")
+
+    def __process_where(self, dbm):
+        """
+        Performs filtering on the tables according to the search condition by creating a result set for each expression
+        containing indexed columns, then intersecting them, and filtering the obtained result set with the remaining
+        expressions which do not contain indexed columns.
+        If none of the expressions contain indexed columns, then iterate through the entire table.
+
+        Sets the attribute '__result_values'.
+        """
+        search_condition = self.__select_parsed.get("search_condition")
+        if search_condition is None:
+            # no filtering is done
+            return
+        indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
+
+    def __split_indexed_not_indexed(self, search_condition: list):
+        """
+        Split a list of expressions into two lists: one that contains only indexed columns and one that contains not
+        not indexed columns.
+        """
+        indexed: list[dict] = []
+        not_indexed: list[dict] = []
+        for expression in search_condition:
+            is_indexed = True
+            left = expression.get("left")
+            right = expression.get("right")
+            for side in [left, right]:
+                if side.get("column") is None:
+                    # side is a constant
+                    continue
+                # side is a column reference
+                col_name = left.get("column")
+                table_name = left.get("table")  # can be None
+                if table_name:
+                    # table name is given => search through the table's indexes list
+                    if self.__tables[table_name].has_index_with(col_name):
+                        is_indexed = is_indexed and True  # if once it was False, it should remain False
+                    else:
+                        is_indexed = False
+                else:
+                    # table name not given => search through every given table's indexes list
+                    found = False
+                    for table in list(self.__tables.values()):
+                        if table.has_index_with(col_name):
+                            is_indexed = is_indexed and True
+                            found = True
+                    if not found:
+                        is_indexed = False
+            if is_indexed:
+                indexed.append(expression)
+            else:
+                not_indexed.append(expression)
+        return indexed, not_indexed
+
+    def __eval_logical_expression(self, left, op, right) -> bool:
+        match op:
+            case "<":
+                return left < right
+            case ">":
+                return left > right
+            case "<=":
+                return left <= right
+            case ">=":
+                return left >= right
+            case "=":
+                return left == right
+            case _:
+                raise NotImplementedError(f"Operator '{op}' not supported yet")
