@@ -110,10 +110,10 @@ def execute_cli_command(command: str, ds: DatabaseStructure, s: ServerConnection
                     print(f"No columns found in table '{table_name}'")
 
         case ["help"]:
-            documentation = read_file(__working_dir__ + "/documentation.txt")
-            if documentation:
+            try:
+                documentation = read_file(__working_dir__ + "/documentation.txt")
                 print(documentation)
-            else:
+            except FileNotFoundError:
                 print("No documentation found.")
 
         case _:
