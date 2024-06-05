@@ -62,14 +62,13 @@ class InsertInto(ExecutableTree):
             # column names are not specified, use the existing column names
             self.__column_names = existing_column_names
 
-        # column names that are not specified
-        self.__rest_of_column_names = [
-            col_name for col_name in table.get_column_names() if col_name not in self.__column_names
-        ]
-
         # remove identity column name from the column names that will be inserted into
         if self.__identity_column_name in self.__column_names:
             self.__column_names.remove(self.__identity_column_name)
+
+        # column names that are not specified
+        self.__rest_of_column_names = [col_name for col_name in table.get_column_names() if col_name not in
+                                       self.__column_names and col_name != self.__identity_column_name]
 
         self.__validate_values(dbm, db, table, identity_col)
 
@@ -333,7 +332,7 @@ class InsertInto(ExecutableTree):
             other_record = self.__values[i]
             matching = True
             for j in range(len(key_column_values)):
-                if key_column_values[i] != other_record[key_column_positions[i]]:
+                if key_column_values[j] != other_record[key_column_positions[j]]:
                     matching = False
                     break
             if matching:
