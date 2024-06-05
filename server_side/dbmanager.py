@@ -371,7 +371,10 @@ class DbManager:
         tb = self.get_databases()[db_idx].get_tables()[tb_idx]
         if not tb.has_primary_key():  # check if the table has a primary key because we can only delete by primary key
             raise ValueError(f"Table [{tb.get_name()}] has no primary key")
-        result = mongo_db.select(db.get_name(), tb.get_name(), {"_id": key})[0]
+        results = mongo_db.select(db.get_name(), tb.get_name(), {"_id": key})
+        if len(results) == 0:
+            return 0
+        result = results[0]
         record: dict = split_key_value_pair(result, tb.get_column_names(), tb.get_primary_key().get_column_names())
         indexes = tb.get_indexes()
         for index in indexes:
