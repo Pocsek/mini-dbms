@@ -1,6 +1,6 @@
 import json
 
-from client_side.database_objects import Database
+from client_side.database_objects import Database, Table
 from client_side.server_connection import ServerConnection
 
 
@@ -55,3 +55,12 @@ class DatabaseStructure:
 
     def get_table_names(self, db_idx: int) -> list[str]:
         return self.__databases[db_idx].get_table_names()
+
+    def get_column_names(self, db_idx: int, tb_idx: int) -> list[str]:
+        return self.__databases[db_idx].get_tables()[tb_idx].get_column_names()
+
+    def find_table(self, db_idx: int, table_name: str) -> int:
+        for (idx, tb) in enumerate(self.get_databases()[db_idx].get_tables()):
+            if tb.get_name() == table_name:
+                return idx
+        return -1
