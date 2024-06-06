@@ -96,7 +96,7 @@ class Select(ExecutableTree):
         self.__process_from(dbm)
         self.__process_where(dbm)
         self.__process_select_list(dbm)
-        self.__process_distinct()
+        # self.__process_distinct()  # TODO
 
         # set the result set tuple for the client to receive
         self.get_result().set_result_set((self.__result_header, self.__result_values))
@@ -154,9 +154,9 @@ class Select(ExecutableTree):
         match table_source_type:
             case "database":
                 # load all data in the table directly from the database
-                table = self.__tables[0]
+                table = self.__tables[self.__get_table_source_name()]
                 self.__result_header = table.get_column_names()
-                self.__result_values = dbm.find_all(dbm.get_working_db.get_name(), table.get_name())
+                self.__result_values = dbm.find_all(dbm.get_working_db().get_name(), table.get_name())
             case "joined":
                 raise NotImplementedError("Table joins are not supported yet")
             case "derived":
@@ -307,6 +307,12 @@ class Select(ExecutableTree):
         table_source = self.__select_parsed.get("table_source")
         if table_source:
             return table_source.get("table_type")
+        return None
+
+    def __get_table_source_name(self) -> str | None:
+        table_source = self.__select_parsed.get("table_source")
+        if table_source:
+            return table_source.get("table_name")
         return None
 
     def __process_distinct(self):
