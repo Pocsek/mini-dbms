@@ -122,14 +122,19 @@ def run_server(s: socket):
         log("Error starting the server: " + e.__str__())
         print("Error starting the server: " + e.__str__())
         return
-
-    log("Server started")
-    print("Server running, press enter to stop!")
-    global stop_threads
-    while not stop_threads:
-        conn, addr = s.accept()
-        log("Connected by" + str(addr))
-        handle_client(conn, addr)
+    try:
+        log("Server started")
+        print("Server running, press enter to stop!")
+        global stop_threads
+        while not stop_threads:
+            conn, addr = s.accept()
+            log("Connected by" + str(addr))
+            handle_client(conn, addr)
+    except Exception as e:  # restart the server if an error occurs
+        log("Error running the server: " + e.__str__())
+        print("Error running the server: " + e.__str__())
+        print("Restarting the server...")
+        run_server(s)
 
 
 def main():
@@ -144,6 +149,7 @@ def main():
     input("")
     stop_threads = True
     log("Stopping server...")
+    print("Stopping server...")
     # send go message to server to get it out of waiting for connection, so it can stop
     exit_socket = socket(AF_INET, SOCK_STREAM)
     exit_socket.connect((host, port))
@@ -153,6 +159,7 @@ def main():
     exit_socket.close()
     thread.join()
     log("Server stopped")
+    print("Server stopped")
 
 
 main()

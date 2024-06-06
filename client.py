@@ -5,9 +5,12 @@ from client_side.server_connection import ServerConnection
 from client_side.database_structure import DatabaseStructure
 from client_side.tab_completer import TabCompleter
 from client_side.result import Result
+from client_side import __working_dir__  # the client_side directory's absolute path
 
-CLI_COMMANDS = ["show databases", "show tables", r"file [\w/.]+"]  # client side commands
-FORBIDDEN_COMMANDS = ["~show structure~"]  # commands that are not allowed to be sent by the client
+# client side commands
+CLI_COMMANDS = ["show databases", "show tables", r"file [\w/.:-]+", r"show columns [\w]+", "help"]
+# commands that are not allowed to be sent by the client
+FORBIDDEN_COMMANDS = ["~show structure~"]
 
 
 def any_fullmatch(string: str, patterns: list[str]) -> bool:
@@ -95,6 +98,25 @@ def execute_cli_command(command: str, ds: DatabaseStructure, s: ServerConnection
                 interpret_response(s.receive())
             else:
                 print("No commands to execute in file.")
+
+        case ["show", "columns", _]:
+            # it important to use the table name from the original command and not the lowercase one
+            table_name = command.split(" ")[2]
+            db_idx = ds.get_working_db_index()
+            tb_idx = ds.find_table(db_idx, table_name)
+            if tb_idx != -1:
+                columns = ds.get_column_names(db_idx, tb_idx)
+                if columns:
+                    print("Columns: ", " ".join(columns))
+                else:
+                    print(f"No columns found in table '{table_name}'")
+
+        case ["help"]:
+            try:
+                documentation = read_file(__working_dir__ + "/documentation.txt")
+                print(documentation)
+            except FileNotFoundError:
+                print("No documentation found.")
 
         case _:
             print("Not implemented yet.")
