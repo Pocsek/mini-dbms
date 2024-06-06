@@ -1,5 +1,5 @@
 from tabulate import tabulate
-
+import datetime
 # Sample data
 data = [
     ["Alice", 30, "New York"],
@@ -9,4 +9,5 @@ data = [
 ]
 
 # Printing the table
-print(tabulate(data, headers=["Name", "Age", "City"], tablefmt="simple_grid"))
+# print(tabulate(data, headers=["Name", "Age", "City"], tablefmt="simple_grid"))
+print(datetime.datetime.now())

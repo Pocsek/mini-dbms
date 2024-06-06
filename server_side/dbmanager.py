@@ -453,6 +453,18 @@ class DbManager:
                     return kv.get("_id")
         return None
 
+    def find_all(self, db_name: str, table_name: str) -> list[list]:
+        """
+        Find all records in a table.
+
+        :return: a list of records where a record is a list of values
+        """
+        result = []
+        for kv in mongo_db.select(db_name, table_name):
+            kv_list = kv.get("_id").split("#") + kv.get("value").split("#")
+            result.append(kv_list)
+        return result
+
     def create_default_databases(self) -> list[Database]:
         dbs: list[Database] = []
         for name in self.get_default_database_names():

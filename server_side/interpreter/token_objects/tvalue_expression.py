@@ -46,7 +46,7 @@ class TValueExpression(TObj):
         """
         Representation:
             {
-                "type": ("constant" | "aggregate", "subquery"),
+                "type": ("constant" | "aggregate" | "subquery"),
                 "value": <constant> | <aggregate_function> | <subquery>
             }
         """

@@ -1,4 +1,5 @@
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
+from datetime import datetime
 
 
 class Select(ExecutableTree):
@@ -94,7 +95,8 @@ class Select(ExecutableTree):
     def _execute(self, dbm):
         self.__process_from(dbm)
         self.__process_where(dbm)
-
+        self.__process_select_list(dbm)
+        self.__process_distinct()
 
         # set the result set tuple for the client to receive
         self.get_result().set_result_set((self.__result_header, self.__result_values))
@@ -132,13 +134,30 @@ class Select(ExecutableTree):
         expressions which do not contain indexed columns.
         If none of the expressions contain indexed columns, then iterate through the entire table.
 
-        Sets the attribute '__result_values'.
+        Sets the attributes '__result_header' and '__result_values'.
         """
         search_condition = self.__select_parsed.get("search_condition")
         if search_condition is None:
-            # no filtering is done
+            # no filtering is done => load all data
+            self.__load_all_values(dbm)
             return
         indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
+
+    def __load_all_values(self, dbm):
+        """
+        Sets the attribute '__result_header' and '__result_values' by loading all values from the table source.
+        """
+        table_source_type = self.__select_parsed["table_source"]["table_type"]
+        match table_source_type:
+            case "database":
+                # load all data in the table directly from the database
+                table = self.__tables[0]
+                self.__result_header = table.get_column_names()
+                self.__result_values = dbm.find_all(dbm.get_working_db.get_name(), table.get_name())
+            case "joined":
+                raise NotImplementedError("Table joins are not supported yet")
+            case "derived":
+                raise NotImplementedError("Derived tables are not supported yet")
 
     def __split_indexed_not_indexed(self, search_condition: list):
         """
@@ -192,4 +211,93 @@ class Select(ExecutableTree):
             case "=":
                 return left == right
             case _:
-                raise NotImplementedError(f"Operator '{op}' not supported yet")
+                raise NotImplementedError(f"Invalid operator'{op}'")
+
+    def __process_select_list(self, dbm):
+        """
+        Updates the attributes '__result_header' and '__result_values'.
+        """
+        select_list = self.__select_parsed.get("select_list")
+
+        table_source_type = self.__get_table_source_type()
+        if table_source_type is None:
+            # special case when there is no table source given
+            self.__result_header = []
+            self.__result_values = []
+            for projection in select_list:
+                # only expressions can appear here
+                self.__result_values.append(self.__eval_value_expression(projection.get("value")))
+            return
+
+        match table_source_type:
+            case "database":
+                pass #TODO
+            case "joined":
+                raise NotImplementedError("Table joins are not supported yet")
+            case "derived":
+                raise NotImplementedError("Derived tables are not supported yet")
+
+    def __eval_value_expression(self, expression: dict):
+        """
+        Evaluate an expression that has a return type of value.
+        :param expression:
+                {
+                    "type": ("constant" | "aggregate" | "subquery"),
+                    "value": <constant> | <aggregate_function> | <subquery>
+                }
+        :return: The result of the expression.
+        """
+        expr_value = expression.get("value")
+        match expression.get("type"):
+            case "constant":
+                return expr_value
+            case "function":
+                return self.__eval_function(expr_value)
+            case "subquery":
+                raise NotImplementedError("Subqueries are not supported yet")
+
+    def __eval_function(self, function: dict):
+        """
+        Evaluate a function.
+        :param function:
+                {
+                "type": ("aggregate" | "date_and_time"),
+                "function": <function>
+            }
+        :return: The result of the functino.
+        """
+        func_type = function.get("type")
+        func = function.get("function")
+        func_name = func.get("name")
+        match func_type:
+            case "date_and_time":
+                match func_name:
+                    case "getdate":
+                        return datetime.now()
+                    case _:
+                        raise NotImplementedError(f"Date&Time function '{func_name}' not supported")
+            case "aggregate":
+                match func_name:
+                    case "count":
+                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
+                    case "sum":
+                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
+                    case "avg":
+                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
+                    case "min":
+                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
+                    case "max":
+                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
+                    case _:
+                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
+            case _:
+                raise NotImplementedError(f"Function of type '{func_type}' not supported")
+
+    def __get_table_source_type(self) -> str | None:
+        table_source = self.__select_parsed.get("table_source")
+        if table_source:
+            return table_source.get("table_type")
+        return None
+
+    def __process_distinct(self):
+        pass # TODO

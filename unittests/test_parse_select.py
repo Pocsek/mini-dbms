@@ -121,3 +121,9 @@ class TestParseSelect(TestCase):
         token_list = self.__to_token_list(raw_command)
         result = token_list.consume_group(TSelect(True)).__dict__()
         print(json.dumps(result, indent=4))
+
+    def test_select_7(self):
+        raw_command = ("SELECT 1 AS One, GETDATE() AS Today, MAX(*)")
+        token_list = self.__to_token_list(raw_command)
+        result = token_list.consume_group(TSelect(True)).__dict__()
+        print(json.dumps(result, indent=4))

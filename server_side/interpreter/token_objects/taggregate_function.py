@@ -27,7 +27,10 @@ class TAggregateFunction(TObj):
         if token_list.check_token("distinct"):
             token_list.consume()
             self.__is_distinct = True
-        self.__column_reference = token_list.consume_group(TColumnReference()).__dict__()
+        if token_list.check_token("*"):
+            self.__column_reference = token_list.consume()
+        else:
+            self.__column_reference = token_list.consume_group(TColumnReference()).__dict__()
         token_list.consume_concrete(")")
 
     def __dict__(self):
