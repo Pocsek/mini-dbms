@@ -7,8 +7,10 @@ from client_side.tab_completer import TabCompleter
 from client_side.result import Result
 from client_side import __working_dir__  # the client_side directory's absolute path
 
-CLI_COMMANDS = ["show databases", "show tables", r"file [\w/.]+", r"show columns [\w]+", "help"]  # client side commands
-FORBIDDEN_COMMANDS = ["~show structure~"]  # commands that are not allowed to be sent by the client
+# client side commands
+CLI_COMMANDS = ["show databases", "show tables", r"file [\w/.:-]+", r"show columns [\w]+", "help"]
+# commands that are not allowed to be sent by the client
+FORBIDDEN_COMMANDS = ["~show structure~"]
 
 
 def any_fullmatch(string: str, patterns: list[str]) -> bool:
