@@ -477,6 +477,22 @@ class DbManager:
             mongo_db.create_collection(db.get_name(), "__next_identity")
         return dbs
 
+    def join_tables(self, db_idx: int, tb_1: Table, tb_2: Table, op: str, col_name_1: str, col_name_2: str) ->list[list]:
+        """ """
+        outer = tb_1.get_name()
+        outer_col = col_name_1
+        outer_idx = tb_1.find_column(col_name_1)
+        inner = tb_2.get_name()
+        inner_col = col_name_2
+        inner_idx = tb_2.find_column(col_name_2)
+        if tb_1.column_is_indexed(col_name_1) and not tb_2.column_is_indexed(col_name_2):
+            # swap them
+            outer, inner = inner, outer
+            outer_col, inner_col = inner_col, outer_col
+        outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
+        for o
+
+
 
 def create_empty_database() -> Database:
     return Database()

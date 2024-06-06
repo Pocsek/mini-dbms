@@ -171,6 +171,33 @@ class Select(ExecutableTree):
                 self.__result_header = table.get_column_names()
                 self.__result_values = dbm.find_all(dbm.get_working_db().get_name(), table.get_name())
             case "joined":
+                right_table_source: dict = self.__select_parsed.get("table_source").get("right_table")
+                if right_table_source.get("table_type") != "database":
+                    raise RecursionError("Wrongly implemented JOIN, right table must be a database table")
+
+                left_table_source: dict = self.__select_parsed.get("table_source").get("left_table")
+                if left_table_source.get("table_type") != "database":
+                    raise NotImplementedError("Left table must be a database table in the current implementation")
+
+                condition: dict = self.__select_parsed.get("join_condition")[0]
+                left_table_name = left_table_source.get("table_name")
+                right_table_name = right_table_source.get("table_name")
+                left_table = self.__tables[left_table_name]
+                right_table = self.__tables[right_table_name]
+                left_side = condition.get("left")
+                right_side = condition.get("right")
+                op = condition.get("op")
+                if self.__get_name_by_alias(left_side.get("table")) == left_table_name:
+                    left_table_column_name = left_side.get("column")
+                    right_table_column_name = right_side.get("column")
+                else:
+                    left_table_column_name = right_side.get("column")
+                    right_table_column_name = left_side.get("column")
+                self.__result_header = left_table.get_column_names() + right_table.get_column_names()
+                self.__result_values = dbm.join_tables()
+
+
+
                 raise NotImplementedError("Table joins are not supported yet")
             case "derived":
                 raise NotImplementedError("Derived tables are not supported yet")
@@ -350,3 +377,7 @@ class Select(ExecutableTree):
         """
         if self.__select_parsed.get("is_distinct"):
             raise NotImplementedError("DISTINCT not supported yet")
+
+    def __get_name_by_alias(self, alias: str) -> str:
+        """If the alias is not found, return the alias itself."""
+        return self.__table_aliases.get(alias, alias)
