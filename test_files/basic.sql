@@ -6,6 +6,6 @@ create table test_table (
     name varchar
 );
 
--- insert into test_table (name) values ('test'), ('test2');
--- delete from test_table where name = 'test2';
+insert into test_table (name) values ('test'), ('test2');
+delete from test_table where id = 1;
 
