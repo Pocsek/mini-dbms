@@ -93,6 +93,17 @@ class Select(ExecutableTree):
         # hold all table structures in one place [key=<table_name>, value=<table_dbo>]
         self.__tables: dict = {}
 
+        # save the DbManager and the working db to simplify code
+        from server_side.dbmanager import DbManager
+        self.__dbm: DbManager | None = None
+        self.__db = None
+        self.__db_idx = None
+
+    def __setup(self, dbm):
+        self.__dbm = dbm
+        self.__db = self.__dbm.get_working_db()
+        self.__db_idx = self.__dbm.get_working_db_index()
+
     def _execute(self, dbm):
         self.__process_from(dbm)
         self.__process_where(dbm)
@@ -103,7 +114,7 @@ class Select(ExecutableTree):
         self.get_result().set_result_set((self.__result_header, self.__result_values))
 
     def validate(self, dbm, **kwargs):
-        pass
+        self.__setup(dbm)
 
     def __repr__(self):
         return self.__select_parsed
@@ -159,11 +170,31 @@ class Select(ExecutableTree):
             # no filtering is done => load all data
             self.__load_all_values(dbm)
             return
-        indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
-        indexed_result_sets: list[tuple[list[str], list]] = self.__filter_indexed(dbm, indexed)
+        raise NotImplementedError("WHERE clause not supported yet")
+        # self.__filter(search_condition)
+        # indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
+        # indexed_result_sets: list[tuple[list[str], list]] = self.__filter_indexed(dbm, indexed)
 
-    def __filter_not_indexed(self, expressions: list[dict]):
-        pass  # TODO
+    def __filter(self, expressions: list[dict]):
+        """
+        Filters the current result set with the given expressions.
+        ! Does NOT use indexes.
+        """
+        for expr in expressions:
+            left = expression.get("left")
+            op = expr.get("op")
+            right = expression.get("right")
+            # for now
+            if right.get("column") or not left.get("column"):
+                raise NotImplementedError(
+                    f"Unsupported condition format: {left} {op} {right}. Should be <column> <op> <value>."
+                )
+
+            col_name = left.get("column")
+            table = self.__find_table_by_column(col_name)
+            for record in self.__dbm.find_all(self.__db.get_name(), table.get_name()):
+                # check if condition applies
+                pass
 
     def __filter_indexed(self, dbm, expressions: list[dict]) -> list[tuple[list[str], list]]:
         """
@@ -235,6 +266,16 @@ class Select(ExecutableTree):
             if table.has_index_with(column_name):
                 return table
         raise ValueError(f"Table with indexed column '{column_name}' not found")
+
+    def __find_table_by_column(self, column_name: str):
+        """
+        Search through every given table's columns find the table corresponding to the given column name.
+        :return: database object of type Table
+        """
+        for table in list(self.__tables.values()):
+            if column_name in table.get_column_names():
+                return table
+        raise ValueError(f"Table with column '{column_name}' not found")
 
     def __load_all_values(self, dbm):
         """
