@@ -147,7 +147,10 @@ class Select(ExecutableTree):
         """
         Sets the attribute '__result_header' and '__result_values' by loading all values from the table source.
         """
-        table_source_type = self.__select_parsed["table_source"]["table_type"]
+        table_source_type = self.__get_table_source_type()
+        if table_source_type is None:
+            # table source not given
+            return
         match table_source_type:
             case "database":
                 # load all data in the table directly from the database
@@ -162,7 +165,7 @@ class Select(ExecutableTree):
     def __split_indexed_not_indexed(self, search_condition: list):
         """
         Split a list of expressions into two lists: one that contains only indexed columns and one that contains not
-        not indexed columns.
+        indexed columns.
         """
         indexed: list[dict] = []
         not_indexed: list[dict] = []
@@ -224,9 +227,16 @@ class Select(ExecutableTree):
             # special case when there is no table source given
             self.__result_header = []
             self.__result_values = []
+            record = []
             for projection in select_list:
                 # only expressions can appear here
-                self.__result_values.append(self.__eval_value_expression(projection.get("value")))
+                record.append(self.__eval_value_expression(projection.get("value")))
+                alias = projection.get("alias")
+                if alias:
+                    self.__result_header.append(alias)
+                else:
+                    self.__result_header.append("")
+            self.__result_values.append(record)
             return
 
         match table_source_type:
@@ -273,7 +283,7 @@ class Select(ExecutableTree):
             case "date_and_time":
                 match func_name:
                     case "getdate":
-                        return datetime.now()
+                        return str(datetime.now())
                     case _:
                         raise NotImplementedError(f"Date&Time function '{func_name}' not supported")
             case "aggregate":

@@ -127,3 +127,9 @@ class TestParseSelect(TestCase):
         token_list = self.__to_token_list(raw_command)
         result = token_list.consume_group(TSelect(True)).__dict__()
         print(json.dumps(result, indent=4))
+
+    def test_select_8(self):
+        raw_command = ("SELECT t.col1 as Price, GETDATE() AS Today")
+        token_list = self.__to_token_list(raw_command)
+        result = token_list.consume_group(TSelect(True)).__dict__()
+        print(json.dumps(result, indent=4))
