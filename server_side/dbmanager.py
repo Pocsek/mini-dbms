@@ -454,12 +454,33 @@ class DbManager:
                     return kv.get("_id")
         return None
 
+    def find_conditional_indexed_by_primary_key(self,
+                                                db_name: str,
+                                                table_name: str,
+                                                logical_op: str,
+                                                condition_value) -> list:
+        """
+        Find those primary keys and values that fulfill the condition USING the built-in INDEXES.
+
+        ! Currently, condition is always evaluated in the order: <column> <op> <value>
+
+        :param column_name: the column to compare
+        :param column_type: the datatype of the column
+        :param logical_op: the logical operator used for comparing
+        :param condition_value: the value the column is being compared with
+        :return: a list of records that fulfill the condition
+        """
+        mongo_op = self.__logical_op_to_mongo_op(logical_op)
+        selection = {"_id": {mongo_op: condition_value}}
+        values = mongo_db.select(db_name, table_name, selection)
+        return values
+
     def find_conditional_indexed_by_value(self,
                                           db_name: str,
                                           table_name: str,
                                           column_name: str,
                                           column_type: str,
-                                          relational_op: str,
+                                          logical_op: str,
                                           condition_value) -> list:
         """
         Find those values that fulfill the condition USING INDEXES.
@@ -468,7 +489,7 @@ class DbManager:
 
         :param column_name: the column to compare
         :param column_type: the datatype of the column
-        :param relational_op: the logical operator used for comparing
+        :param logical_op: the logical operator used for comparing
         :param condition_value: the value the column is being compared with
         :return: a list of primary keys (not in concatenated format) of records that fulfill the condition
         """
@@ -480,13 +501,13 @@ class DbManager:
         for kv in mongo_db.select(db_name, index_collection_name):
             k = kv.get("_id").split("#")[0]  # [0] for now
             k = datatypes.cast_value(k, column_type)
-            fulfills = self.__eval_logical_expression(k, relational_op, condition_value)
+            fulfills = self.__eval_logical_expression(k, logical_op, condition_value)
             if not fulfills:
                 continue
             v = kv.get("value").split("#")
             for i in range(0, len(v), pk_length):
                 # take out length of primary key number of elements from the list with values to get one primary key
-                result.append(v[i:i+pk_length])
+                result.append(v[i:i + pk_length])
         return result
 
     def __eval_logical_expression(self, left, op, right) -> bool:
@@ -504,6 +525,20 @@ class DbManager:
             case _:
                 raise NotImplementedError(f"Invalid operator'{op}'")
 
+    def __logical_op_to_mongo_op(self, op: str):
+        match op:
+            case "<":
+                return "$lt"
+            case ">":
+                return "$gt"
+            case "<=":
+                return "$lte"
+            case ">=":
+                return "$gte"
+            case "=":
+                return "$eq"
+            case _:
+                raise NotImplementedError(f"Invalid operator'{op}'")
 
     def find_all(self, db_name: str, table_name: str) -> list[list]:
         """

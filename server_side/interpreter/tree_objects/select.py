@@ -162,6 +162,8 @@ class Select(ExecutableTree):
         indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
         indexed_result_sets: list[tuple[list[str], list]] = self.__filter_indexed(dbm, indexed)
 
+    def __filter_not_indexed(self, expressions: list[dict]):
+        pass  # TODO
 
     def __filter_indexed(self, dbm, expressions: list[dict]) -> list[tuple[list[str], list]]:
         """
@@ -317,13 +319,13 @@ class Select(ExecutableTree):
             return
         self.__select_list_database_table_source()
 
-        match table_source_type:
-            case "database":
-                raise NotImplementedError("'SELECT' with 'FROM' clause not implemented")
-            case "joined":
-                raise NotImplementedError("Table joins are not supported yet")
-            case "derived":
-                raise NotImplementedError("Derived tables are not supported yet")
+        # match table_source_type:
+        #     case "database":
+        #         raise NotImplementedError("'SELECT' with 'FROM' clause not implemented")
+        #     case "joined":
+        #         raise NotImplementedError("Table joins are not supported yet")
+        #     case "derived":
+        #         raise NotImplementedError("Derived tables are not supported yet")
 
     def __select_list_no_table_source(self):
         """
@@ -344,15 +346,23 @@ class Select(ExecutableTree):
         self.__result_values.append(record)
 
     def __select_list_database_table_source(self):
+        """
+        ! Current version:
+            - only works for column references and '*'
+        """
         select_list = self.__select_parsed.get("select_list")
+        to_keep: list[int] = []  # indexes of columns to keep from the current result set
         for projection in select_list:
-            self.__process_projection(projection)
+            projection_type = projection.get("type")
+            match projection_type:
+                case "*":
+                    # don't need to change the result set => can skip this step
+                    return
+                case "column":
+                    raise NotImplementedError("Column references in SELECT clause are not supported yet")
+                case "expression":
+                    raise NotImplementedError("Expressions in SELECT clause are not supported yet")
 
-    def __process_projection(self, projection: dict):
-        """"""
-        # TODO: implement projection after filtering is implemented
-        proj_type = projection.get("type")
-        raise NotImplementedError("Projection not implemented")
 
     def __eval_value_expression(self, expression: dict):
         """
