@@ -461,7 +461,11 @@ class DbManager:
         """
         result = []
         for kv in mongo_db.select(db_name, table_name):
-            kv_list = kv.get("_id").split("#") + kv.get("value").split("#")
+            k = kv.get("_id").split("#")
+            v = kv.get("value").split("#")
+            if v[-1] == "":
+                v = v[:-1]
+            kv_list = k + v
             result.append(kv_list)
         return result
 
