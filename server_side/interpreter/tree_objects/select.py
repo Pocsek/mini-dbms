@@ -96,7 +96,7 @@ class Select(ExecutableTree):
         self.__process_from(dbm)
         self.__process_where(dbm)
         self.__process_select_list(dbm)
-        # self.__process_distinct()  # TODO
+        self.__process_distinct()
 
         # set the result set tuple for the client to receive
         self.get_result().set_result_set((self.__result_header, self.__result_values))
@@ -220,32 +220,48 @@ class Select(ExecutableTree):
         """
         Updates the attributes '__result_header' and '__result_values'.
         """
-        select_list = self.__select_parsed.get("select_list")
-
         table_source_type = self.__get_table_source_type()
         if table_source_type is None:
-            # special case when there is no table source given
-            self.__result_header = []
-            self.__result_values = []
-            record = []
-            for projection in select_list:
-                # only expressions can appear here
-                record.append(self.__eval_value_expression(projection.get("value")))
-                alias = projection.get("alias")
-                if alias:
-                    self.__result_header.append(alias)
-                else:
-                    self.__result_header.append("")
-            self.__result_values.append(record)
+            self.__select_list_no_table_source()
             return
 
         match table_source_type:
             case "database":
-                pass #TODO
+                # self.__select_list_database_table_source()
+                raise NotImplementedError("'SELECT' with 'FROM' clause not implemented")
             case "joined":
                 raise NotImplementedError("Table joins are not supported yet")
             case "derived":
                 raise NotImplementedError("Derived tables are not supported yet")
+
+    def __select_list_no_table_source(self):
+        """
+        Special case when there is no table source given.
+        """
+        select_list = self.__select_parsed.get("select_list")
+        self.__result_header = []
+        self.__result_values = []
+        record = []
+        for projection in select_list:
+            # only expressions can appear here
+            record.append(self.__eval_value_expression(projection.get("value")))
+            alias = projection.get("alias")
+            if alias:
+                self.__result_header.append(alias)
+            else:
+                self.__result_header.append("")
+        self.__result_values.append(record)
+
+    def __select_list_database_table_source(self):
+        select_list = self.__select_parsed.get("select_list")
+        for projection in select_list:
+            self.__process_projection(projection)
+
+    def __process_projection(self, projection: dict):
+        """"""
+        proj_type = projection.get("type")
+        # chongy is working here
+        pass
 
     def __eval_value_expression(self, expression: dict):
         """
@@ -316,4 +332,8 @@ class Select(ExecutableTree):
         return None
 
     def __process_distinct(self):
-        pass # TODO
+        """
+        Filter duplicates in the result values.
+        """
+        if self.__select_parsed.get("is_distinct"):
+            raise NotImplementedError("DISTINCT not supported yet")
