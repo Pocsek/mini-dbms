@@ -109,9 +109,19 @@ class Select(ExecutableTree):
 
     def __process_from(self, dbm):
         """
+        Goes through all tables of the root table source recursively.
         Sets the attributes '__table_aliases', '__tables'.
         """
-        table_source: dict = self.__select_parsed.get("table_source")
+        table_source = self.__select_parsed.get("table_source")
+        self.__process_table_source(dbm, table_source)
+
+    def __process_table_source(self, dbm, table_source: dict):
+        """
+        Goes through all tables of the current table source recursively.
+        Sets the attributes '__table_aliases', '__tables'.
+
+        :param table_source: the current table source in the recursion tree
+        """
         if table_source is None:
             return
         table_type: str = table_source.get("table_type")  # cannot be None
@@ -123,7 +133,10 @@ class Select(ExecutableTree):
                     self.__table_aliases[table_alias] = table_name
                 self.__tables[table_name] = dbm.get_table(dbm.get_working_db_index(), table_name)
             case "joined":
-                raise NotImplementedError("Table joins not supported yet")
+                left: dict = table_source.get("left_table")
+                right: dict = table_source.get("right_table")
+                self.__process_table_source(dbm, left)
+                self.__process_table_source(dbm, right)
             case "derived":
                 raise NotImplementedError("Derived tables inside FROM clause not supported yet")
 
