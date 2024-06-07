@@ -364,7 +364,57 @@ class Select(ExecutableTree):
         """
         select_list = self.__select_parsed.get("select_list")
         if self.__queried_values:
-            raise NotImplementedError("Only indexed values in WHERE not supported")
+            self.__select_list_database_table_source_with_queried_values(select_list)
+        else:
+            self.__select_list_database_table_source_no_queried_values(select_list)
+
+    def __select_list_database_table_source_with_queried_values(self, select_list):
+        # get only the first value, because all of them contain the same column references
+        query_value: list[tuple] = list(self.__queried_values.values())[0]
+        query_col_refs: list[dict] = [val[0] for val in query_value]
+
+        # check if the select list contains only column references
+        if self.__projection_matches_queried_col_refs(select_list, query_col_refs):
+            # use query values
+            query_keys: list = list(self.__queried_values.keys())
+            self.__result_values = [[None for _ in range(len(query_value))] for _ in range(len(query_keys))]  # it has the number of rows as query keys
+            for projection in select_list:
+                match projection.get("type"):
+                    case "*":
+                        positions = self.__get_positions_by_col_refs_select_star(query_col_refs)
+                        for i, key in enumerate(query_keys):
+                            for j, tupp in enumerate(self.__queried_values[key]):
+                                self.__result_values[i][positions[j]] = tupp[1]
+                        self.__result_header = [col_ref.get("column") for col_ref in self.__build_all_col_refs()]
+                    case "column":
+                        raise NotImplementedError("MINGYA MEGLESZ")
+                        col_ref = projection.get("column_reference")
+                        col_name = col_ref.get("column")
+                        table_name = col_ref.get("table")
+                        if table_name is None:
+                            table_name = self.__find_table_by_column(col_name).get_name()
+                        for i, key in enumerate(query_keys):
+                            for tupp in self.__queried_values[key]:
+                                q_col_ref = tupp[0]
+        else:
+            # load all values
+            raise NotImplementedError("MINGYA MEGLESZ ez is")
+
+    def __get_positions_by_col_refs_select_star(self, col_refs: list[dict]) -> list[int]:
+        all_col_refs = self.__build_all_col_refs()
+        positions = []
+        for col_ref in col_refs:
+            col_name = col_ref.get("column")
+            table_name = col_ref.get("table")
+            if table_name is None:
+                table_name = self.__find_table_by_column(col_name).get_name()
+            for i, ref in enumerate(all_col_refs):
+                if ref["column"] == col_name and ref["table"] == table_name:
+                    positions.append(i)
+                    break
+        return positions
+
+    def __select_list_database_table_source_no_queried_values(self, select_list):
         all_col_refs = self.__build_all_col_refs()
         proj_positions_in_all = []
         for projection in select_list:
@@ -408,11 +458,12 @@ class Select(ExecutableTree):
             projection_type = projection.get("type")
             match projection_type:
                 case "*":
-                    raise NotImplementedError("'*' in SELECT clause is not supported yet")
+                    return self.__build_all_col_refs()
                 case "column":
                     col_refs.append(projection.get("column_reference"))
                 case "expression":
                     raise NotImplementedError("Expressions in SELECT clause are not supported yet")
+        return col_refs
 
     def __eval_value_expression(self, expression: dict):
         """
@@ -509,10 +560,28 @@ class Select(ExecutableTree):
         for condition in conditions:
             col_ref, col_name, table_name, op, cond_val = self.__parse_dict_expression(condition)
             idx = column_names.index(col_name)
-            val = res[idx]
+            col_type = self.__tables[table_name].get_column(col_name).get_type()
+            val = datatypes.cast_value(res[idx], col_type)
             if not datatypes.eval_logical_expression(val, op, cond_val):
                 return False
         return True
+
+    def __projection_matches_queried_col_refs(self, select_list, query_col_refs) -> bool:
+        for projection in select_list:
+            match projection.get("type"):
+                case "*":
+                    all_col_refs = self.__build_all_col_refs()
+                    for col_ref in all_col_refs:
+                        if col_ref not in query_col_refs:
+                            return False
+                    return True
+
+                case "column":
+                    col_ref = projection.get("column_reference")
+                    if col_ref not in query_col_refs:
+                        return False
+        return True
+
 
 
 

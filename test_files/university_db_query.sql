@@ -4,6 +4,10 @@ use University
 -- select groupId
 -- from students;
 
+select *
+from groups
+where GroupId > 1 and SpecID = 'MI'
+
 --no projection, filter 1 indexed equality condition, no join
 -- select *
 -- from students
@@ -30,9 +34,9 @@ use University
 -- where GroupId = 531 and StudName = 'Nagy Fero'
 
 --# column projections
-select StudID, StudName as Fakanal
-from students
-where GroupId = 233 and StudName = 'Nagy Fero'
+-- select StudID, StudName as Fakanal
+-- from students
+-- where GroupId = 233 and StudName = 'Nagy Fero'
 
 --projection, filter 2 equality conditions with different columns, no join
 -- select mark
