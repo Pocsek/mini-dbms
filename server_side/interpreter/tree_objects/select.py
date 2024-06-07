@@ -220,19 +220,18 @@ class Select(ExecutableTree):
                     self.__queried_values = [{qvk: self.__queried_values[qvk]} for qvk in self.__queried_values.keys() if
                                              qvk in pk_key_set]  # filter out the non-intersecting keys
                 if not_indexed_conditions:
+                    table_name = self.__get_table_source_name()
                     if pk_key_set is None:
                         # no indexed conditions => iterate through the entire table
-                        table_name = self.__get_table_source_name()
                         results: list[list] = self.__dbm.find_all(self.__db.get_name(), table_name)
-                        column_names = self.__tables[table_name].get_column_names()
-                        self.__result_header = column_names
-                        for res in results:
-                            if self.__satisfies_conditions(res, not_indexed_conditions, column_names):
-                                self.__result_values.append(res)
                     else:
+                        results = self.__dbm.find_by_primary_keys(self.__db.get_name(), table_name, list(pk_key_set))
+                    column_names = self.__tables[table_name].get_column_names()
+                    self.__result_header = column_names
+                    for res in results:
+                        if self.__satisfies_conditions(res, not_indexed_conditions, column_names):
+                            self.__result_values.append(res)
 
-                        # filter the result set with the remaining expressions
-                        raise NotImplementedError("WHERE clause not supported yet")
                     # TODO filter the result set with the remaining expressions
                     raise NotImplementedError("WHERE clause not supported yet")
 

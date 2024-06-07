@@ -418,6 +418,23 @@ class DbManager:
         values = mongo_db.select(db_name, table_name, {"_id": key})
         return values[0] if values else None
 
+    def find_by_primary_keys(self, db_name: str, table_name: str, pks: list[str]) -> list[list]:
+        """
+        Only works for single primary key tables.
+        """
+        or_conds: list[dict] = []
+        for pk in pks:
+            or_conds.append({"_id": pk})
+        result = []
+        for kv in mongo_db.select(db_name, table_name, {"$or": or_conds}):
+            k = kv.get("_id").split("#")
+            v = kv.get("value").split("#")
+            if v[-1] == "":
+                v = v[:-1]
+            kv_list = k + v
+            result.append(kv_list)
+        return result
+
     def find_by_value(self,
                       db_name: str,
                       table_name: str,
