@@ -66,6 +66,12 @@ class Table(Dbo):
                 return col
         raise ValueError(f"Column {col_name} not found")
 
+    def find_column(self, col_name):
+        for i, col in enumerate(self.__columns):
+            if col.get_name() == col_name:
+                return i
+        return -1
+
     def exists_column(self, col_name):
         for col in self.__columns:
             if col.get_name() == col_name:
@@ -82,6 +88,12 @@ class Table(Dbo):
         for index in self.get_indexes():
             if column_name in index.get_column_names():
                 return True
+        return False
+
+    def column_is_indexed(self, column_name: str) -> bool:
+        """Returns True if the column is indexed or is the primary key."""
+        if self.has_index_with(column_name) or self.is_primary_key([column_name]):
+            return True
         return False
 
     def set_name(self, name: str):

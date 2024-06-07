@@ -56,6 +56,7 @@ class Literal:
         "left",
         "like",
         "limit",
+        "on",
         "min",
         "max",
         "no",
