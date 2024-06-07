@@ -454,6 +454,8 @@ class DbManager:
                     return kv.get("_id")
         return None
 
+
+
     def find_conditional_indexed_by_primary_key(self,
                                                 db_name: str,
                                                 table_name: str,
@@ -587,12 +589,16 @@ class DbManager:
             return result
         swap: bool = False
         if tb_1.column_is_indexed(col_name_1) and not tb_2.column_is_indexed(col_name_2):
-            # swap them
+            # swap them so that the indexed one is the inner table
             outer, inner = inner, outer
             outer_col, inner_col = inner_col, outer_col
             swap = True
-        # outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
-        # for o_rec in outer_records:
+            outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
+            for o_rec in outer_records:
+                i_key = o_rec[outer_idx]
+                i_rec = self.find_by_value(self.get_databases()[db_idx].get_name(), inner, inner_col, i_key)
+                if i_rec:
+                    result.append(o_rec + i_rec)
 
 
 
