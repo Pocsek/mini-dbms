@@ -219,8 +219,11 @@ class Select(ExecutableTree):
                             pk_key_set = pk_key_set.intersection(pk_set)
                         else:
                             pk_key_set = pk_set
-                    self.__queried_values = [{qvk: self.__queried_values[qvk]} for qvk in self.__queried_values.keys() if
-                                             qvk in pk_key_set]  # filter out the non-intersecting keys
+                    new_queried_values = {}
+                    for qvk in self.__queried_values.keys():
+                        if qvk in pk_key_set:
+                            new_queried_values[qvk] = self.__queried_values[qvk]  # filter out the non-intersecting keys
+                    self.__queried_values = new_queried_values
                 if not_indexed_conditions:
                     table_name = self.__get_table_source_name()
                     if pk_key_set is None:
@@ -374,10 +377,10 @@ class Select(ExecutableTree):
         query_col_refs: list[dict] = [val[0] for val in query_value]
 
         # check if the select list contains only column references
+        query_keys: list = list(self.__queried_values.keys())
         if self.__projection_matches_queried_col_refs(select_list, query_col_refs):
             # use query values
-            query_keys: list = list(self.__queried_values.keys())
-            self.__result_values = [[None for _ in range(len(query_value))] for _ in range(len(query_keys))]  # it has the number of rows as query keys
+            self.__result_values = [[None for _ in range(len(select_list))] for _ in range(len(query_keys))]  # it has the number of rows as query keys
             for projection in select_list:
                 match projection.get("type"):
                     case "*":
@@ -388,9 +391,11 @@ class Select(ExecutableTree):
                         self.__result_header = [col_ref.get("column") for col_ref in self.__build_all_col_refs()]
                     case "column":
                         # TODO might polish in the future
+                        self.__result_values = self.__dbm.find_by_primary_keys(self.__db.get_name(), self.__get_table_source_name(), query_keys)
                         self.__select_list_database_table_source_no_queried_values(select_list)
         else:
             # load all values
+            self.__result_values = self.__dbm.find_by_primary_keys(self.__db.get_name(), self.__get_table_source_name(), query_keys)
             self.__select_list_database_table_source_no_queried_values(select_list)
 
 
@@ -565,16 +570,43 @@ class Select(ExecutableTree):
             match projection.get("type"):
                 case "*":
                     all_col_refs = self.__build_all_col_refs()
+                    ok = False
                     for col_ref in all_col_refs:
-                        if col_ref not in query_col_refs:
+                        for qcr in query_col_refs:
+                            if self.__match_col_refs(col_ref, qcr):
+                                ok = True
+                                break
+                        if not ok:
                             return False
                     return True
 
                 case "column":
                     col_ref = projection.get("column_reference")
-                    if col_ref not in query_col_refs:
+                    ok = False
+                    for qcr in query_col_refs:
+                        if self.__match_col_refs(col_ref, qcr):
+                            ok = True
+                            break
+                    if not ok:
                         return False
         return True
+
+    def __match_col_refs(self, col_ref1, col_ref2):
+        col_name1 = col_ref1.get("column")
+        col_name2 = col_ref2.get("column")
+        if col_name1 != col_name2:
+            return False
+        table1 = col_ref1.get("table", None)
+        if table1 is None:
+            table1 = self.__find_table_by_column(col_name1).get_name()
+        table2 = col_ref2.get("table", None)
+        if table2 is None:
+            table2 = self.__find_table_by_column(col_name2).get_name()
+        if table1 != table2:
+            return False
+        return True
+
+
 
 
 

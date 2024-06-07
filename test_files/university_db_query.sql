@@ -8,6 +8,15 @@ select GroupId
 from groups
 where GroupId < 800 and SpecID = 'I'
 
+-- table alias
+-- select g.GroupId
+-- from groups g
+-- where g.GroupId < 800 and g.SpecID = 'I'
+
+-- select GroupId, SpecID
+-- from groups
+-- where GroupId < 800
+
 --no projection, filter 1 indexed equality condition, no join
 -- select *
 -- from students

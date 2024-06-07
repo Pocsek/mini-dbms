@@ -176,6 +176,11 @@ class Table(Dbo):
             # every column that is part of the primary key should not allow nulls
             for col_name in key.get_column_names():
                 self.get_column(col_name).set_allow_nulls(False)
+            # create index for the PQ
+            col_names: str = self.concatenate_names(key.get_column_names())
+            idx_name = f"i_pk_{self.get_name()}_{col_names}"
+            index = Index(idx_name, key.get_column_names())
+            self.__indexes.append(index)
         elif isinstance(key, ForeignKeyCObj):
             self.__foreign_keys.append(ForeignKey(key))
             # create index for the FK
