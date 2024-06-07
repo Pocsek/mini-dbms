@@ -4,10 +4,15 @@ use University
 -- select groupId
 -- from students;
 
---no projection, filter 1 indexed equality conditions with different columns, no join
+--no projection, filter 1 indexed equality condition, no join
 -- select *
--- from marks
--- where StudID = 50 and StudID = 30 and Age = 10
+-- from students
+-- where GroupId = 531
+
+--no projection, filter 2 indexed equality conditions, no join
+select *
+from students
+where GroupId > 231 and GroupId <= 235 and StudName = 'Rosa White'
 
 --no projection, filter 2 indexed equality conditions with different columns, no join
 -- select *

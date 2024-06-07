@@ -93,6 +93,9 @@ class Select(ExecutableTree):
         # hold all table structures in one place [key=<table_name>, value=<table_dbo>]
         self.__tables: dict = {}
 
+        # store in a dict (<primary_key>, list[ (<column_reference>, <value>), ... ]) pairs
+        self.__queried_values: dict = {}
+
         # save the DbManager and the working db to simplify code
         from server_side.dbmanager import DbManager
         self.__dbm: DbManager | None = None
@@ -163,16 +166,84 @@ class Select(ExecutableTree):
          - only considers logical expressions that contain a column reference on one side and a value on the other side
          - only works with single column indexes (no composite indexes)
 
-        Sets the attributes '__result_header' and '__result_values'.
+        Sets the attributes '__result_header' and '__result_values' only if WHERE is not specified.
         """
+        # is FROM specified
+        table_source_type = self.__get_table_source_type()
+        if table_source_type is None:
+            # table source not given
+            return
+        # is WHERE specified
         search_condition = self.__select_parsed.get("search_condition")
         if search_condition is None:
             # no filtering is done => load all data
             self.__load_all_values(dbm)
             return
-        # self.__filter(search_condition)
-        indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
-        raise NotImplementedError("WHERE clause not supported yet")
+
+        indexed_conditions, not_indexed_conditions = self.__split_indexed_not_indexed(search_condition)
+
+        match table_source_type:
+            case "database":
+                # only ONE table is involved
+                # - go through each indexed condition and create a set of PKs and intersect it with the previous one
+                # - store in a dict (<primary_key>, list[ (<column_reference>, <value>), ... ]) pairs
+                pk_key_set = None  # this is a set that contains pk values that make a set of unique values
+
+
+                for ic in indexed_conditions:
+                    col_ref = ic.get("left")
+                    col_name = col_ref.get("column")
+                    table_name = col_ref.get("table")
+                    if table_name is None:
+                        table_name = self.__find_table_by_indexed_column(dbm, col_name).get_name()
+                    else:
+                        table_name = self.__get_name_by_alias(table_name)  # resolve alias
+                    op = ic.get("op")
+                    cond_val = ic.get("right")
+                    result: list[tuple] | None = self.__dbm.query_index_collection(self.__db.get_name(), table_name, col_name, op, cond_val)
+                    if result is None:
+                        # TODO all set is empty, shouldn't continue
+                        self.__queried_values = {}
+                        return
+                    else:
+                        pk_set = set()
+                        for kv_pair in result:
+                            pk_list = kv_pair[1]
+                            val = kv_pair[0]
+                            pk_set.update(pk_list)
+
+                            for pk_key in pk_list:
+                                val_tp_list: list = self.__queried_values.get(pk_key, None)
+                                tupp = ({"table": table_name, "column": col_name}, val)
+                                if val_tp_list is None:
+                                    self.__queried_values[pk_key] = [tupp]
+                                else:
+                                    self.__queried_values[pk_key].append(tupp)
+
+                    if pk_key_set is not None:
+                        pk_key_set = pk_key_set.intersection(pk_set)
+                    else:
+                        pk_key_set = pk_set
+                # for pk in self.__queried_values.keys():
+                #     if pk not in pk_key_set:
+                #         self.__queried_values.pop(pk)
+                self.__queried_values = [{qvk: self.__queried_values[qvk]} for qvk in self.__queried_values.keys() if
+                                         qvk in pk_key_set]
+
+
+
+
+
+
+
+
+
+
+            case "joined":
+                raise NotImplementedError("Table joins are not supported yet")
+            case "derived":
+                raise NotImplementedError("Derived tables are not supported yet")
+        # raise NotImplementedError("WHERE clause not supported yet")
         # indexed_result_sets: list[tuple[list[str], list]] = self.__filter_indexed(dbm, indexed)
 
     def __filter(self, expressions: list[dict]):
