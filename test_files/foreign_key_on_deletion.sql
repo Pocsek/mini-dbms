@@ -12,4 +12,5 @@ create table child_table (
 );
 insert into parent_table values (1), (2), (3);
 insert into child_table values (1, 1), (2, 2), (3, 3);
-delete from parent_table where id = 1;
+delete from parent_table where id = 3; -- delete rossz
+-- delete from parent_table where id = 4; -- delete jo
