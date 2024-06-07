@@ -54,6 +54,7 @@ class Table(Dbo):
         self.__primary_key = PrimaryKey().from_dict(pk_dict) if pk_dict else None
         self.__foreign_keys = [ForeignKey().from_dict(fk) for fk in data.get("foreign_keys", [])]
         self.__unique_keys = [Unique().from_dict(uk) for uk in data.get("unique_keys", [])]
+        self.__checks = [Check().from_dict(c) for c in data.get("checks", [])]
         return self
 
     def get_name(self) -> str:
