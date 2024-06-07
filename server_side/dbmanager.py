@@ -261,6 +261,10 @@ class DbManager:
     def get_column_names(self, db_idx, table_idx) -> list[str]:
         return [col.get_name() for col in self.get_databases()[db_idx].get_tables()[table_idx].get_columns()]
 
+    def get_index_name(self, db_name, table_name, col_name):
+        table: Table = self.get_table(self.get_db_index(db_name), table_name)
+        return table.get_index_by_column_names([col_name]).get_name()
+
     def get_next_identity_value(self, db_name: str, table_name: str) -> int:
         """
         Retrieves the next identity value of a table and increments that value inside the __next_identity collection.
@@ -513,6 +517,8 @@ class DbManager:
         return result
 
     def __eval_logical_expression(self, left, op, right) -> bool:
+        if type(left) != type(right):
+            raise ValueError(f"Type of '{left}' differs from type of '{right}'")
         match op:
             case "<":
                 return left < right
@@ -556,6 +562,26 @@ class DbManager:
                 v = v[:-1]
             kv_list = k + v
             result.append(kv_list)
+        return result
+
+    def query_index_collection(self, db_name, table_name, col_name, op, cond_val: str) -> list[tuple] | None:
+        """
+        :return:
+        """
+        idx_name = self.get_index_name(db_name, table_name, col_name)
+        collection_name = _build_collection_name_for_index(table_name, idx_name)
+        mongo_op = self.__logical_op_to_mongo_op(op)
+        selection = {"_id": {mongo_op: str(cond_val)}}
+        kv_pairs: list[dict] = mongo_db.select(db_name, collection_name, selection)
+        if len(kv_pairs) == 0:
+            return None
+        result: list[tuple] = []
+        for kv_p in kv_pairs:
+            key = kv_p.get("_id")
+            val = kv_p.get("value")
+            if "#" in key:
+                raise NotImplementedError("Composite indexes are not supported")
+            result.append((key, val.split('#')))
         return result
 
     def create_default_databases(self) -> list[Database]:
