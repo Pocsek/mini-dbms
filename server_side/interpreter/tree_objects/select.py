@@ -367,7 +367,6 @@ class Select(ExecutableTree):
             raise NotImplementedError("Only indexed values in WHERE not supported")
         all_col_refs = self.__build_all_col_refs()
         proj_positions_in_all = []
-        self.__result_header = []
         for projection in select_list:
             projection_type = projection.get("type")
             match projection_type:
@@ -375,6 +374,7 @@ class Select(ExecutableTree):
                     # don't need to change the result set => can skip this step
                     return
                 case "column":
+                    self.__result_header = []
                     proj_col_ref = projection.get("column_reference")
                     pos_of_ref_in_all = -1
                     for i, col_ref in enumerate(all_col_refs):
