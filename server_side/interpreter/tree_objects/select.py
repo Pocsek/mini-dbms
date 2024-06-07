@@ -285,7 +285,7 @@ class Select(ExecutableTree):
                 left_side = condition.get("left")
                 right_side = condition.get("right")
                 op = condition.get("op")
-                if self.__get_name_by_alias(left_side.get("table")) == left_table_name:
+                if self.__get_table_name_by_alias(left_side.get("table")) == left_table_name:
                     left_table_column_name = left_side.get("column")
                     right_table_column_name = right_side.get("column")
                 else:
@@ -316,6 +316,7 @@ class Select(ExecutableTree):
             left = expression.get("left")
             col_name = left.get("column")
             table_name = left.get("table")  # can be None
+            table_name = self.__get_table_name_by_alias(table_name)  # resolve alias
             if table_name:
                 # table name is given => search through the table's indexes list
                 if self.__tables[table_name].has_index_with(col_name):
@@ -407,6 +408,8 @@ class Select(ExecutableTree):
             table_name = col_ref.get("table")
             if table_name is None:
                 table_name = self.__find_table_by_column(col_name).get_name()
+            else:
+                table_name = self.__get_table_name_by_alias(table_name)
             for i, ref in enumerate(all_col_refs):
                 if ref["column"] == col_name and ref["table"] == table_name:
                     positions.append(i)
@@ -432,6 +435,8 @@ class Select(ExecutableTree):
                             table_name = proj_col_ref.get("table", None)
                             if table_name is None:
                                 table_name = self.__find_table_by_column(proj_col_name).get_name()
+                            else:
+                                table_name = self.__get_table_name_by_alias(table_name)  # resolve alias
                             if col_ref["table"] == table_name:
                                 pos_of_ref_in_all = i
                     proj_col_ref_col_name = proj_col_ref.get("column")
@@ -539,7 +544,7 @@ class Select(ExecutableTree):
         if self.__select_parsed.get("is_distinct"):
             raise NotImplementedError("DISTINCT not supported yet")
 
-    def __get_name_by_alias(self, alias: str) -> str:
+    def __get_table_name_by_alias(self, alias: str) -> str:
         """If the alias is not found, return the alias itself."""
         return self.__table_aliases.get(alias, alias)
 
@@ -550,7 +555,7 @@ class Select(ExecutableTree):
         if table_name is None:
             table_name = self.__find_table_by_column(col_name).get_name()
         else:
-            table_name = self.__get_name_by_alias(table_name)  # resolve alias
+            table_name = self.__get_table_name_by_alias(table_name)  # resolve alias
         op = expression.get("op")
         cond_val = expression.get("right")
         return col_ref, col_name, table_name, op, cond_val
@@ -599,9 +604,13 @@ class Select(ExecutableTree):
         table1 = col_ref1.get("table", None)
         if table1 is None:
             table1 = self.__find_table_by_column(col_name1).get_name()
+        else:
+            table1 = self.__get_table_name_by_alias(table1)
         table2 = col_ref2.get("table", None)
         if table2 is None:
             table2 = self.__find_table_by_column(col_name2).get_name()
+        else:
+            table2 = self.__get_table_name_by_alias(table2)
         if table1 != table2:
             return False
         return True

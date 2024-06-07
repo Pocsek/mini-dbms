@@ -4,9 +4,9 @@ use University
 -- select groupId
 -- from students;
 
-select GroupId
-from groups
-where GroupId < 800 and SpecID = 'I'
+-- select GroupId
+-- from groups
+-- where GroupId < 800 and SpecID = 'I'
 
 -- table alias
 -- select g.GroupId
