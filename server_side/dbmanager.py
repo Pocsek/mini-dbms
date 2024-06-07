@@ -595,6 +595,7 @@ class DbManager:
             swap = True
             outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
             for o_rec in outer_records:
+                raise NotImplementedError("Join operation not implemented for indexed columns")
                 i_key = o_rec[outer_idx]
                 i_rec = self.find_by_value(self.get_databases()[db_idx].get_name(), inner, inner_col, i_key)
                 if i_rec:
