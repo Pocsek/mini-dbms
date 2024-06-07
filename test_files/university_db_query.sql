@@ -4,9 +4,9 @@ use University
 -- select groupId
 -- from students;
 
-select *
+select GroupId
 from groups
-where GroupId > 1 and SpecID = 'MI'
+where GroupId < 800 and SpecID = 'I'
 
 --no projection, filter 1 indexed equality condition, no join
 -- select *

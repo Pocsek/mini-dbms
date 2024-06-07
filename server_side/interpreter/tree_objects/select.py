@@ -387,18 +387,12 @@ class Select(ExecutableTree):
                                 self.__result_values[i][positions[j]] = tupp[1]
                         self.__result_header = [col_ref.get("column") for col_ref in self.__build_all_col_refs()]
                     case "column":
-                        raise NotImplementedError("MINGYA MEGLESZ")
-                        col_ref = projection.get("column_reference")
-                        col_name = col_ref.get("column")
-                        table_name = col_ref.get("table")
-                        if table_name is None:
-                            table_name = self.__find_table_by_column(col_name).get_name()
-                        for i, key in enumerate(query_keys):
-                            for tupp in self.__queried_values[key]:
-                                q_col_ref = tupp[0]
+                        # TODO might polish in the future
+                        self.__select_list_database_table_source_no_queried_values(select_list)
         else:
             # load all values
-            raise NotImplementedError("MINGYA MEGLESZ ez is")
+            self.__select_list_database_table_source_no_queried_values(select_list)
+
 
     def __get_positions_by_col_refs_select_star(self, col_refs: list[dict]) -> list[int]:
         all_col_refs = self.__build_all_col_refs()
