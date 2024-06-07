@@ -300,7 +300,7 @@ class Select(ExecutableTree):
                 if left_table_source.get("table_type") != "database":
                     raise NotImplementedError("Left table must be a database table in the current implementation")
 
-                condition: dict = self.__select_parsed.get("join_condition")[0]
+                condition: dict = self.__select_parsed["table_source"]["join_condition"][0]
                 left_table_name = left_table_source.get("table_name")
                 right_table_name = right_table_source.get("table_name")
                 left_table = self.__tables[left_table_name]
@@ -315,11 +315,16 @@ class Select(ExecutableTree):
                     left_table_column_name = right_side.get("column")
                     right_table_column_name = left_side.get("column")
                 self.__result_header = left_table.get_column_names() + right_table.get_column_names()
-                self.__result_values = dbm.join_tables()
+                self.__result_values = dbm.join_tables(dbm.get_working_db_index(),
+                                                       left_table,
+                                                       right_table,
+                                                       op,
+                                                       left_table_column_name,
+                                                       right_table_column_name)
 
 
 
-                raise NotImplementedError("Table joins are not supported yet")
+                # raise NotImplementedError("Table joins are not supported yet")
             case "derived":
                 raise NotImplementedError("Derived tables are not supported yet")
 
