@@ -110,7 +110,7 @@ class Select(ExecutableTree):
     def _execute(self, dbm):
         self.__process_from(dbm)
         self.__process_where(dbm)
-        self.__process_select_list(dbm)
+        self.__process_select_list()
         self.__process_distinct()
 
         # set the result set tuple for the client to receive
@@ -197,6 +197,8 @@ class Select(ExecutableTree):
                         if result is None:
                             # TODO all set is empty, shouldn't continue
                             self.__queried_values = {}
+                            self.__result_header = self.__tables[table_name].get_column_names()
+                            self.__result_values = []
                             return
                         else:
                             pk_set = set()
@@ -231,6 +233,7 @@ class Select(ExecutableTree):
                     for res in results:
                         if self.__satisfies_conditions(res, not_indexed_conditions, column_names):
                             self.__result_values.append(res)
+                    self.__queried_values = {}
             case "joined":
                 raise NotImplementedError("Table joins are not supported yet")
             case "derived":
@@ -326,8 +329,7 @@ class Select(ExecutableTree):
                 not_indexed.append(expression)
         return indexed, not_indexed
 
-
-    def __process_select_list(self, dbm):
+    def __process_select_list(self):
         """
         Updates the attributes '__result_header' and '__result_values'.
         """
@@ -336,14 +338,6 @@ class Select(ExecutableTree):
             self.__select_list_no_table_source()
             return
         self.__select_list_database_table_source()
-
-        # match table_source_type:
-        #     case "database":
-        #         raise NotImplementedError("'SELECT' with 'FROM' clause not implemented")
-        #     case "joined":
-        #         raise NotImplementedError("Table joins are not supported yet")
-        #     case "derived":
-        #         raise NotImplementedError("Derived tables are not supported yet")
 
     def __select_list_no_table_source(self):
         """
@@ -369,7 +363,11 @@ class Select(ExecutableTree):
             - only works for column references and '*'
         """
         select_list = self.__select_parsed.get("select_list")
-        to_keep: list[int] = []  # indexes of columns to keep from the current result set
+        if self.__queried_values:
+            raise NotImplementedError("Only indexed values in WHERE not supported")
+        all_col_refs = self.__build_all_col_refs()
+        proj_positions_in_all = []
+        self.__result_header = []
         for projection in select_list:
             projection_type = projection.get("type")
             match projection_type:
@@ -377,7 +375,42 @@ class Select(ExecutableTree):
                     # don't need to change the result set => can skip this step
                     return
                 case "column":
-                    raise NotImplementedError("Column references in SELECT clause are not supported yet")
+                    proj_col_ref = projection.get("column_reference")
+                    pos_of_ref_in_all = -1
+                    for i, col_ref in enumerate(all_col_refs):
+                        proj_col_name = proj_col_ref["column"]
+                        if col_ref["column"] == proj_col_name:
+                            table_name = proj_col_ref.get("table", None)
+                            if table_name is None:
+                                table_name = self.__find_table_by_column(proj_col_name).get_name()
+                            if col_ref["table"] == table_name:
+                                pos_of_ref_in_all = i
+                    proj_col_ref_col_name = proj_col_ref.get("column")
+                    if pos_of_ref_in_all == -1:
+                        raise ValueError(f"Unclear column reference: {proj_col_ref_col_name}")
+                    proj_positions_in_all.append(pos_of_ref_in_all)
+                    self.__result_header.append(projection.get("alias", proj_col_ref_col_name))
+                case "expression":
+                    raise NotImplementedError("Expressions in SELECT clause are not supported yet")
+        self.__result_values = [[res[pos] for pos in proj_positions_in_all] for res in self.__result_values]
+
+    def __build_all_col_refs(self) -> list[dict]:
+        col_refs = []
+        for tb in self.__tables.values():
+            tb_name = tb.get_name()
+            references = [{"table": tb_name, "column": col_name} for col_name in tb.get_column_names()]
+            col_refs.extend(references)
+        return col_refs
+
+    def __get_projected_column_references(self, select_list: list[dict]) -> list[dict]:
+        col_refs = []
+        for projection in select_list:
+            projection_type = projection.get("type")
+            match projection_type:
+                case "*":
+                    raise NotImplementedError("'*' in SELECT clause is not supported yet")
+                case "column":
+                    col_refs.append(projection.get("column_reference"))
                 case "expression":
                     raise NotImplementedError("Expressions in SELECT clause are not supported yet")
 

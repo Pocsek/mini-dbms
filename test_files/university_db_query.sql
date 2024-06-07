@@ -10,9 +10,9 @@ use University
 -- where GroupId = 531
 
 --no projection, filter 2 indexed equality conditions, no join
-select *
-from students
-where StudName = 'Rosa White' and Email = 'JaneRooney2@email.co'
+-- select *
+-- from students
+-- where StudName = 'Rosa White' and Email = 'JaneRooney2@email.co'
 
 --no projection, filter 2 indexed equality conditions with different columns, no join
 -- select *
@@ -23,6 +23,16 @@ where StudName = 'Rosa White' and Email = 'JaneRooney2@email.co'
 -- select *
 -- from marks
 -- where StudID = 50 and Mark > 8;
+
+--# '*' proj
+-- select *
+-- from students
+-- where GroupId = 531 and StudName = 'Nagy Fero'
+
+--# column projections
+select StudID, StudName as Fakanal
+from students
+where GroupId = 233 and StudName = 'Nagy Fero'
 
 --projection, filter 2 equality conditions with different columns, no join
 -- select mark
