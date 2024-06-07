@@ -33,3 +33,18 @@ class Index(Dbo):
 
     def set_columns(self, columns: list[Column]):
         self.__column_names = columns
+
+    def is_unique_index(self, table) -> bool:
+        """
+        Given the table it's in, determine from an index whether it's unique or non-unique.
+        :param table: Table database object
+        """
+        i_col_names = self.get_column_names()
+        # search through unique keys
+        for uq in table.get_unique_keys():
+            if i_col_names == uq.get_column_names():
+                return True
+        # compare with primary key
+        if table.get_primary_key().get_column_names():
+            return True
+        return True

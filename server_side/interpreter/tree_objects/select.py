@@ -160,7 +160,7 @@ class Select(ExecutableTree):
         If none of the expressions contain indexed columns, then iterate through the entire table.
 
         ! Current implementation:
-         - only considers logical expressions that contain a column reference one side and a value on the other side
+         - only considers logical expressions that contain a column reference on one side and a value on the other side
          - only works with single column indexes (no composite indexes)
 
         Sets the attributes '__result_header' and '__result_values'.
@@ -170,9 +170,9 @@ class Select(ExecutableTree):
             # no filtering is done => load all data
             self.__load_all_values(dbm)
             return
-        raise NotImplementedError("WHERE clause not supported yet")
         # self.__filter(search_condition)
-        # indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
+        indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
+        raise NotImplementedError("WHERE clause not supported yet")
         # indexed_result_sets: list[tuple[list[str], list]] = self.__filter_indexed(dbm, indexed)
 
     def __filter(self, expressions: list[dict]):
@@ -304,31 +304,21 @@ class Select(ExecutableTree):
         indexed: list[dict] = []
         not_indexed: list[dict] = []
         for expression in search_condition:
-            is_indexed = True
+            # determine if the column has index
+            is_indexed = False
             left = expression.get("left")
-            right = expression.get("right")
-            for side in [left, right]:
-                if side.get("column") is None:
-                    # side is a constant
-                    continue
-                # side is a column reference
-                col_name = left.get("column")
-                table_name = left.get("table")  # can be None
-                if table_name:
-                    # table name is given => search through the table's indexes list
-                    if self.__tables[table_name].has_index_with(col_name):
-                        is_indexed = is_indexed and True  # if once it was False, it should remain False
-                    else:
-                        is_indexed = False
-                else:
-                    # table name not given => search through every given table's indexes list
-                    found = False
-                    for table in list(self.__tables.values()):
-                        if table.has_index_with(col_name):
-                            is_indexed = is_indexed and True
-                            found = True
-                    if not found:
-                        is_indexed = False
+            col_name = left.get("column")
+            table_name = left.get("table")  # can be None
+            if table_name:
+                # table name is given => search through the table's indexes list
+                if self.__tables[table_name].has_index_with(col_name):
+                    is_indexed = True
+            else:
+                # table name not given => search through every given table's indexes list
+                for table in list(self.__tables.values()):
+                    if table.has_index_with(col_name):
+                        is_indexed = True
+                        break
             if is_indexed:
                 indexed.append(expression)
             else:

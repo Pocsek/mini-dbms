@@ -511,6 +511,8 @@ class DbManager:
         return result
 
     def __eval_logical_expression(self, left, op, right) -> bool:
+        if type(left) != type(right):
+            raise ValueError(f"Type of '{left}' differs from type of '{right}'")
         match op:
             case "<":
                 return left < right
