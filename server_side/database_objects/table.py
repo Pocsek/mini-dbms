@@ -54,6 +54,7 @@ class Table(Dbo):
         self.__primary_key = PrimaryKey().from_dict(pk_dict) if pk_dict else None
         self.__foreign_keys = [ForeignKey().from_dict(fk) for fk in data.get("foreign_keys", [])]
         self.__unique_keys = [Unique().from_dict(uk) for uk in data.get("unique_keys", [])]
+        self.__checks = [Check().from_dict(c) for c in data.get("checks", [])]
         return self
 
     def get_name(self) -> str:
@@ -177,8 +178,19 @@ class Table(Dbo):
                 self.get_column(col_name).set_allow_nulls(False)
         elif isinstance(key, ForeignKeyCObj):
             self.__foreign_keys.append(ForeignKey(key))
+            # create index for the FK
+            src_col_names: str = self.concatenate_names(key.get_source_column_names())
+            ref_col_names: str = self.concatenate_names(key.get_referenced_column_names())
+            idx_name = f"i_fk_{self.get_name()}_{src_col_names}_{key.get_referenced_table_name()}_{ref_col_names}"
+            index = Index(idx_name, key.get_source_column_names())
+            self.__indexes.append(index)
         elif isinstance(key, UniqueCObj):
             self.__unique_keys.append(Unique(key))
+            # create index for the UQ
+            col_names: str = self.concatenate_names(key.get_column_names())
+            idx_name = f"i_uq_{self.get_name()}_{col_names}"
+            index = Index(idx_name, key.get_column_names())
+            self.__indexes.append(index)
         else:
             raise ValueError(f"Invalid key type: {type(key)}")
 
@@ -216,3 +228,9 @@ class Table(Dbo):
 
     def is_primary_key(self, col_names: list[str]) -> bool:
         return col_names == self.get_primary_key().get_column_names()
+
+    def concatenate_names(self, names: list[str], char: str = "_"):
+        concatenated = ""
+        for name in names:
+            concatenated += name + "_"
+        return concatenated[:-1]

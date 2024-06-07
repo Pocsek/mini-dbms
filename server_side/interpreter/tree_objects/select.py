@@ -1,4 +1,5 @@
 from server_side.interpreter.tree_objects.executable_tree import ExecutableTree
+from server_side.interpreter import datatypes
 from datetime import datetime
 
 
@@ -92,6 +93,17 @@ class Select(ExecutableTree):
         # hold all table structures in one place [key=<table_name>, value=<table_dbo>]
         self.__tables: dict = {}
 
+        # save the DbManager and the working db to simplify code
+        from server_side.dbmanager import DbManager
+        self.__dbm: DbManager | None = None
+        self.__db = None
+        self.__db_idx = None
+
+    def __setup(self, dbm):
+        self.__dbm = dbm
+        self.__db = self.__dbm.get_working_db()
+        self.__db_idx = self.__dbm.get_working_db_index()
+
     def _execute(self, dbm):
         self.__process_from(dbm)
         self.__process_where(dbm)
@@ -102,7 +114,7 @@ class Select(ExecutableTree):
         self.get_result().set_result_set((self.__result_header, self.__result_values))
 
     def validate(self, dbm, **kwargs):
-        pass
+        self.__setup(dbm)
 
     def __repr__(self):
         return self.__select_parsed
@@ -147,6 +159,10 @@ class Select(ExecutableTree):
         expressions which do not contain indexed columns.
         If none of the expressions contain indexed columns, then iterate through the entire table.
 
+        ! Current implementation:
+         - only considers logical expressions that contain a column reference one side and a value on the other side
+         - only works with single column indexes (no composite indexes)
+
         Sets the attributes '__result_header' and '__result_values'.
         """
         search_condition = self.__select_parsed.get("search_condition")
@@ -154,7 +170,112 @@ class Select(ExecutableTree):
             # no filtering is done => load all data
             self.__load_all_values(dbm)
             return
-        indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
+        raise NotImplementedError("WHERE clause not supported yet")
+        # self.__filter(search_condition)
+        # indexed, not_indexed = self.__split_indexed_not_indexed(search_condition)
+        # indexed_result_sets: list[tuple[list[str], list]] = self.__filter_indexed(dbm, indexed)
+
+    def __filter(self, expressions: list[dict]):
+        """
+        Filters the current result set with the given expressions.
+        ! Does NOT use indexes.
+        """
+        for expr in expressions:
+            left = expression.get("left")
+            op = expr.get("op")
+            right = expression.get("right")
+            # for now
+            if right.get("column") or not left.get("column"):
+                raise NotImplementedError(
+                    f"Unsupported condition format: {left} {op} {right}. Should be <column> <op> <value>."
+                )
+
+            col_name = left.get("column")
+            table = self.__find_table_by_column(col_name)
+            for record in self.__dbm.find_all(self.__db.get_name(), table.get_name()):
+                # check if condition applies
+                pass
+
+    def __filter_indexed(self, dbm, expressions: list[dict]) -> list[tuple[list[str], list]]:
+        """
+        Filters indexed records in the table source.
+
+        ! Currently, only works for conditions in the format: <column> <op> <value>
+
+        :param expressions: a list of expressions where each contains an indexed column, a value, and a logical operator
+        :return: a list of tuples where a tuple consists of its corresponding result set's header and the result set's
+                values
+        """
+        result_sets: list[tuple[list[str], list]] = []
+
+        for expr in expressions:
+            left = expression.get("left")
+            op = expr.get("op")
+            right = expression.get("right")
+
+            # for now
+            if right.get("column") or not left.get("column"):
+                raise NotImplementedError(
+                    f"Unsupported condition format: {left} {op} {right}. Should be <column> <op> <value>."
+                )
+
+            cur_result_header = None
+            left_table = None
+            left_table_alias = None
+            left_table_name = left.get("table")  # can be None
+            left_col_name = left.get("column")
+            if left_table_name is None:
+                cur_result_header = [left_col_name]
+                left_table = self.__find_table_by_indexed_column(dbm, left_col_name)
+            else:
+                # resolve the potential table alias to its real name
+                alias = self.__table_aliases.get(left_table_name)
+                if alias:
+                    cur_result_header = [alias]
+                    left_table_name = alias
+                else:
+                    cur_result_header = [left_table_name]
+                # get the table
+                left_table = dbm.get_table(dbm.get_working_db_index(), left_table_name)
+            left_col_type = left_table.get_column(left_col_name).get_type()
+
+            right_val = datatypes.cast_value(right, left_col_type)
+
+            cur_result_values = dbm.find_conditional_indexed_by_value(
+                dbm.get_working_db().get_name(),
+                left_table_name,
+                left_col_name,
+                left_col_type,
+                op,
+                right_val
+            )
+            # save current results
+            result_values_column = []
+            for val in cur_result_values:
+                result_values_column.append(val)
+            result_sets.append((cur_result_header, result_values_column))
+
+        return result_sets
+
+    def __find_table_by_indexed_column(self, dbm, column_name: str):
+        """
+        Search through every given table's indexes list to find the table corresponding to the given column name.
+        :return: database object of type Table
+        """
+        for table in list(self.__tables.values()):
+            if table.has_index_with(column_name):
+                return table
+        raise ValueError(f"Table with indexed column '{column_name}' not found")
+
+    def __find_table_by_column(self, column_name: str):
+        """
+        Search through every given table's columns find the table corresponding to the given column name.
+        :return: database object of type Table
+        """
+        for table in list(self.__tables.values()):
+            if column_name in table.get_column_names():
+                return table
+        raise ValueError(f"Table with column '{column_name}' not found")
 
     def __load_all_values(self, dbm):
         """
@@ -202,7 +323,7 @@ class Select(ExecutableTree):
             case "derived":
                 raise NotImplementedError("Derived tables are not supported yet")
 
-    def __split_indexed_not_indexed(self, search_condition: list):
+    def __split_indexed_not_indexed(self, search_condition: list) -> tuple[list, list]:
         """
         Split a list of expressions into two lists: one that contains only indexed columns and one that contains not
         indexed columns.
@@ -264,15 +385,15 @@ class Select(ExecutableTree):
         if table_source_type is None:
             self.__select_list_no_table_source()
             return
+        self.__select_list_database_table_source()
 
-        match table_source_type:
-            case "database":
-                # self.__select_list_database_table_source()
-                raise NotImplementedError("'SELECT' with 'FROM' clause not implemented")
-            case "joined":
-                raise NotImplementedError("Table joins are not supported yet")
-            case "derived":
-                raise NotImplementedError("Derived tables are not supported yet")
+        # match table_source_type:
+        #     case "database":
+        #         raise NotImplementedError("'SELECT' with 'FROM' clause not implemented")
+        #     case "joined":
+        #         raise NotImplementedError("Table joins are not supported yet")
+        #     case "derived":
+        #         raise NotImplementedError("Derived tables are not supported yet")
 
     def __select_list_no_table_source(self):
         """
@@ -293,15 +414,23 @@ class Select(ExecutableTree):
         self.__result_values.append(record)
 
     def __select_list_database_table_source(self):
+        """
+        ! Current version:
+            - only works for column references and '*'
+        """
         select_list = self.__select_parsed.get("select_list")
+        to_keep: list[int] = []  # indexes of columns to keep from the current result set
         for projection in select_list:
-            self.__process_projection(projection)
+            projection_type = projection.get("type")
+            match projection_type:
+                case "*":
+                    # don't need to change the result set => can skip this step
+                    return
+                case "column":
+                    raise NotImplementedError("Column references in SELECT clause are not supported yet")
+                case "expression":
+                    raise NotImplementedError("Expressions in SELECT clause are not supported yet")
 
-    def __process_projection(self, projection: dict):
-        """"""
-        proj_type = projection.get("type")
-        # chongy is working here
-        pass
 
     def __eval_value_expression(self, expression: dict):
         """
