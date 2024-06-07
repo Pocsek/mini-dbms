@@ -1,3 +1,4 @@
+drop database if exists University;
 create database University;
 
 USE University;

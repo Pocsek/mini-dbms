@@ -12,7 +12,7 @@ use University
 --no projection, filter 2 indexed equality conditions, no join
 select *
 from students
-where GroupId > 231 and GroupId <= 235 and StudName = 'Rosa White'
+where StudName = 'Rosa White' and Email = 'JaneRooney2@email.co'
 
 --no projection, filter 2 indexed equality conditions with different columns, no join
 -- select *

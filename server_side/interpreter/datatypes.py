@@ -25,3 +25,21 @@ def cast_value(val, target_type: str):
             return val
         case _:
             raise ValueError(f"Unknown datatype '{target_type}'.")
+
+
+def eval_logical_expression(left, op, right) -> bool:
+    if type(left) != type(right):
+        raise ValueError(f"Type of '{left}' differs from type of '{right}'")
+    match op:
+        case "<":
+            return left < right
+        case ">":
+            return left > right
+        case "<=":
+            return left <= right
+        case ">=":
+            return left >= right
+        case "=":
+            return left == right
+        case _:
+            raise NotImplementedError(f"Invalid operator'{op}'")

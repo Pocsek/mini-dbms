@@ -184,59 +184,57 @@ class Select(ExecutableTree):
 
         match table_source_type:
             case "database":
-                # only ONE table is involved
-                # - go through each indexed condition and create a set of PKs and intersect it with the previous one
-                # - store in a dict (<primary_key>, list[ (<column_reference>, <value>), ... ]) pairs
                 pk_key_set = None  # this is a set that contains pk values that make a set of unique values
+                if indexed_conditions:
+                    # only ONE table is involved
+                    # - go through each indexed condition and create a set of PKs and intersect it with the previous one
+                    # - store in a dict (<primary_key>, list[ (<column_reference>, <value>), ... ]) pairs
+                    # TODO group op cond_val - range query
+                    for ic in indexed_conditions:
+                        col_ref, col_name, table_name, op, cond_val = self.__parse_dict_expression(ic)
+                        result: list[tuple] | None = self.__dbm.query_index_collection(self.__db.get_name(), table_name,
+                                                                                       col_name, op, cond_val)
+                        if result is None:
+                            # TODO all set is empty, shouldn't continue
+                            self.__queried_values = {}
+                            return
+                        else:
+                            pk_set = set()
+                            for kv_pair in result:
+                                pk_list = kv_pair[1]
+                                val = kv_pair[0]
+                                pk_set.update(pk_list)
 
+                                for pk_key in pk_list:
+                                    val_tp_list: list = self.__queried_values.get(pk_key, None)
+                                    tupp = ({"table": table_name, "column": col_name}, val)
+                                    if val_tp_list is None:
+                                        self.__queried_values[pk_key] = [tupp]
+                                    else:
+                                        self.__queried_values[pk_key].append(tupp)
 
-                for ic in indexed_conditions:
-                    col_ref = ic.get("left")
-                    col_name = col_ref.get("column")
-                    table_name = col_ref.get("table")
-                    if table_name is None:
-                        table_name = self.__find_table_by_indexed_column(dbm, col_name).get_name()
+                        if pk_key_set is not None:
+                            pk_key_set = pk_key_set.intersection(pk_set)
+                        else:
+                            pk_key_set = pk_set
+                    self.__queried_values = [{qvk: self.__queried_values[qvk]} for qvk in self.__queried_values.keys() if
+                                             qvk in pk_key_set]  # filter out the non-intersecting keys
+                if not_indexed_conditions:
+                    if pk_key_set is None:
+                        # no indexed conditions => iterate through the entire table
+                        table_name = self.__get_table_source_name()
+                        results: list[list] = self.__dbm.find_all(self.__db.get_name(), table_name)
+                        column_names = self.__tables[table_name].get_column_names()
+                        self.__result_header = column_names
+                        for res in results:
+                            if self.__satisfies_conditions(res, not_indexed_conditions, column_names):
+                                self.__result_values.append(res)
                     else:
-                        table_name = self.__get_name_by_alias(table_name)  # resolve alias
-                    op = ic.get("op")
-                    cond_val = ic.get("right")
-                    result: list[tuple] | None = self.__dbm.query_index_collection(self.__db.get_name(), table_name, col_name, op, cond_val)
-                    if result is None:
-                        # TODO all set is empty, shouldn't continue
-                        self.__queried_values = {}
-                        return
-                    else:
-                        pk_set = set()
-                        for kv_pair in result:
-                            pk_list = kv_pair[1]
-                            val = kv_pair[0]
-                            pk_set.update(pk_list)
 
-                            for pk_key in pk_list:
-                                val_tp_list: list = self.__queried_values.get(pk_key, None)
-                                tupp = ({"table": table_name, "column": col_name}, val)
-                                if val_tp_list is None:
-                                    self.__queried_values[pk_key] = [tupp]
-                                else:
-                                    self.__queried_values[pk_key].append(tupp)
-
-                    if pk_key_set is not None:
-                        pk_key_set = pk_key_set.intersection(pk_set)
-                    else:
-                        pk_key_set = pk_set
-                # for pk in self.__queried_values.keys():
-                #     if pk not in pk_key_set:
-                #         self.__queried_values.pop(pk)
-                self.__queried_values = [{qvk: self.__queried_values[qvk]} for qvk in self.__queried_values.keys() if
-                                         qvk in pk_key_set]
-
-
-
-
-
-
-
-
+                        # filter the result set with the remaining expressions
+                        raise NotImplementedError("WHERE clause not supported yet")
+                    # TODO filter the result set with the remaining expressions
+                    raise NotImplementedError("WHERE clause not supported yet")
 
 
             case "joined":
@@ -297,7 +295,7 @@ class Select(ExecutableTree):
             left_col_name = left.get("column")
             if left_table_name is None:
                 cur_result_header = [left_col_name]
-                left_table = self.__find_table_by_indexed_column(dbm, left_col_name)
+                left_table = self.__find_table_by_column(left_col_name)
             else:
                 # resolve the potential table alias to its real name
                 alias = self.__table_aliases.get(left_table_name)
@@ -328,22 +326,14 @@ class Select(ExecutableTree):
 
         return result_sets
 
-    def __find_table_by_indexed_column(self, dbm, column_name: str):
-        """
-        Search through every given table's indexes list to find the table corresponding to the given column name.
-        :return: database object of type Table
-        """
-        for table in list(self.__tables.values()):
-            if table.has_index_with(column_name):
-                return table
-        raise ValueError(f"Table with indexed column '{column_name}' not found")
-
     def __find_table_by_column(self, column_name: str):
         """
         Search through every given table's columns find the table corresponding to the given column name.
         :return: database object of type Table
         """
         for table in list(self.__tables.values()):
+            if table.has_index_with(column_name):
+                return table
             if column_name in table.get_column_names():
                 return table
         raise ValueError(f"Table with column '{column_name}' not found")
@@ -393,8 +383,6 @@ class Select(ExecutableTree):
                                                        left_table_column_name,
                                                        right_table_column_name)
 
-
-
                 # raise NotImplementedError("Table joins are not supported yet")
             case "derived":
                 raise NotImplementedError("Derived tables are not supported yet")
@@ -428,20 +416,6 @@ class Select(ExecutableTree):
                 not_indexed.append(expression)
         return indexed, not_indexed
 
-    def __eval_logical_expression(self, left, op, right) -> bool:
-        match op:
-            case "<":
-                return left < right
-            case ">":
-                return left > right
-            case "<=":
-                return left <= right
-            case ">=":
-                return left >= right
-            case "=":
-                return left == right
-            case _:
-                raise NotImplementedError(f"Invalid operator'{op}'")
 
     def __process_select_list(self, dbm):
         """
@@ -496,7 +470,6 @@ class Select(ExecutableTree):
                     raise NotImplementedError("Column references in SELECT clause are not supported yet")
                 case "expression":
                     raise NotImplementedError("Expressions in SELECT clause are not supported yet")
-
 
     def __eval_value_expression(self, expression: dict):
         """
@@ -576,3 +549,27 @@ class Select(ExecutableTree):
     def __get_name_by_alias(self, alias: str) -> str:
         """If the alias is not found, return the alias itself."""
         return self.__table_aliases.get(alias, alias)
+
+    def __parse_dict_expression(self, expression: dict) -> tuple[dict, str, str, str, any]:
+        col_ref = expression.get("left")
+        col_name = col_ref.get("column")
+        table_name = col_ref.get("table")
+        if table_name is None:
+            table_name = self.__find_table_by_column(col_name).get_name()
+        else:
+            table_name = self.__get_name_by_alias(table_name)  # resolve alias
+        op = expression.get("op")
+        cond_val = expression.get("right")
+        return col_ref, col_name, table_name, op, cond_val
+
+    def __satisfies_conditions(self, res: list, conditions: list[dict], column_names: list[str]):
+        for condition in conditions:
+            col_ref, col_name, table_name, op, cond_val = self.__parse_dict_expression(condition)
+            idx = column_names.index(col_name)
+            val = res[idx]
+            if not datatypes.eval_logical_expression(val, op, cond_val):
+                return False
+        return True
+
+
+

@@ -507,7 +507,7 @@ class DbManager:
         for kv in mongo_db.select(db_name, index_collection_name):
             k = kv.get("_id").split("#")[0]  # [0] for now
             k = datatypes.cast_value(k, column_type)
-            fulfills = self.__eval_logical_expression(k, logical_op, condition_value)
+            fulfills = datatypes.eval_logical_expression(k, logical_op, condition_value)
             if not fulfills:
                 continue
             v = kv.get("value").split("#")
@@ -515,23 +515,6 @@ class DbManager:
                 # take out length of primary key number of elements from the list with values to get one primary key
                 result.append(v[i:i + pk_length])
         return result
-
-    def __eval_logical_expression(self, left, op, right) -> bool:
-        if type(left) != type(right):
-            raise ValueError(f"Type of '{left}' differs from type of '{right}'")
-        match op:
-            case "<":
-                return left < right
-            case ">":
-                return left > right
-            case "<=":
-                return left <= right
-            case ">=":
-                return left >= right
-            case "=":
-                return left == right
-            case _:
-                raise NotImplementedError(f"Invalid operator'{op}'")
 
     def __logical_op_to_mongo_op(self, op: str):
         match op:
