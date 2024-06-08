@@ -28,6 +28,6 @@ When a list of commands is executed you will see feedback on the screen, whether
 
 A list of commands are either executed or not executed at all. If a command produces an error, the program will stop executing the list of commands and revert to the last successful state.
 
--- Enjoy using out Mini Database Management System! --
+-- Enjoy using our Mini Database Management System! --
 
 
