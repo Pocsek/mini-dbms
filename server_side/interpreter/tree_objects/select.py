@@ -110,6 +110,7 @@ class Select(ExecutableTree):
     def _execute(self, dbm):
         self.__process_from(dbm)
         self.__process_where(dbm)
+        self.__process_group_by()
         self.__process_select_list()
         self.__process_distinct()
 
@@ -340,6 +341,9 @@ class Select(ExecutableTree):
         """
         Updates the attributes '__result_header' and '__result_values'.
         """
+        if self.__has_group_by():
+            # result_values and result_header are already set in the handling of the GROUP BY clause
+            return
         table_source_type = self.__get_table_source_type()
         if table_source_type is None:
             self.__select_list_no_table_source()
@@ -514,20 +518,6 @@ class Select(ExecutableTree):
                         return str(datetime.now())
                     case _:
                         raise NotImplementedError(f"Date&Time function '{func_name}' not supported")
-            case "aggregate":
-                match func_name:
-                    case "count":
-                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
-                    case "sum":
-                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
-                    case "avg":
-                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
-                    case "min":
-                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
-                    case "max":
-                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
-                    case _:
-                        raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
             case _:
                 raise NotImplementedError(f"Function of type '{func_type}' not supported")
 
@@ -542,6 +532,9 @@ class Select(ExecutableTree):
         if table_source:
             return table_source.get("table_name")
         return None
+
+    def __has_group_by(self):
+        return self.__select_parsed.get("group_by_expression") is not None
 
     def __process_distinct(self):
         """
@@ -621,8 +614,141 @@ class Select(ExecutableTree):
             return False
         return True
 
+    def __process_group_by(self):
+        """
+        Group the result set by the specified columns.
+        """
+        group_by_expression = self.__select_parsed.get("group_by_expression")
+        if not group_by_expression:
+            return
+        if len(group_by_expression) > 1:
+            raise NotImplementedError("GROUP BY with multiple columns not supported yet")
+
+        select_list = self.__select_parsed.get("select_list")
+        col_aliases = [projection.get("alias") for projection in select_list if projection.get("type") == "column" and projection.get("alias") is not None]
+        expr_aliases = [projection.get("alias") for projection in select_list if projection.get("type") == "expression" and projection.get("alias") is not None]
+
+        # set of col refs of columns we apply aggregation function(s) on
+        aggregating_col_refs = self.__get_aggregating_col_refs(select_list)
+
+        # create dict of form (key=<group_by_key>, value=list[(<aggregating_col_ref>, <value>)])
+        group_by_col_ref = group_by_expression[0]
+        grouped_values = self.__group_values(group_by_col_ref, aggregating_col_refs)
+
+        # set the result header
+        self.__result_header = [col_aliases if col_aliases else group_by_col_ref.get("column")]
+        self.__result_header.extend(expr_aliases)
+
+        # evaluate the aggregate functions
+        aggregate_functions: list[dict] = self.__get_aggregate_functions_from_select_list(select_list)
+        aggr_col_types: list[str] = [self.__find_table_by_column(func.get("column_reference").get("column")).get_column(
+                func.get("column_reference").get("column")).get_type() for func in aggregate_functions]
+        for group_key, val_list in grouped_values.items():
+            aggregate_results = []
+            for i, func in enumerate(aggregate_functions):
+                is_distinct = func.get("is_distinct")
+                func_name = func.get("name")
+                aggregating_col_ref = func.get("column_reference")
+                cur_aggr_res = self.__eval_aggretate_function(func_name, val_list, aggregating_col_ref, aggr_col_types[i])
+                aggregate_results.append(cur_aggr_res)
+            self.__result_values.append([group_key] + aggregate_results)
+        # add the aggregate results to the result set
+        # self.__result_values = [[group_key] + [aggr_res for aggr_res in aggregate_results] for group_key in grouped_values.keys()]
 
 
+    def __parse_column_reference_with_table_name(self, col_ref):
+        col_name = col_ref.get("column")
+        table_name = col_ref.get("table")
+        if table_name is None:
+            table_name = self.__find_table_by_column(col_name).get_name()
+        else:
+            table_name = self.__get_table_name_by_alias(table_name)
+        return table_name, col_name
 
+    def __get_column_reference_from_aggregate_projection(self, projection: dict) -> dict:
+        if projection.get("type") != "expression":
+            raise ValueError("Projection must be 'expression'")
+        if projection.get("value").get("type") != "function":
+            raise ValueError("Projection must be 'function'")
+        function = projection.get("value").get("value")
+        if function.get("type") != "aggregate":
+            raise ValueError("Projection must be function of type 'aggregate'")
+        return function.get("function").get("column_reference")
 
+    def __get_aggregating_col_refs(self, select_list: list[dict]) -> list[dict]:
+        col_refs = []
+        for projection in select_list:
+            if projection.get("type") == "expression":
+                col_ref = self.__get_column_reference_from_aggregate_projection(projection)
+                if col_ref not in col_refs:
+                    # only add unique column references
+                    col_refs.append(col_ref)
+        return col_refs
 
+    def __group_values(self, group_by_col_ref, aggregating_col_refs) -> dict:
+        table_name, col_name = self.__parse_column_reference_with_table_name(group_by_col_ref)
+        pos_grouped_by_col: int = self.__result_header.index(col_name)
+        pos_aggregating_cols: list[int] = [self.__result_header.index(col_ref.get("column")) for col_ref in aggregating_col_refs]
+        grouped_values = {}
+        for res in self.__result_values:
+            key = res[pos_grouped_by_col]
+            if grouped_values.get(key) is None:
+                grouped_values[key] = []
+            col_val_list: list[tuple] = []
+            for i, aggr_pos in enumerate(pos_aggregating_cols):
+                col_val_list.append((aggregating_col_refs[i], res[aggr_pos]))
+            grouped_values[key].extend(col_val_list)
+        return grouped_values
+
+    def __get_aggregate_functions_from_select_list(self, select_list: list[dict]) -> list[dict]:
+        aggregate_functions = []
+        for projection in select_list:
+            if projection.get("type") != "expression":
+                continue
+            function = projection["value"]["value"]["function"]
+            aggregate_functions.append(function)
+        return aggregate_functions
+
+    def __eval_aggretate_function(self, func_name: str, val_list: dict, aggregating_col_ref: dict,
+                                  col_type: str):
+        """Returns a single value."""
+        aggregation_result = None
+        match func_name:
+            case "count":
+                aggregation_result = 0
+                for val in val_list:
+                    if val[0] == aggregating_col_ref:
+                        aggregation_result += 1
+            case "sum":
+                aggregation_result = 0
+                for val in val_list:
+                    casted_val = datatypes.cast_value(val[1], col_type)
+                    if val[0] == aggregating_col_ref:
+                        aggregation_result += casted_val
+            case "avg":
+                aggregation_result = 0
+                cnt = 0
+                for val in val_list:
+                    casted_val = datatypes.cast_value(val[1], col_type)
+                    if val[0] == aggregating_col_ref:
+                        aggregation_result += casted_val
+                        cnt += 1
+                aggregation_result /= cnt
+            case "min":
+                aggregation_result = None
+                for val in val_list:
+                    casted_val = datatypes.cast_value(val[1], col_type)
+                    if val[0] == aggregating_col_ref:
+                        if aggregation_result is None or casted_val < aggregation_result:
+                            aggregation_result = casted_val
+            case "max":
+                aggregation_result = None
+                for val in val_list:
+                    casted_val = datatypes.cast_value(val[1], col_type)
+                    if val[0] == aggregating_col_ref:
+                        if aggregation_result is None or casted_val > aggregation_result:
+                            aggregation_result = casted_val
+            case _:
+                raise NotImplementedError(f"Aggregate function '{func_name}' not supported")
+
+        return aggregation_result

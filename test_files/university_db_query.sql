@@ -86,12 +86,16 @@ use University
 --     join disciplines d on m.discID = d.discID
 -- where StudName = 'Rosa White';
 
+-- nofilter, group, aggregate
+-- select StudID, avg(Mark) as avg_Mark, min(Mark) as min_Mark, max(Mark) as max_Mark
+-- from marks
+-- group by StudID
 
 --filter range, no join, group
 -- select StudID, avg(Mark) as avg_Mark, min(Mark) as min_Mark, max(Mark) as max_Mark
 -- from marks
 -- where mark > 4 and mark < 7
--- group by StudID;
+-- group by StudID
 
 --filter, 1 join, group
 -- select DName, avg(Mark) as avg_Mark
@@ -99,3 +103,12 @@ use University
 --     join disciplines d on m.discID = d.discID
 -- where mark > 4
 -- group by DName;
+
+select GroupId, sum(StudID) as sum_StudID, avg(StudID) as avg_StudID, min(StudID) as min_StudID, max(StudID) as max_StudID, count(StudID) as count_StudID
+from students
+where GroupId < 500
+group by GroupId
+
+-- select GroupId, avg(StudID) as avg_StudID, min(StudName) as min_StudName, max(Email) as max_Email
+-- from students
+-- group by GroupId

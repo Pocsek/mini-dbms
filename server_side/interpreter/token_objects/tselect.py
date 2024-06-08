@@ -50,7 +50,7 @@ class TSelect(TObj):
         if token_list.check_token("group"):
             token_list.consume_concrete("group")
             token_list.consume_concrete("by")
-            self.__group_by_expression = token_list.consume_group(TGroupByExpression())
+            self.__group_by_expression = token_list.consume_group(TGroupByExpression()).get_column_references()
 
     def __dict__(self):
         """
@@ -76,5 +76,5 @@ class TSelect(TObj):
         if self.__search_condition:
             d["search_condition"] = self.__search_condition.__dict__()
         if self.__group_by_expression:
-            d["group_by_expression"] = self.__group_by_expression.__dict__()
+            d["group_by_expression"] = self.__group_by_expression
         return d

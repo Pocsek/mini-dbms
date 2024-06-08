@@ -133,3 +133,11 @@ class TestParseSelect(TestCase):
         token_list = self.__to_token_list(raw_command)
         result = token_list.consume_group(TSelect(True)).__dict__()
         print(json.dumps(result, indent=4))
+
+    def test_select_9(self):
+        raw_command = ("select StudID, avg(Mark) as avg_Mark, min(Mark) as min_Mark, max(Mark) as max_Mark "
+                       "from marks "
+                       "group by StudID")
+        token_list = self.__to_token_list(raw_command)
+        result = token_list.consume_group(TSelect(True)).__dict__()
+        print(json.dumps(result, indent=4))
