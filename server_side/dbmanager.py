@@ -603,29 +603,29 @@ class DbManager:
         inner_col = col_name_2
         inner_idx = tb_2.find_column(col_name_2)
 
-        if not tb_1.column_is_indexed(col_name_1) and not tb_2.column_is_indexed(col_name_2):
+        # if not tb_1.column_is_indexed(col_name_1) and not tb_2.column_is_indexed(col_name_2):
             # nested loop join
-            outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
-            inner_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), inner)
-            result: list[list] = []
-            for o_rec in outer_records:
-                for i_rec in inner_records:
-                    if o_rec[outer_idx] == i_rec[inner_idx]:  # join condition is met (only '=' works)
-                        result.append(o_rec + i_rec)
-            return result
-        swap: bool = False
-        if tb_1.column_is_indexed(col_name_1) and not tb_2.column_is_indexed(col_name_2):
-            # swap them so that the indexed one is the inner table
-            outer, inner = inner, outer
-            outer_col, inner_col = inner_col, outer_col
-            swap = True
-            outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
-            for o_rec in outer_records:
-                raise NotImplementedError("Join operation not implemented for indexed columns")
-                i_key = o_rec[outer_idx]
-                i_rec = self.find_by_value(self.get_databases()[db_idx].get_name(), inner, inner_col, i_key)
-                if i_rec:
+        outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
+        inner_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), inner)
+        result: list[list] = []
+        for o_rec in outer_records:
+            for i_rec in inner_records:
+                if o_rec[outer_idx] == i_rec[inner_idx]:  # join condition is met (only '=' works)
                     result.append(o_rec + i_rec)
+        return result
+        # swap: bool = False
+        # if tb_1.column_is_indexed(col_name_1) and not tb_2.column_is_indexed(col_name_2):
+        #     # swap them so that the indexed one is the inner table
+        #     outer, inner = inner, outer
+        #     outer_col, inner_col = inner_col, outer_col
+        #     swap = True
+        #     outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
+        #     for o_rec in outer_records:
+        #         raise NotImplementedError("Join operation not implemented for indexed columns")
+        #         i_key = o_rec[outer_idx]
+        #         i_rec = self.find_by_value(self.get_databases()[db_idx].get_name(), inner, inner_col, i_key)
+        #         if i_rec:
+        #             result.append(o_rec + i_rec)
 
 
 

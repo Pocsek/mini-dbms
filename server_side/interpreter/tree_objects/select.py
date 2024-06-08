@@ -147,7 +147,10 @@ class Select(ExecutableTree):
                 table_alias: str = table_source.get("table_alias")  # can be None
                 if table_alias:
                     self.__table_aliases[table_alias] = table_name
-                self.__tables[table_name] = dbm.get_table(dbm.get_working_db_index(), table_name)
+                tb = dbm.get_table(dbm.get_working_db_index(), table_name)
+                if tb is None:
+                    raise ValueError(f"Table '{table_name}' not found in database")
+                self.__tables[table_name] = tb
             case "joined":
                 left: dict = table_source.get("left_table")
                 right: dict = table_source.get("right_table")
@@ -423,6 +426,7 @@ class Select(ExecutableTree):
     def __select_list_database_table_source_no_queried_values(self, select_list):
         all_col_refs = self.__build_all_col_refs()
         proj_positions_in_all = []
+        result_header = [] # temporary result header, only used when there is a column reference
         for projection in select_list:
             projection_type = projection.get("type")
             match projection_type:
@@ -430,7 +434,6 @@ class Select(ExecutableTree):
                     # don't need to change the result set => can skip this step
                     return
                 case "column":
-                    self.__result_header = []
                     proj_col_ref = projection.get("column_reference")
                     pos_of_ref_in_all = -1
                     for i, col_ref in enumerate(all_col_refs):
@@ -447,10 +450,11 @@ class Select(ExecutableTree):
                     if pos_of_ref_in_all == -1:
                         raise ValueError(f"Unclear column reference: {proj_col_ref_col_name}")
                     proj_positions_in_all.append(pos_of_ref_in_all)
-                    self.__result_header.append(projection.get("alias", proj_col_ref_col_name))
+                    result_header.append(projection.get("alias", proj_col_ref_col_name))
                 case "expression":
                     raise NotImplementedError("Expressions in SELECT clause are not supported yet")
         self.__result_values = [[res[pos] for pos in proj_positions_in_all] for res in self.__result_values]
+        self.__result_header = result_header
 
     def __build_all_col_refs(self) -> list[dict]:
         col_refs = []
