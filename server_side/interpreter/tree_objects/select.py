@@ -624,7 +624,13 @@ class Select(ExecutableTree):
 
         select_list = self.__select_parsed.get("select_list")
         col_aliases = [projection.get("alias") for projection in select_list if projection.get("type") == "column" and projection.get("alias") is not None]
-        expr_aliases = [projection.get("alias") for projection in select_list if projection.get("type") == "expression" and projection.get("alias") is not None]
+        expr_aliases = []
+        for proj in select_list:
+            if proj.get("type") == "expression":
+                if proj.get("alias") is None:
+                    expr_aliases.append(" ")
+                else:
+                    expr_aliases.append(proj.get("alias"))
 
         # set of col refs of columns we apply aggregation function(s) on
         aggregating_col_refs = self.__get_aggregating_col_refs(select_list)
@@ -641,6 +647,7 @@ class Select(ExecutableTree):
         aggregate_functions: list[dict] = self.__get_aggregate_functions_from_select_list(select_list)
         aggr_col_types: list[str] = [self.__find_table_by_column(func.get("column_reference").get("column")).get_column(
                 func.get("column_reference").get("column")).get_type() for func in aggregate_functions]
+        new_result_values = []
         for group_key, val_list in grouped_values.items():
             aggregate_results = []
             for i, func in enumerate(aggregate_functions):
@@ -649,10 +656,8 @@ class Select(ExecutableTree):
                 aggregating_col_ref = func.get("column_reference")
                 cur_aggr_res = self.__eval_aggretate_function(func_name, val_list, aggregating_col_ref, aggr_col_types[i])
                 aggregate_results.append(cur_aggr_res)
-            self.__result_values.append([group_key] + aggregate_results)
-        # add the aggregate results to the result set
-        # self.__result_values = [[group_key] + [aggr_res for aggr_res in aggregate_results] for group_key in grouped_values.keys()]
-
+            new_result_values.append([group_key] + aggregate_results)
+        self.__result_values = new_result_values
 
     def __parse_column_reference_with_table_name(self, col_ref):
         col_name = col_ref.get("column")
