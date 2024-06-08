@@ -104,8 +104,9 @@ use University
 -- where mark > 4
 -- group by DName;
 
-select GroupId, sum(StudID) as sum_StudID
+select GroupId, sum(StudID) as sum_StudID, avg(StudID) as avg_StudID, min(StudID) as min_StudID, max(StudID) as max_StudID, count(StudID) as count_StudID
 from students
+where GroupId < 500
 group by GroupId
 
 -- select GroupId, avg(StudID) as avg_StudID, min(StudName) as min_StudName, max(Email) as max_Email
