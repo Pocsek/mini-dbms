@@ -148,6 +148,7 @@ def interpret_response(response: str):
                     headers=result.get_result_set()[0],
                     tablefmt="simple_grid"
                 ))
+                print(f"Results found: {len(result.get_result_set()[1])} rows")
 
 
 def main():

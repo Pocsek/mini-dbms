@@ -344,6 +344,8 @@ class Select(ExecutableTree):
         if table_source_type is None:
             self.__select_list_no_table_source()
             return
+        if table_source_type == "joined":
+            return
         self.__select_list_database_table_source()
 
     def __select_list_no_table_source(self):
