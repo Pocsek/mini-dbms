@@ -1,4 +1,4 @@
-from socket import *
+from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 from datetime import datetime
 import traceback

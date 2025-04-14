@@ -24,26 +24,12 @@ class ForeignKey(CObj):
             - CASCADE ...
         """
         if len(self.__src_col_names) != len(self.__ref_col_names):
-            raise ValueError(f"Number of source columns in FOREIGN KEY constraint is not equal to the number of "
-                             f"referenced columns.")
+            raise ValueError("Number of source columns in FOREIGN KEY constraint is not equal to the number of "
+                             "referenced columns.")
 
         column_definitions = kwargs.get("column_definitions")
         if not column_definitions:
-            raise ValueError(f"Column definitions not given in FOREIGN KEY constraint validation.")
-
-        # column_definition = kwargs.get("column_definition")
-        # if column_definition:  # the constraint is defined inside a column definition
-        #     column_definition.validate_has_constraint_not_more_than_once(ForeignKey)
-        # else:  # the constraint is a table constraint
-        #
-        #
-        #
-        # for col_name in self.__src_col_names:
-        #     found = False
-        #     for col_def in column_definitions:
-        #         if col_def.get_name() == col_name:
-        #             found = True
-
+            raise ValueError("Column definitions not given in FOREIGN KEY constraint validation.")
 
     def get_source_column_names(self):
         return self.__src_col_names
