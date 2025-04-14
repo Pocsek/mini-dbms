@@ -475,8 +475,6 @@ class DbManager:
                     return kv.get("_id")
         return None
 
-
-
     def find_conditional_indexed_by_primary_key(self,
                                                 db_name: str,
                                                 table_name: str,
@@ -592,7 +590,8 @@ class DbManager:
             mongo_db.create_collection(db.get_name(), "__next_identity")
         return dbs
 
-    def join_tables(self, db_idx: int, tb_1: Table, tb_2: Table, op: str, col_name_1: str, col_name_2: str) ->list[list]:
+    def join_tables(self, db_idx: int, tb_1: Table, tb_2: Table, op: str, col_name_1: str, col_name_2: str) -> list[
+        list]:
         """ """
         if op != "=":
             raise NotImplementedError(f"Join operation '{op}' not implemented")
@@ -604,7 +603,7 @@ class DbManager:
         inner_idx = tb_2.find_column(col_name_2)
 
         # if not tb_1.column_is_indexed(col_name_1) and not tb_2.column_is_indexed(col_name_2):
-            # nested loop join
+        # nested loop join
         outer_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), outer)
         inner_records: list[list] = self.find_all(self.get_databases()[db_idx].get_name(), inner)
         result: list[list] = []
@@ -626,8 +625,6 @@ class DbManager:
         #         i_rec = self.find_by_value(self.get_databases()[db_idx].get_name(), inner, inner_col, i_key)
         #         if i_rec:
         #             result.append(o_rec + i_rec)
-
-
 
 
 def create_empty_database() -> Database:

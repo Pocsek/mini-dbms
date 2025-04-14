@@ -162,7 +162,7 @@ def main():
     try:
         while True:
             ds = get_database_structure(s)
-            tab_completer = set_tab_completer(TabCompleter(), ds)
+            _ = set_tab_completer(TabCompleter(), ds)
             # print(ds.get_database_names(), ds.get_working_db_index())
             commands, keep_running = get_user_input()
             command_length: int = len(commands)
